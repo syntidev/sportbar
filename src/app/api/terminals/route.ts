@@ -3,13 +3,11 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
 const CreateTerminalSchema = z.object({
-  name:            z.string().trim().min(1).max(100),
-  type:            z.enum(['debito', 'credito', 'biopago']),
-  bank_name:       z.string().trim().min(1).max(100),
-  serial:          z.string().trim().max(100).optional(),
-  merchant_number: z.string().trim().max(100).optional(),
-  is_active:       z.boolean().optional(),
-  venue_id:        z.number().int().positive().optional(),
+  method:            z.enum(['pos_debit', 'pos_credit', 'biopago']),
+  bank_name:         z.string().trim().min(1).max(100),
+  serial:            z.string().trim().max(50).optional(),
+  commercial_number: z.string().trim().max(50).optional(),
+  is_active:         z.boolean().optional(),
 })
 
 export async function GET() {
