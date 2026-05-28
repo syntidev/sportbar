@@ -1,0 +1,186 @@
+/* ImportButton.module.css */
+
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Trigger button ──────────────────────────────────────────────────────────── */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  color: var(--color-brand);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-4);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: var(--touch-min);
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.trigger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-brand) 24%, transparent);
+  border-color: color-mix(in srgb, var(--color-brand) 50%, transparent);
+}
+
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Status panel ────────────────────────────────────────────────────────────── */
+
+.panel {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 260px;
+  box-shadow: var(--shadow-md);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.panelTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+/* ── Progress bar ────────────────────────────────────────────────────────────── */
+
+.progressTrack {
+  height: 4px;
+  background: var(--color-surface-3);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base);
+}
+
+/* ── Fatal error ─────────────────────────────────────────────────────────────── */
+
+.fatalError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-cancelado);
+  margin: 0;
+}
+
+/* ── Summary list ────────────────────────────────────────────────────────────── */
+
+.summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.summaryOk,
+.summarySkipped {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.summaryOk {
+  color: var(--color-listo);
+}
+
+.summarySkipped {
+  color: var(--color-pendiente);
+}
+
+/* ── Error details ───────────────────────────────────────────────────────────── */
+
+.errDetails {
+  margin: 0;
+}
+
+.errSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-cancelado);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.errSummary::-webkit-details-marker {
+  display: none;
+}
+
+.errList {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0 0 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.errItem {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}

@@ -1,0 +1,389 @@
+.page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  padding: 20px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ─── Header ──────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.livePill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(46, 125, 50, 0.12);
+  border: 1px solid rgba(46, 125, 50, 0.3);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-primary-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  animation: pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.6); }
+}
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ─── Loading / Error state ───────────────────────────── */
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 0;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.stateError { color: var(--color-accent); }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Empty state ─────────────────────────────────────── */
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+.emptyTitle {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.emptySubtitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ─── Stats row ───────────────────────────────────────── */
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 600px) {
+  .statsRow { grid-template-columns: repeat(4, 1fr); }
+}
+
+.statCard {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--stat-color);
+  border-radius: 10px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--stat-color) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--stat-color) 28%, transparent);
+  color: var(--stat-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statValue {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--stat-color);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Sections ────────────────────────────────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ─── Venue grid ──────────────────────────────────────── */
+
+.venueGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.venueCard {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 200ms ease;
+}
+
+.venueCard:hover {
+  border-color: var(--color-primary);
+}
+
+.venueHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.venueName {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.venueType {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--color-primary-light);
+  background: rgba(46, 125, 50, 0.12);
+  border: 1px solid rgba(46, 125, 50, 0.25);
+  border-radius: 20px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.venueStats {
+  display: flex;
+  gap: 12px;
+}
+
+.venueStat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.venueStatValue {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--color-text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.venueStatLabel {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.venueFooter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+.venueEmpty {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+/* ─── Order list ──────────────────────────────────────── */
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orderRow {
+  display: grid;
+  grid-template-columns: 100px 70px 80px 72px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: border-color 180ms ease;
+}
+
+.orderRow:hover { border-color: var(--color-primary); }
+
+.orderCode {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.orderZone {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.orderBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+/* Kitchen status */
+.kitchen_NUEVO     { background: rgba(245,166,35,.12);  color: var(--color-nuevo);     border-color: rgba(245,166,35,.28); }
+.kitchen_PREP      { background: rgba(46,125,50,.12);   color: var(--color-prep);      border-color: rgba(46,125,50,.28);  }
+.kitchen_LISTO     { background: rgba(76,175,80,.12);   color: var(--color-listo);     border-color: rgba(76,175,80,.28);  }
+.kitchen_ENTREGADO { background: rgba(255,255,255,.05); color: var(--color-text-muted); border-color: var(--color-border);  }
+
+/* Payment status */
+.pay_PEND          { background: rgba(245,166,35,.10);  color: var(--color-pendiente); border-color: rgba(245,166,35,.22); }
+.pay_PAID          { background: rgba(76,175,80,.10);   color: var(--color-pagado);    border-color: rgba(76,175,80,.22);  }
+.pay_CREDIT        { background: rgba(124,77,255,.10);  color: var(--color-credito);   border-color: rgba(124,77,255,.22); }
+.pay_CANCELLED     { background: rgba(198,40,40,.08);   color: var(--color-cancelado); border-color: rgba(198,40,40,.18);  }
+
+.orderTotal {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-brand);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.orderTime {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

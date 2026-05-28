@@ -1,0 +1,551 @@
+/* src/app/pos/comandas/page.module.css */
+
+/* ── Page ────────────────────────────────────────────────────────────────────── */
+
+.page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-strong, var(--color-border));
+  flex-shrink: 0;
+  min-height: 56px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-primary-light);
+  min-width: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.backBtn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.headerTitle {
+  display: block;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.headerSub {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.clock {
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+}
+
+.syncLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Zone filter bar ─────────────────────────────────────────────────────────── */
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterBar::-webkit-scrollbar {
+  display: none;
+}
+
+.filterBtn {
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filterBtn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.filterActive {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+  color: var(--color-primary-light);
+}
+
+.countPill {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Error banner ────────────────────────────────────────────────────────────── */
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: color-mix(in srgb, var(--color-cancelado) 14%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-cancelado) 35%, transparent);
+  color: var(--color-cancelado);
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Splash (loading / empty) ────────────────────────────────────────────────── */
+
+.splash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.splashText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.emptyIcon {
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+/* ── Three-column layout ─────────────────────────────────────────────────────── */
+
+.columns {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 700px) {
+  .columns {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+}
+
+/* ── Status column ───────────────────────────────────────────────────────────── */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.column:last-child {
+  border-right: none;
+}
+
+.colHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  flex-shrink: 0;
+  border-bottom: 2px solid transparent;
+}
+
+.colHeaderNUEVO {
+  background: color-mix(in srgb, var(--color-nuevo) 10%, var(--color-surface));
+  border-bottom-color: var(--color-nuevo);
+}
+
+.colHeaderPREP {
+  background: color-mix(in srgb, var(--color-prep) 10%, var(--color-surface));
+  border-bottom-color: var(--color-prep);
+}
+
+.colHeaderLISTO {
+  background: color-mix(in srgb, var(--color-listo) 10%, var(--color-surface));
+  border-bottom-color: var(--color-listo);
+}
+
+.colTitle {
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+}
+
+.colBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.colBadgeNUEVO {
+  background: color-mix(in srgb, var(--color-nuevo) 20%, transparent);
+  color: var(--color-nuevo);
+  border: 1px solid color-mix(in srgb, var(--color-nuevo) 40%, transparent);
+}
+
+.colBadgePREP {
+  background: color-mix(in srgb, var(--color-prep) 20%, transparent);
+  color: var(--color-prep);
+  border: 1px solid color-mix(in srgb, var(--color-prep) 40%, transparent);
+}
+
+.colBadgeLISTO {
+  background: color-mix(in srgb, var(--color-listo) 20%, transparent);
+  color: var(--color-listo);
+  border: 1px solid color-mix(in srgb, var(--color-listo) 40%, transparent);
+}
+
+.cardList {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cardList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cardList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cardList::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.colEmpty {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-5) 0;
+  font-style: italic;
+  opacity: 0.6;
+  margin: 0;
+}
+
+/* ── Order card ──────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: border-color var(--transition-fast);
+}
+
+.cardNUEVO {
+  border-left: 4px solid var(--color-nuevo);
+}
+
+.cardPREP {
+  border-left: 4px solid var(--color-prep);
+}
+
+.cardLISTO {
+  border-left: 4px solid var(--color-listo);
+}
+
+.cardLate {
+  background: color-mix(in srgb, var(--color-cancelado) 7%, var(--color-surface-2));
+  border-color: color-mix(in srgb, var(--color-cancelado) 35%, transparent);
+}
+
+.cardLate.cardNUEVO,
+.cardLate.cardPREP {
+  border-left-color: var(--color-cancelado);
+}
+
+/* ── Card header ─────────────────────────────────────────────────────────────── */
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.orderCode {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.codeLoc {
+  color: var(--color-primary-light);
+}
+
+.codePub {
+  color: var(--color-brand);
+}
+
+.elapsed {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.elapsedLate {
+  color: var(--color-cancelado);
+}
+
+/* ── Zone line ───────────────────────────────────────────────────────────────── */
+
+.zoneLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.zoneText {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meseroTag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Items list ──────────────────────────────────────────────────────────────── */
+
+.itemsList {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.itemQty {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  min-width: 22px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.itemName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.itemMore {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding-top: 2px;
+}
+
+/* ── Note ────────────────────────────────────────────────────────────────────── */
+
+.note {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--color-text-muted);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  background: color-mix(in srgb, var(--color-brand-warm) 8%, transparent);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid color-mix(in srgb, var(--color-brand-warm) 40%, transparent);
+  line-height: 1.4;
+}
+
+/* ── Card footer ─────────────────────────────────────────────────────────────── */
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.total {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-brand);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.badgeNUEVO {
+  background: color-mix(in srgb, var(--color-nuevo) 16%, transparent);
+  color: var(--color-nuevo);
+  border: 1px solid color-mix(in srgb, var(--color-nuevo) 32%, transparent);
+}
+
+.badgePREP {
+  background: color-mix(in srgb, var(--color-prep) 16%, transparent);
+  color: var(--color-prep);
+  border: 1px solid color-mix(in srgb, var(--color-prep) 32%, transparent);
+}
+
+.badgeLISTO {
+  background: color-mix(in srgb, var(--color-listo) 16%, transparent);
+  color: var(--color-listo);
+  border: 1px solid color-mix(in srgb, var(--color-listo) 32%, transparent);
+}

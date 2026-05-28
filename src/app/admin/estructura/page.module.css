@@ -1,0 +1,847 @@
+/* src/app/admin/estructura/page.module.css */
+
+/* ── Page ────────────────────────────────────────────────────────────────────── */
+
+.page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  padding: var(--space-6) var(--space-4) var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: var(--space-1) 0 0;
+}
+
+/* ── New venue button ────────────────────────────────────────────────────────── */
+
+.newBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-primary);
+  color: var(--color-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-4);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: var(--touch-min);
+  white-space: nowrap;
+  transition: background-color var(--transition-fast);
+}
+
+.newBtn:hover {
+  background: var(--color-primary-light);
+}
+
+/* ── Loading / Error ─────────────────────────────────────────────────────────── */
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-content: center;
+  padding: var(--space-10) 0;
+}
+
+.stateError {
+  color: var(--color-cancelado);
+}
+
+.stateText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Venue grid ──────────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.empty {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: var(--space-10) 0;
+}
+
+/* ── Venue card ──────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: border-color var(--transition-base), opacity var(--transition-base);
+}
+
+.card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.cardInactive {
+  opacity: 0.45;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cardName {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* ── Type badge ──────────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badgeMatriz {
+  background: color-mix(in srgb, var(--color-brand) 16%, transparent);
+  color: var(--color-brand);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 35%, transparent);
+}
+
+.badgeQuiosco {
+  background: color-mix(in srgb, var(--color-credito) 16%, transparent);
+  color: var(--color-credito);
+  border: 1px solid color-mix(in srgb, var(--color-credito) 35%, transparent);
+}
+
+.badgeCocina {
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+/* ── Capability chips ────────────────────────────────────────────────────────── */
+
+.capRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-height: 22px;
+}
+
+.capChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.capComida {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  color: var(--color-brand);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+
+.capCerveza {
+  background: color-mix(in srgb, var(--color-primary-light) 14%, transparent);
+  color: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--color-primary-light) 30%, transparent);
+}
+
+.capLicor {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: #ef5350;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.noCaps {
+  font-size: 0.7rem;
+  color: var(--color-text-subtle);
+  font-style: italic;
+}
+
+/* ── Staff row ───────────────────────────────────────────────────────────────── */
+
+.staffRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.staffIcon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.staffText {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* ── Card footer toggle ──────────────────────────────────────────────────────── */
+
+.cardFooter {
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.toggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 30px;
+  transition: background-color var(--transition-fast);
+}
+
+.toggleBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggleOn {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-primary-light);
+}
+
+.toggleOn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+
+.toggleOff {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text-muted);
+}
+
+.toggleOff:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+/* ── Modal overlay ───────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 40;
+  animation: fadeIn 150ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal content ───────────────────────────────────────────────────────────── */
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  width: min(480px, calc(100vw - 32px));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 200ms ease;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.modalClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.modalClose:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+/* ── Form ────────────────────────────────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formLabel {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0;
+  border: none;
+  margin: 0;
+}
+
+.formInput,
+.formSelect {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0 var(--space-4);
+  min-height: var(--touch-min);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.formInput::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.formInput:focus,
+.formSelect:focus {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+}
+
+.formSelect {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(240,245,240,0.5)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-4) center;
+  padding-right: var(--space-8);
+}
+
+.formSelect option {
+  background: var(--color-surface-2);
+}
+
+/* ── Capability checkboxes ───────────────────────────────────────────────────── */
+
+.formFieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.checkGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.checkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Active toggle (switch) ──────────────────────────────────────────────────── */
+
+.formToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.switchOn  { background: var(--color-primary); }
+.switchOff { background: color-mix(in srgb, var(--color-text) 15%, transparent); }
+
+.switchThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--color-text);
+  border-radius: 50%;
+  transition: transform var(--transition-base);
+}
+
+.switchOn  .switchThumb { transform: translateX(20px); }
+.switchOff .switchThumb { transform: translateX(0); }
+
+/* ── Form error ──────────────────────────────────────────────────────────────── */
+
+.formError {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-cancelado);
+  margin: 0;
+}
+
+/* ── Form actions ────────────────────────────────────────────────────────────── */
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.cancelBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-4);
+  min-height: var(--touch-min);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.cancelBtn:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.submitBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-5);
+  min-height: var(--touch-min);
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+}
+
+.submitBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Card: selected state ────────────────────────────────────────────────────── */
+
+.card {
+  cursor: pointer;
+}
+
+.cardSelected {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+/* ── Detail panel backdrop ───────────────────────────────────────────────────── */
+
+.panelBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 30;
+}
+
+/* ── Detail panel ────────────────────────────────────────────────────────────── */
+
+.detailPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  width: min(380px, 100vw);
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border-strong);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ── Panel header ────────────────────────────────────────────────────────────── */
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  z-index: 1;
+}
+
+.panelClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.panelClose:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.panelEditBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  min-height: 30px;
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.panelEditBtn:hover {
+  background: color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+
+/* ── Panel venue identity ────────────────────────────────────────────────────── */
+
+.panelVenueInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panelVenueName {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.15;
+}
+
+/* ── Panel sections ──────────────────────────────────────────────────────────── */
+
+.panelSection {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.panelSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0;
+}
+
+.panelCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-primary-light);
+}
+
+.panelSpinnerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.panelEmpty {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Staff list ──────────────────────────────────────────────────────────────── */
+
+.staffList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.staffItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.staffItemInactive {
+  opacity: 0.45;
+}
+
+.staffAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--color-primary-light);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.staffInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.staffName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staffCode {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Role pills (panel staff list) ──────────────────────────────────────────── */
+
+.rolePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.roleMesero {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.roleCocina {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: #ef5350;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.roleBar {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  color: var(--color-brand);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+
+.roleDespacho {
+  background: color-mix(in srgb, var(--color-listo) 14%, transparent);
+  color: var(--color-listo);
+  border: 1px solid color-mix(in srgb, var(--color-listo) 30%, transparent);
+}
+
+.roleValidador {
+  background: color-mix(in srgb, var(--color-credito) 14%, transparent);
+  color: var(--color-credito);
+  border: 1px solid color-mix(in srgb, var(--color-credito) 30%, transparent);
+}
+
+.roleAdmin {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+

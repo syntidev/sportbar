@@ -1,95 +1,122 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { UtensilsCrossed, ClipboardList, CreditCard } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
 import styles from "./page.module.css";
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0, 0, 1] } },
+};
+
+const stats = [
+  { label: "Pendientes", value: 3, colorVar: "--color-pendiente" },
+  { label: "Crédito", value: 1, colorVar: "--color-credito" },
+  { label: "Cobrados", value: 12, colorVar: "--color-pagado" },
+  { label: "Total REF", value: "48.50", colorVar: "--color-text-muted" },
+];
+
+const buttons = [
+  {
+    href: "/pos/nueva-orden",
+    label: "Nueva Orden",
+    subtitle: "Tomar pedido",
+    icon: UtensilsCrossed,
+    className: styles.btnNuevaOrden,
+    iconClass: styles.btnIconNuevaOrden,
+    badge: null,
+  },
+  {
+    href: "/pos/comandas",
+    label: "Comandas",
+    subtitle: "Pedidos activos",
+    icon: ClipboardList,
+    className: styles.btnComandas,
+    iconClass: styles.btnIconComandas,
+    badge: { value: 3, variant: styles.badgeRed },
+  },
+  {
+    href: "/pos/cobrar",
+    label: "Cobrar",
+    subtitle: "Pagos pendientes",
+    icon: CreditCard,
+    className: styles.btnCobrar,
+    iconClass: styles.btnIconCobrar,
+    badge: { value: 3, variant: styles.badgeYellow },
+  },
+];
 
 export default function Home() {
   return (
     <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+      <header className={styles.header}>
+        <div className={styles.headerTop}>
+          <div className={styles.homeBrand}>
+            <div className={styles.logoContainer}>
+              <Image src="/logo-color.png" alt="CafeBall" width={32} height={32} priority />
+            </div>
+            <div className={styles.brandText}>
+              <span className={styles.homeName}>CafeBall</span>
+              <span className={styles.homeSub}>Sport Bar · Guaiquerías</span>
+            </div>
+          </div>
+          <span className={styles.livePill}>
+            <span className={styles.liveDot} />
+            En vivo
+          </span>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </header>
+
+      <div className={styles.statsRow}>
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className={styles.statChip}
+            style={{ "--chip-color": `var(${s.colorVar})` } as React.CSSProperties}
+          >
+            <span className={styles.statValue}>{s.value}</span>
+            <span className={styles.statLabel}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <motion.nav
+        className={styles.nav}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {buttons.map((btn) => {
+          const Icon = btn.icon;
+          return (
+            <motion.div key={btn.href} variants={itemVariants} className={styles.btnWrapper}>
+              <Link href={btn.href} className={`${styles.btn} ${btn.className}`}>
+                <div className={`${styles.btnIcon} ${btn.iconClass}`}>
+                  <Icon size={28} strokeWidth={1.8} />
+                </div>
+                <div className={styles.btnText}>
+                  <span className={styles.btnLabel}>{btn.label}</span>
+                  <span className={styles.btnSubtitle}>{btn.subtitle}</span>
+                </div>
+                {btn.badge && (
+                  <span className={`${styles.btnBadge} ${btn.badge.variant}`}>
+                    {btn.badge.value}
+                  </span>
+                )}
+              </Link>
+            </motion.div>
+          );
+        })}
+      </motion.nav>
     </div>
   );
 }

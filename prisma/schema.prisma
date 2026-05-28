@@ -1,0 +1,243 @@
+// CafeBall — Schema DB v1.1
+// POS Sport Bar Guaiqueries de Margarita
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ── VENUES ────────────────────────────────────────────
+model Venue {
+  id              Int       @id @default(autoincrement())
+  name            String
+  type            VenueType
+  capabilities    Json      // string[]
+  zona_geografica Json?
+  is_active       Boolean   @default(true)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  users           User[]
+
+  @@map("venues")
+}
+
+enum VenueType {
+  matriz
+  quiosco
+  cocina
+}
+
+// ── USUARIOS DEL SISTEMA ──────────────────────────────
+model User {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique // USR-001, COC-001, BAR-001, ADM-001
+  name       String
+  lastname   String
+  pin        String   // bcrypt hash
+  role       Role
+  cedula     String?
+  telefono   String?
+  venue_id   Int?
+  venue      Venue?   @relation(fields: [venue_id], references: [id])
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  orders     Order[]  @relation("CreatedBy")
+
+  @@index([venue_id], map: "users_venue_id_fkey")
+  @@map("users")
+}
+
+enum Role {
+  mesero
+  cocina
+  bar
+  despacho
+  validador
+  admin
+}
+
+// ── PRODUCTOS ─────────────────────────────────────────
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  price_usd   Decimal     @db.Decimal(10, 2)
+  category    Category
+  image_url   String?
+  is_active   Boolean     @default(true)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  order_items OrderItem[]
+
+  @@map("products")
+}
+
+enum Category {
+  hamburguesas
+  raciones
+  bebidas
+}
+
+// ── ORDENES ───────────────────────────────────────────
+model Order {
+  id              Int            @id @default(autoincrement())
+  code            String         @unique // PUB-00001 o LOC-00001
+  origin          Origin
+  flujo           OriginFlujo?
+  kitchen_status  KitchenStatus  @default(NUEVO)
+  payment_status  PaymentStatus  @default(PEND)
+  payment_method  String?        // Pago Movil, Efectivo, Zelle, etc
+  receipt_photo   String?        // path foto comprobante
+
+  // Cliente
+  customer_name     String
+  customer_lastname String
+  customer_id       String?      // cedula
+
+  // Ubicacion
+  zone   Zone
+  seat   String?                 // Fila G Asiento 12 o Palco 5
+
+  // Totales
+  total_usd   Decimal  @db.Decimal(10, 2)
+  rate_used   Decimal  @db.Decimal(10, 4)  // tasa BCV al momento
+  total_bs    Decimal  @db.Decimal(12, 2)  // total_usd x rate_used
+
+  // Venue asignado
+  venue_assigned  Int?
+
+  // Trazabilidad
+  created_by  Int
+  user        User     @relation("CreatedBy", fields: [created_by], references: [id])
+  note        String?
+  paid_at     DateTime?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  items       OrderItem[]
+  logs        OrderLog[]
+  validation  PaymentValidation?
+
+  @@index([created_by], map: "orders_created_by_fkey")
+  @@map("orders")
+}
+
+enum Origin {
+  PUB   // cliente autonomo via QR
+  LOC   // mesero toma la orden
+}
+
+enum OriginFlujo {
+  A
+  B
+}
+
+enum KitchenStatus {
+  NUEVO
+  PREP
+  LISTO
+  ENTREGADO
+}
+
+enum PaymentStatus {
+  PEND
+  PAID
+  CREDIT
+  CANCELLED
+}
+
+enum Zone {
+  Norte
+  Sur
+  VIP
+  Externa
+}
+
+// ── ITEMS DE ORDEN ────────────────────────────────────
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  order_id    Int
+  product_id  Int
+  qty         Int
+  price_usd   Decimal @db.Decimal(10, 2)  // snapshot precio al momento
+  subtotal    Decimal @db.Decimal(10, 2)
+
+  order       Order   @relation(fields: [order_id], references: [id])
+  product     Product @relation(fields: [product_id], references: [id])
+
+  @@index([order_id], map: "order_items_order_id_fkey")
+  @@index([product_id], map: "order_items_product_id_fkey")
+  @@map("order_items")
+}
+
+// ── CONTADORES DE TICKETS ─────────────────────────────
+model TicketCounter {
+  id      Int    @id @default(autoincrement())
+  prefix  String @unique  // PUB o LOC
+  last    Int    @default(0)
+
+  @@map("ticket_counters")
+}
+
+// ── LOG DE CAMBIOS DE ESTADO ──────────────────────────
+model OrderLog {
+  id         Int      @id @default(autoincrement())
+  order_id   Int
+  action     String   // CREATED, STATUS_CHANGE, PAYMENT_REGISTERED, etc
+  from_state String?
+  to_state   String?
+  actor_code String   // USR-001, VAL-001, etc
+  note       String?
+  created_at DateTime @default(now())
+
+  order      Order    @relation(fields: [order_id], references: [id])
+
+  @@index([order_id], map: "order_logs_order_id_fkey")
+  @@map("order_logs")
+}
+
+// ── VALIDACION DE COMPROBANTES ────────────────────────
+model PaymentValidation {
+  id           Int      @id @default(autoincrement())
+  order_id     Int      @unique
+  photo_path   String?
+  validated_by String?  // VAL-001
+  status       String   @default("PENDING")  // PENDING, VALIDATED, FLAGGED
+  note         String?
+  validated_at DateTime?
+  created_at   DateTime @default(now())
+
+  order        Order    @relation(fields: [order_id], references: [id])
+
+  @@map("payment_validations")
+}
+
+// ── TASA DE CAMBIO ────────────────────────────────────
+model DollarRate {
+  id              Int       @id @default(autoincrement())
+  rate            Decimal   @db.Decimal(12, 4)
+  source          String
+  is_active       Boolean   @default(true)
+  effective_from  DateTime  @default(now())
+  effective_until DateTime?
+  created_at      DateTime  @default(now())
+
+  @@map("dollar_rates")
+}
+
+// ── CONFIGURACION DEL NEGOCIO ─────────────────────────
+model Config {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String @db.Text
+
+  @@map("config")
+}

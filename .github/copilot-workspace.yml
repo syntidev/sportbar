@@ -1,0 +1,49 @@
+﻿# CAFEBALL -- Workspace Skills
+# Version: 1.0 | Mayo 2026
+
+agent:
+  instructions: |
+    Lee siempre .github/copilot-instructions.md ANTES de actuar.
+    Lee CLAUDE.md para reglas criticas del proyecto.
+
+skills:
+  pos_designer:
+    description: Diseno UI dark theme para PWA operativa de meseros y KDS
+    rules:
+      - CSS Modules unicamente -- nunca Tailwind
+      - Dark theme por defecto -- tokens en styles/tokens.css
+      - Touch targets minimo 44x44px
+      - Lucide React para iconos -- nunca emojis
+      - Framer Motion para transiciones de cards y modales
+      - Radix UI para componentes base sin estilos propios
+      - 3 estados en todo componente: Loading, Success, Error
+      - Feedback visual en cada accion operativa
+
+  kds_engineer:
+    description: Logica de KDS routing de ordenes por tipo de item
+    rules:
+      - Comida Hamburguesas y Raciones va a KDS Cocina
+      - Bebidas van a KDS Bar
+      - Orden mixta va a ambos KDS simultaneo
+      - Despacho espera bump de Cocina Y Bar
+      - Bump actualiza estado en Supabase Realtime
+      - NUNCA enviar bebida a KDS Cocina
+
+  currency_handler:
+    description: Manejo de moneda venezolana
+    rules:
+      - Simbolo USD: REF -- nunca signo dolar
+      - Simbolo bolivares: Bs.
+      - Calculo: price_usd x tasa_bcv = total_bs
+      - Tasa readonly desde synticorex DB via Prisma segunda conexion
+      - Fallback ultimo valor disponible -- nunca bloquear operacion
+      - Mostrar ambos en modal de cobro: REF + Bs.
+
+  offline_handler:
+    description: Estrategia offline para conectividad inestable
+    rules:
+      - IndexedDB guarda ordenes sin conexion
+      - Service Worker detecta reconexion y sincroniza
+      - ID temporal en offline -- ID definitivo al sincronizar
+      - Indicador visual claro de estado de conexion
+      - Starlink principal + WiFi respaldo + IndexedDB ultimo recurso

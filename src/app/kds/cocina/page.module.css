@@ -1,0 +1,400 @@
+/* src/app/kds/cocina/page.module.css */
+/* KDS Cocina — fullscreen dark display optimized for touch & large screens */
+
+/* ── Page ────────────────────────────────────────────────────────────────────── */
+
+.page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-border-strong);
+  flex-shrink: 0;
+  min-height: 60px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-primary-light);
+}
+
+.headerTitle {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  line-height: 1.1;
+}
+
+.headerSub {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.headerCenter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pillNuevo {
+  background: color-mix(in srgb, var(--color-nuevo) 20%, transparent);
+  color: var(--color-nuevo);
+  border: 1px solid color-mix(in srgb, var(--color-nuevo) 40%, transparent);
+}
+
+.pillPrep {
+  background: color-mix(in srgb, var(--color-credito) 20%, transparent);
+  color: var(--color-credito);
+  border: 1px solid color-mix(in srgb, var(--color-credito) 40%, transparent);
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.clock {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+}
+
+.syncLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--color-text-subtle);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Error banner ────────────────────────────────────────────────────────────── */
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: color-mix(in srgb, var(--color-cancelado) 16%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-cancelado) 40%, transparent);
+  color: var(--color-cancelado);
+  font-size: 0.82rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Loading / Empty splash ──────────────────────────────────────────────────── */
+
+.splash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.splashText {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.emptyIcon {
+  color: var(--color-text-subtle);
+}
+
+/* ── Cards grid ──────────────────────────────────────────────────────────────── */
+
+.grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ── Order card ──────────────────────────────────────────────────────────────── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  width: clamp(300px, 22vw, 400px);
+  flex-shrink: 0;
+  transition: background-color var(--transition-base);
+}
+
+/* NUEVO — orange left stripe + pulse glow */
+.cardNuevo {
+  border-left: 5px solid var(--color-nuevo);
+  animation: pulseNuevo 2s ease-in-out infinite;
+}
+
+@keyframes pulseNuevo {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-nuevo) 40%, transparent); }
+  50%       { box-shadow: 0 0 16px 4px color-mix(in srgb, var(--color-nuevo) 15%, transparent); }
+}
+
+/* PREP — credito/blue left stripe */
+.cardPrep {
+  border-left: 5px solid var(--color-credito);
+}
+
+/* ALERT (>5 min) — red bg tint */
+.cardAlert {
+  background: color-mix(in srgb, var(--color-cancelado) 9%, var(--color-surface-2));
+  border-color: color-mix(in srgb, var(--color-cancelado) 50%, transparent);
+}
+
+.cardAlert.cardNuevo {
+  border-left-color: var(--color-cancelado);
+  animation: pulseAlert 1.2s ease-in-out infinite;
+}
+
+@keyframes pulseAlert {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-cancelado) 40%, transparent); }
+  50%       { box-shadow: 0 0 20px 6px color-mix(in srgb, var(--color-cancelado) 15%, transparent); }
+}
+
+/* ── Card header ─────────────────────────────────────────────────────────────── */
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.cardLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.orderCode {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.codeLoc {
+  color: var(--color-primary-light);   /* staff origin — green */
+}
+
+.codePub {
+  color: var(--color-brand);           /* QR public origin — orange */
+}
+
+.zoneLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.cardRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.badgeNuevo {
+  background: color-mix(in srgb, var(--color-nuevo) 18%, transparent);
+  color: var(--color-nuevo);
+  border: 1px solid color-mix(in srgb, var(--color-nuevo) 35%, transparent);
+}
+
+.badgePrep {
+  background: color-mix(in srgb, var(--color-credito) 18%, transparent);
+  color: var(--color-credito);
+  border: 1px solid color-mix(in srgb, var(--color-credito) 35%, transparent);
+}
+
+/* ── Elapsed time ────────────────────────────────────────────────────────────── */
+
+.elapsed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+}
+
+.elapsedAlert {
+  color: var(--color-cancelado);
+}
+
+/* ── Items list ──────────────────────────────────────────────────────────────── */
+
+.itemsList {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.itemRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.itemQty {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.itemName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+/* ── Note ────────────────────────────────────────────────────────────────────── */
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--color-text-muted);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--color-brand-warm) 10%, transparent);
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--color-brand-warm) 20%, transparent);
+}
+
+/* ── Bump button ─────────────────────────────────────────────────────────────── */
+
+.bumpBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 72px;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.bumpBtn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.bumpBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.bumpBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}

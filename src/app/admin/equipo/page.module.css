@@ -1,0 +1,504 @@
+.page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 4px 0 0;
+}
+
+.btnNew {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: var(--color-primary);
+  color: var(--color-text);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.btnNew:hover {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+/* ─── Loading / Error state ──────────────────────────── */
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.stateText {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.stateError { color: var(--color-accent); }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Sections ───────────────────────────────────────── */
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sectionIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--role-color) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--role-color) 30%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--role-color);
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--color-text);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.sectionCount {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.empty {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 4px 0 0 2px;
+  font-style: italic;
+}
+
+/* ─── Grid ───────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+/* ─── Card ───────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--role-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.card:hover {
+  border-color: var(--role-color);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--role-color) 20%, transparent),
+    0 4px 12px color-mix(in srgb, var(--role-color) 15%, transparent);
+}
+
+.cardInactive { opacity: 0.45; }
+
+.cardMain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--role-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--role-color) 32%, transparent);
+  color: var(--role-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardCode {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Card footer ────────────────────────────────────── */
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--role-color) 14%, transparent);
+  color: var(--role-color);
+  border: 1px solid color-mix(in srgb, var(--role-color) 28%, transparent);
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 180ms ease, opacity 180ms ease;
+}
+
+.actionBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.toggleOn {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-primary-light);
+}
+.toggleOn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 32%, transparent);
+}
+
+.toggleOff {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text-muted);
+}
+.toggleOff:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+.pinBtn {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  color: var(--color-brand);
+}
+.pinBtn:hover {
+  background: color-mix(in srgb, var(--color-brand) 28%, transparent);
+}
+
+/* ─── Modal overlay ──────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-surface);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  max-height: 90dvh;
+  overflow: hidden;
+  transform: translateY(0);
+  animation: slideUp 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0);    }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--color-text);
+}
+
+.modalClose {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 180ms ease;
+}
+.modalClose:hover { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+
+.modalBody {
+  overflow-y: auto;
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldRow {
+  display: flex;
+  gap: 10px;
+}
+.fieldRow .fieldGroup { flex: 1; }
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.input {
+  width: 100%;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  outline: none;
+  transition: border-color 180ms ease;
+  box-sizing: border-box;
+}
+.input:focus { border-color: var(--color-primary); }
+.input option { background: var(--color-surface); }
+
+/* input with right-side icon */
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputWithIcon {
+  padding-right: 36px;
+}
+
+.inputIconBtn {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.inputIconActive {
+  color: #25d366;
+}
+
+.inputIconActive:hover {
+  color: #128c7e;
+  background: color-mix(in srgb, #25d366 12%, transparent);
+}
+
+.inputIconDisabled {
+  color: var(--color-text-muted);
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.modalError {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 0;
+}
+
+.pinTargetName {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0 0 4px;
+}
+.pinTargetCode {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.modalFooter {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.btnCancel {
+  flex: 1;
+  height: 44px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 180ms ease;
+}
+.btnCancel:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); }
+
+.btnSave {
+  flex: 2;
+  height: 44px;
+  border-radius: 11px;
+  background: var(--color-primary);
+  color: var(--color-text);
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 180ms ease, opacity 180ms ease;
+}
+.btnSave:hover:not(:disabled) { background: var(--color-primary-light); }
+.btnSave:disabled { opacity: 0.4; cursor: not-allowed; }

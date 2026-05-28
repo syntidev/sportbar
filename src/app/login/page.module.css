@@ -1,0 +1,224 @@
+/* src/app/login/page.module.css */
+
+/* ── Page ────────────────────────────────────────────────────────────────────── */
+
+.page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────────── */
+
+.card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+/* ── Brand ───────────────────────────────────────────────────────────────────── */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brandOrb {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: var(--color-brand);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(245, 166, 35, 0.65);
+}
+
+.brandName {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Code field ──────────────────────────────────────────────────────────────── */
+
+.field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.codeInput {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0 var(--space-4);
+  min-height: var(--touch-min);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.codeInput::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.codeInput:focus {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.18);
+}
+
+.codeInput:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── PIN dots ────────────────────────────────────────────────────────────────── */
+
+.dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-2) 0;
+}
+
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid var(--color-border-strong);
+  transition: border-color var(--transition-fast);
+}
+
+.dotFilled {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px rgba(46, 125, 50, 0.55);
+}
+
+/* ── Error message ───────────────────────────────────────────────────────────── */
+
+.errorMsg {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-cancelado);
+  margin: calc(var(--space-2) * -1) 0 0;
+  text-align: center;
+}
+
+/* ── PIN pad ─────────────────────────────────────────────────────────────────── */
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.key:hover:not(:disabled) {
+  background: var(--color-surface-3);
+  border-color: var(--color-border-strong);
+}
+
+.key:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.key:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Delete key */
+.keyDel {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.keyDel:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-cancelado) 10%, transparent);
+  border-color: transparent;
+  color: var(--color-cancelado);
+}
+
+/* Confirm key */
+.keyOk {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  color: var(--color-primary-light);
+}
+
+.keyOk:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 28%, transparent);
+  border-color: var(--color-primary);
+}
+
+.keyOk:disabled {
+  opacity: 0.2;
+}
+
+/* ── Loading ─────────────────────────────────────────────────────────────────── */
+
+.loadingText {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
