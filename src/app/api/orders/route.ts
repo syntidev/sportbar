@@ -16,7 +16,7 @@ const CreateOrderSchema = z.object({
   flujo:             z.enum(['A', 'B']).optional(),
   created_by:        z.number().int().positive().optional(),
   customer_name:     z.string().min(1),
-  customer_lastname: z.string().min(1),
+  customer_lastname: z.string().min(1).optional(),
   customer_id:       z.string().optional(),
   zone:              z.enum(['Norte', 'Sur', 'VIP', 'Externa']),
   seat:              z.string().optional(),
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
     const order = await prisma.order.create({
       data: {
-        code, origin, flujo, zone, seat, customer_name, customer_lastname,
+        code, origin, flujo, zone, seat, customer_name, customer_lastname: customer_lastname ?? '',
         customer_id, note, total_usd, rate_used: rate, total_bs,
         created_by: userId,
         items: {
