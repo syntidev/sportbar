@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 const PatchSchema = z.discriminatedUnion('op', [
@@ -62,7 +63,7 @@ export async function PATCH(
         venue_id:     d.venue_id     ?? null,
         access_start: d.access_start ?? null,
         access_end:   d.access_end   ?? null,
-        access_days:  d.access_days  ?? null,
+        access_days:  d.access_days  ?? Prisma.JsonNull,
       }
       if (d.pin) data.pin = await bcrypt.hash(d.pin, 10)
       const user = await prisma.user.update({
