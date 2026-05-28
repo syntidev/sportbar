@@ -34,21 +34,24 @@ enum VenueType {
 
 // ── USUARIOS DEL SISTEMA ──────────────────────────────
 model User {
-  id         Int      @id @default(autoincrement())
-  code       String   @unique // USR-001, COC-001, BAR-001, ADM-001
-  name       String
-  lastname   String
-  pin        String   // bcrypt hash
-  role       Role
-  cedula     String?
-  telefono   String?
-  venue_id   Int?
-  venue      Venue?   @relation(fields: [venue_id], references: [id])
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  code         String   @unique // USR-001, COC-001, BAR-001, ADM-001
+  name         String
+  lastname     String
+  pin          String   // bcrypt hash
+  role         Role
+  cedula       String?
+  telefono     String?
+  venue_id     Int?
+  venue        Venue?   @relation(fields: [venue_id], references: [id])
+  is_active    Boolean  @default(true)
+  access_start String?  // "HH:MM"
+  access_end   String?  // "HH:MM"
+  access_days  Json?    // string[] ej: ["mon","tue","fri"]
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  orders     Order[]  @relation("CreatedBy")
+  orders       Order[]  @relation("CreatedBy")
 
   @@index([venue_id], map: "users_venue_id_fkey")
   @@map("users")
@@ -240,4 +243,46 @@ model Config {
   value String @db.Text
 
   @@map("config")
+}
+
+// ── MÉTODOS DE PAGO ───────────────────────────────────
+model PaymentMethod {
+  id         Int           @id @default(autoincrement())
+  name       String        @db.VarChar(80)
+  type       PayMethodType
+  bank_name  String?       @db.VarChar(100)
+  is_active  Boolean       @default(true)
+  sort_order Int           @default(0)
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+
+  @@map("payment_methods")
+}
+
+enum PayMethodType {
+  cash
+  transfer
+  mobile
+  biometric
+  other
+}
+
+// ── TERMINALES / DISPOSITIVOS POS ────────────────────
+model Terminal {
+  id                Int            @id @default(autoincrement())
+  method            TerminalMethod
+  bank_name         String         @db.VarChar(100)
+  serial            String?        @db.VarChar(50)
+  commercial_number String?        @db.VarChar(50)
+  is_active         Boolean        @default(true)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+
+  @@map("terminals")
+}
+
+enum TerminalMethod {
+  pos_debit
+  pos_credit
+  biopago
 }

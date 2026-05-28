@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import {
-  AlertCircle, Eye, EyeOff, KeyRound, MessageCircle, UserPlus, X,
-  ChefHat, Wine, Truck, ShieldCheck, Users,
+  AlertCircle, Eye, EyeOff, KeyRound, MessageCircle,
+  UserPlus, X, ChefHat, Wine, Truck, ShieldCheck, Users, Pencil,
 } from 'lucide-react'
 import type { Role } from '@/types'
 import styles from './page.module.css'
@@ -11,33 +11,39 @@ import styles from './page.module.css'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface TeamUser {
-  id:         number
-  code:       string
-  name:       string
-  lastname:   string
-  role:       Role
-  is_active:  boolean
-  created_at: string
+  id:           number
+  code:         string
+  name:         string
+  lastname:     string
+  role:         Role
+  is_active:    boolean
+  created_at:   string
+  access_start: string | null
+  access_end:   string | null
+  access_days:  string[] | null
 }
 
 interface Venue {
-  id:       number
-  name:     string
-  type:     string
+  id:        number
+  name:      string
+  type:      string
   is_active: boolean
 }
 
-interface NewUserForm {
-  name:      string
-  lastname:  string
-  role:      Exclude<Role, 'admin'>
-  pin:       string
-  cedula:    string
-  telefono:  string
-  venue_id:  number | null
+interface UserForm {
+  name:         string
+  lastname:     string
+  role:         Exclude<Role, 'admin'>
+  pin:          string
+  cedula:       string
+  telefono:     string
+  venue_id:     number | null
+  access_start: string
+  access_end:   string
+  access_days:  string[]
 }
 
-// ── Role metadata ─────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const ROLE_ORDER: Exclude<Role, 'admin'>[] = ['mesero', 'cocina', 'bar', 'despacho', 'validador']
 
@@ -49,7 +55,21 @@ const ROLE_META: Record<Exclude<Role, 'admin'>, { label: string; color: string; 
   validador: { label: 'Validador', color: 'var(--color-credito)',  icon: ShieldCheck },
 }
 
-const FORM_INIT: NewUserForm = { name: '', lastname: '', role: 'mesero', pin: '', cedula: '', telefono: '', venue_id: null }
+const DAYS = [
+  { key: 'mon', label: 'L', full: 'Lunes'     },
+  { key: 'tue', label: 'M', full: 'Martes'    },
+  { key: 'wed', label: 'X', full: 'Miércoles' },
+  { key: 'thu', label: 'J', full: 'Jueves'    },
+  { key: 'fri', label: 'V', full: 'Viernes'   },
+  { key: 'sat', label: 'S', full: 'Sábado'    },
+  { key: 'sun', label: 'D', full: 'Domingo'   },
+] as const
+
+const FORM_INIT: UserForm = {
+  name: '', lastname: '', role: 'mesero', pin: '',
+  cedula: '', telefono: '', venue_id: null,
+  access_start: '', access_end: '', access_days: [],
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -59,28 +79,51 @@ export default function EquipoPage() {
   const [error,     setError]     = useState<string | null>(null)
   const [toggling,  setToggling]  = useState<number | null>(null)
 
-  // new user modal
-  const [showNew,   setShowNew]   = useState(false)
-  const [form,      setForm]      = useReducer(
-    (s: NewUserForm, p: Partial<NewUserForm>) => ({ ...s, ...p }),
+  // modal (shared create / edit)
+  const [showModal,   setShowModal]   = useState(false)
+  const [editTarget,  setEditTarget]  = useState<TeamUser | null>(null)
+  const [form,        setForm]        = useReducer(
+    (s: UserForm, p: Partial<UserForm>) => ({ ...s, ...p }),
     FORM_INIT,
   )
   const [saving,    setSaving]    = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  // venues for selector
+  // venues
   const [venues,      setVenues]      = useState<Venue[]>([])
   const [venuesReady, setVenuesReady] = useState(false)
 
-  // change PIN modal
-  const [pinTarget,  setPinTarget]  = useState<TeamUser | null>(null)
-  const [newPin,     setNewPin]     = useState('')
-  const [pinSaving,  setPinSaving]  = useState(false)
-  const [pinError,   setPinError]   = useState<string | null>(null)
+  // PIN modal
+  const [pinTarget, setPinTarget] = useState<TeamUser | null>(null)
+  const [newPin,    setNewPin]    = useState('')
+  const [pinSaving, setPinSaving] = useState(false)
+  const [pinError,  setPinError]  = useState<string | null>(null)
 
   const firstInputRef = useRef<HTMLInputElement>(null)
 
-  // ── Load ────────────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function daysLabel(days: string[] | null) {
+    if (!days?.length) return 'Todos los días'
+    return days.map((d) => DAYS.find((x) => x.key === d)?.label ?? d).join(' ')
+  }
+
+  function toggleDay(key: string) {
+    setForm({
+      access_days: form.access_days.includes(key)
+        ? form.access_days.filter((d) => d !== key)
+        : [...form.access_days, key],
+    })
+  }
+
+  const grouped = ROLE_ORDER.reduce<Record<string, TeamUser[]>>((acc, role) => {
+    acc[role] = users.filter((u) => u.role === role)
+    return acc
+  }, {})
+
+  const initials = (u: TeamUser) => `${u.name[0] ?? ''}${u.lastname[0] ?? ''}`.toUpperCase()
+
+  // ── Load ─────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetch('/api/users')
@@ -91,7 +134,7 @@ export default function EquipoPage() {
   }, [])
 
   useEffect(() => {
-    if (!showNew) return
+    if (!showModal) return
     setTimeout(() => firstInputRef.current?.focus(), 50)
     if (venuesReady) return
     fetch('/api/venues')
@@ -99,9 +142,41 @@ export default function EquipoPage() {
       .then((d: { venues?: Venue[] }) => { if (d.venues) setVenues(d.venues.filter((v) => v.is_active)) })
       .catch(() => { /* non-blocking */ })
       .finally(() => setVenuesReady(true))
-  }, [showNew, venuesReady])
+  }, [showModal, venuesReady])
 
-  // ── Toggle active ────────────────────────────────────────────────────────────
+  // ── Modal open helpers ────────────────────────────────────────────────────────
+
+  function openCreate() {
+    setEditTarget(null)
+    setForm(FORM_INIT)
+    setFormError(null)
+    setShowModal(true)
+  }
+
+  function openEdit(u: TeamUser) {
+    setEditTarget(u)
+    setForm({
+      name:         u.name,
+      lastname:     u.lastname,
+      role:         u.role as Exclude<Role, 'admin'>,
+      pin:          '',
+      cedula:       '',
+      telefono:     '',
+      venue_id:     null,
+      access_start: u.access_start ?? '',
+      access_end:   u.access_end   ?? '',
+      access_days:  u.access_days  ?? [],
+    })
+    setFormError(null)
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditTarget(null)
+  }
+
+  // ── Toggle active ─────────────────────────────────────────────────────────────
 
   const handleToggle = useCallback(async (u: TeamUser) => {
     setToggling(u.id)
@@ -121,39 +196,71 @@ export default function EquipoPage() {
     }
   }, [])
 
-  // ── Save new user ────────────────────────────────────────────────────────────
+  // ── Save user (create or edit) ────────────────────────────────────────────────
 
-  const handleSaveNew = async () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.lastname.trim()) { setFormError('Nombre y apellido son requeridos'); return }
-    if (!/^\d{4}$/.test(form.pin)) { setFormError('PIN debe ser exactamente 4 dígitos'); return }
+    if (!editTarget && !/^\d{4}$/.test(form.pin))   { setFormError('PIN debe ser exactamente 4 dígitos'); return }
+    if (editTarget && form.pin && !/^\d{4}$/.test(form.pin)) { setFormError('PIN debe ser exactamente 4 dígitos'); return }
+
     setSaving(true); setFormError(null)
     try {
-      const res  = await fetch('/api/users', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          name:      form.name,
-          lastname:  form.lastname,
-          role:      form.role,
-          pin:       form.pin,
-          cedula:    form.cedula   || undefined,
-          telefono:  form.telefono || undefined,
-          venue_id:  form.venue_id ?? undefined,
-        }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error((data.errors ?? [data.error]).join(', '))
-      setUsers((prev) => [...prev, data.user])
-      setShowNew(false)
-      setForm(FORM_INIT)
+      if (editTarget) {
+        const body: Record<string, unknown> = {
+          op:           'update',
+          name:         form.name,
+          lastname:     form.lastname,
+          role:         form.role,
+          access_start: form.access_start || null,
+          access_end:   form.access_end   || null,
+          access_days:  form.access_days.length ? form.access_days : null,
+        }
+        if (form.pin) body.pin = form.pin
+        const res  = await fetch(`/api/users/${editTarget.id}`, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error((data.errors ?? [data.error]).join(', '))
+        setUsers((prev) => prev.map((x) =>
+          x.id === editTarget.id
+            ? { ...x, name: form.name, lastname: form.lastname, role: form.role,
+                access_start: form.access_start || null,
+                access_end:   form.access_end   || null,
+                access_days:  form.access_days.length ? form.access_days : null }
+            : x
+        ))
+      } else {
+        const res  = await fetch('/api/users', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            name:         form.name,
+            lastname:     form.lastname,
+            role:         form.role,
+            pin:          form.pin,
+            cedula:       form.cedula   || undefined,
+            telefono:     form.telefono || undefined,
+            venue_id:     form.venue_id ?? undefined,
+            access_start: form.access_start || undefined,
+            access_end:   form.access_end   || undefined,
+            access_days:  form.access_days.length ? form.access_days : undefined,
+          }),
+        })
+        const data = await res.json()
+        if (!data.success) throw new Error((data.errors ?? [data.error]).join(', '))
+        setUsers((prev) => [...prev, data.user])
+      }
+      closeModal()
     } catch (e: unknown) {
-      setFormError(e instanceof Error ? e.message : 'Error al crear usuario')
+      setFormError(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
       setSaving(false)
     }
   }
 
-  // ── Change PIN ───────────────────────────────────────────────────────────────
+  // ── Change PIN ────────────────────────────────────────────────────────────────
 
   const handleSavePin = async () => {
     if (!pinTarget) return
@@ -175,30 +282,16 @@ export default function EquipoPage() {
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-
-  const grouped = ROLE_ORDER.reduce<Record<string, TeamUser[]>>((acc, role) => {
-    acc[role] = users.filter((u) => u.role === role)
-    return acc
-  }, {})
-
-  const initials = (u: TeamUser) =>
-    `${u.name[0] ?? ''}${u.lastname[0] ?? ''}`.toUpperCase()
-
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>Equipo</h1>
-          <p className={styles.subtitle}>Usuarios activos · Roles · PINs</p>
+          <p className={styles.subtitle}>Usuarios · Roles · Horario de acceso</p>
         </div>
-        <button
-          type="button"
-          className={styles.btnNew}
-          onClick={() => { setShowNew(true); setFormError(null); setForm(FORM_INIT) }}
-        >
+        <button type="button" className={styles.btnNew} onClick={openCreate}>
           <UserPlus size={15} strokeWidth={2.2} aria-hidden />
           Nuevo usuario
         </button>
@@ -227,10 +320,7 @@ export default function EquipoPage() {
             return (
               <section key={role} className={styles.section}>
                 <div className={styles.sectionHeader}>
-                  <span
-                    className={styles.sectionIcon}
-                    style={{ '--role-color': meta.color } as React.CSSProperties}
-                  >
+                  <span className={styles.sectionIcon} style={{ '--role-color': meta.color } as React.CSSProperties}>
                     <Icon size={13} strokeWidth={2} aria-hidden />
                   </span>
                   <h2 className={styles.sectionTitle}>{meta.label}</h2>
@@ -255,6 +345,20 @@ export default function EquipoPage() {
                           </div>
                         </div>
 
+                        {/* Access schedule */}
+                        {(u.access_days?.length || u.access_start) && (
+                          <div className={styles.accessInfo}>
+                            {u.access_days?.length
+                              ? <span className={styles.accessDays}>{daysLabel(u.access_days)}</span>
+                              : null}
+                            {u.access_start && u.access_end && (
+                              <span className={styles.accessTime}>
+                                {u.access_start.slice(0, 5)} – {u.access_end.slice(0, 5)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         <div className={styles.cardFooter}>
                           <span
                             className={styles.roleBadge}
@@ -265,15 +369,21 @@ export default function EquipoPage() {
                           <div className={styles.cardActions}>
                             <button
                               type="button"
+                              onClick={() => openEdit(u)}
+                              aria-label={`Editar ${u.name}`}
+                              className={`${styles.actionBtn} ${styles.editBtn}`}
+                            >
+                              <Pencil size={12} aria-hidden />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleToggle(u)}
                               disabled={toggling === u.id}
                               aria-label={u.is_active ? 'Desactivar usuario' : 'Activar usuario'}
                               aria-pressed={u.is_active}
                               className={`${styles.actionBtn} ${u.is_active ? styles.toggleOn : styles.toggleOff}`}
                             >
-                              {u.is_active
-                                ? <Eye size={13} aria-hidden />
-                                : <EyeOff size={13} aria-hidden />}
+                              {u.is_active ? <Eye size={13} aria-hidden /> : <EyeOff size={13} aria-hidden />}
                             </button>
                             <button
                               type="button"
@@ -295,13 +405,19 @@ export default function EquipoPage() {
         </div>
       )}
 
-      {/* ── Modal: Nuevo usuario ─────────────────────────────────────────── */}
-      {showNew && (
-        <div className={styles.overlay} onClick={() => setShowNew(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Nuevo usuario">
+      {/* ── Modal: crear / editar usuario ── */}
+      {showModal && (
+        <div className={styles.overlay} onClick={closeModal}>
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal
+            aria-label={editTarget ? 'Editar usuario' : 'Nuevo usuario'}
+          >
             <div className={styles.modalHeader}>
-              <span className={styles.modalTitle}>Nuevo usuario</span>
-              <button type="button" className={styles.modalClose} onClick={() => setShowNew(false)} aria-label="Cerrar">
+              <span className={styles.modalTitle}>{editTarget ? 'Editar usuario' : 'Nuevo usuario'}</span>
+              <button type="button" className={styles.modalClose} onClick={closeModal} aria-label="Cerrar">
                 <X size={16} aria-hidden />
               </button>
             </div>
@@ -331,73 +447,80 @@ export default function EquipoPage() {
                 </label>
               </div>
 
-              <div className={styles.fieldRow}>
-                <label className={styles.fieldGroup}>
-                  <span className={styles.fieldLabel}>Cédula</span>
-                  <input
-                    className={styles.input}
-                    value={form.cedula}
-                    onChange={(e) => setForm({ cedula: e.target.value.replace(/\D/g, '').slice(0, 9) })}
-                    inputMode="numeric"
-                    placeholder="12345678"
-                    maxLength={9}
-                  />
-                </label>
-                <div className={styles.fieldGroup} style={{ flex: 1 }}>
-                  <span className={styles.fieldLabel}>Teléfono / WhatsApp</span>
-                  <div className={styles.inputWrap}>
+              {/* Cédula / Teléfono — solo en creación */}
+              {!editTarget && (
+                <div className={styles.fieldRow}>
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.fieldLabel}>Cédula</span>
                     <input
-                      className={`${styles.input} ${styles.inputWithIcon}`}
-                      value={form.telefono}
-                      onChange={(e) => setForm({ telefono: e.target.value.replace(/\D/g, '').slice(0, 11) })}
+                      className={styles.input}
+                      value={form.cedula}
+                      onChange={(e) => setForm({ cedula: e.target.value.replace(/\D/g, '').slice(0, 9) })}
                       inputMode="numeric"
-                      placeholder="04121234567"
-                      maxLength={11}
+                      placeholder="12345678"
+                      maxLength={9}
                     />
-                    <a
-                      href={form.telefono.length >= 10 ? `https://wa.me/58${form.telefono.replace(/^0/, '')}` : undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Abrir WhatsApp"
-                      className={`${styles.inputIconBtn} ${form.telefono.length >= 10 ? styles.inputIconActive : styles.inputIconDisabled}`}
-                      onClick={(e) => { if (form.telefono.length < 10) e.preventDefault() }}
-                      tabIndex={form.telefono.length >= 10 ? 0 : -1}
-                    >
-                      <MessageCircle size={14} strokeWidth={2} aria-hidden />
-                    </a>
+                  </label>
+                  <div className={styles.fieldGroup} style={{ flex: 1 }}>
+                    <span className={styles.fieldLabel}>Teléfono / WhatsApp</span>
+                    <div className={styles.inputWrap}>
+                      <input
+                        className={`${styles.input} ${styles.inputWithIcon}`}
+                        value={form.telefono}
+                        onChange={(e) => setForm({ telefono: e.target.value.replace(/\D/g, '').slice(0, 11) })}
+                        inputMode="numeric"
+                        placeholder="04121234567"
+                        maxLength={11}
+                      />
+                      <a
+                        href={form.telefono.length >= 10 ? `https://wa.me/58${form.telefono.replace(/^0/, '')}` : undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="Abrir WhatsApp"
+                        className={`${styles.inputIconBtn} ${form.telefono.length >= 10 ? styles.inputIconActive : styles.inputIconDisabled}`}
+                        onClick={(e) => { if (form.telefono.length < 10) e.preventDefault() }}
+                        tabIndex={form.telefono.length >= 10 ? 0 : -1}
+                      >
+                        <MessageCircle size={14} strokeWidth={2} aria-hidden />
+                      </a>
+                    </div>
                   </div>
                 </div>
+              )}
+
+              <div className={styles.fieldRow}>
+                <label className={styles.fieldGroup}>
+                  <span className={styles.fieldLabel}>Rol</span>
+                  <select
+                    className={styles.input}
+                    value={form.role}
+                    onChange={(e) => setForm({ role: e.target.value as Exclude<Role, 'admin'> })}
+                  >
+                    {ROLE_ORDER.map((r) => (
+                      <option key={r} value={r}>{ROLE_META[r].label}</option>
+                    ))}
+                  </select>
+                </label>
+                {!editTarget && (
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.fieldLabel}>Punto de venta</span>
+                    <select
+                      className={styles.input}
+                      value={form.venue_id ?? ''}
+                      onChange={(e) => setForm({ venue_id: e.target.value ? Number(e.target.value) : null })}
+                    >
+                      <option value="">— Sin asignar —</option>
+                      {venues.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    </select>
+                  </label>
+                )}
               </div>
 
+              {/* PIN */}
               <label className={styles.fieldGroup}>
-                <span className={styles.fieldLabel}>Rol</span>
-                <select
-                  className={styles.input}
-                  value={form.role}
-                  onChange={(e) => setForm({ role: e.target.value as Exclude<Role, 'admin'> })}
-                >
-                  {ROLE_ORDER.map((r) => (
-                    <option key={r} value={r}>{ROLE_META[r].label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className={styles.fieldGroup}>
-                <span className={styles.fieldLabel}>Punto de venta</span>
-                <select
-                  className={styles.input}
-                  value={form.venue_id ?? ''}
-                  onChange={(e) => setForm({ venue_id: e.target.value ? Number(e.target.value) : null })}
-                >
-                  <option value="">— Sin asignar —</option>
-                  {venues.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className={styles.fieldGroup}>
-                <span className={styles.fieldLabel}>PIN (4 dígitos)</span>
+                <span className={styles.fieldLabel}>
+                  {editTarget ? 'Nuevo PIN (dejar vacío para no cambiar)' : 'PIN (4 dígitos)'}
+                </span>
                 <input
                   className={styles.input}
                   type="password"
@@ -409,6 +532,47 @@ export default function EquipoPage() {
                 />
               </label>
 
+              {/* Días habilitados */}
+              <div className={styles.fieldGroup}>
+                <span className={styles.fieldLabel}>Días habilitados <span className={styles.fieldOptional}>(vacío = todos)</span></span>
+                <div className={styles.dayPicker}>
+                  {DAYS.map((d) => (
+                    <button
+                      key={d.key}
+                      type="button"
+                      className={`${styles.dayBtn} ${form.access_days.includes(d.key) ? styles.dayBtnOn : ''}`}
+                      title={d.full}
+                      onClick={() => toggleDay(d.key)}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Horario */}
+              <div className={styles.fieldRow}>
+                <label className={styles.fieldGroup}>
+                  <span className={styles.fieldLabel}>Acceso desde</span>
+                  <input
+                    className={styles.input}
+                    type="time"
+                    value={form.access_start}
+                    onChange={(e) => setForm({ access_start: e.target.value })}
+                  />
+                </label>
+                <label className={styles.fieldGroup}>
+                  <span className={styles.fieldLabel}>Acceso hasta</span>
+                  <input
+                    className={styles.input}
+                    type="time"
+                    value={form.access_end}
+                    onChange={(e) => setForm({ access_end: e.target.value })}
+                  />
+                </label>
+              </div>
+              <p className={styles.fieldHint}>El sistema cerrará la sesión fuera del horario configurado.</p>
+
               {formError && (
                 <p className={styles.modalError}>
                   <AlertCircle size={13} aria-hidden /> {formError}
@@ -417,23 +581,16 @@ export default function EquipoPage() {
             </div>
 
             <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnCancel} onClick={() => setShowNew(false)}>
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className={styles.btnSave}
-                onClick={handleSaveNew}
-                disabled={saving}
-              >
-                {saving ? 'Guardando…' : 'Crear usuario'}
+              <button type="button" className={styles.btnCancel} onClick={closeModal}>Cancelar</button>
+              <button type="button" className={styles.btnSave} onClick={handleSave} disabled={saving}>
+                {saving ? 'Guardando…' : editTarget ? 'Guardar cambios' : 'Crear usuario'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Modal: Cambiar PIN ───────────────────────────────────────────── */}
+      {/* ── Modal: cambiar PIN ── */}
       {pinTarget && (
         <div className={styles.overlay} onClick={() => setPinTarget(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Cambiar PIN">
@@ -449,7 +606,6 @@ export default function EquipoPage() {
                 {pinTarget.name} {pinTarget.lastname}
                 <span className={styles.pinTargetCode}> · {pinTarget.code}</span>
               </p>
-
               <label className={styles.fieldGroup}>
                 <span className={styles.fieldLabel}>Nuevo PIN (4 dígitos)</span>
                 <input
@@ -463,7 +619,6 @@ export default function EquipoPage() {
                   autoFocus
                 />
               </label>
-
               {pinError && (
                 <p className={styles.modalError}>
                   <AlertCircle size={13} aria-hidden /> {pinError}
@@ -472,9 +627,7 @@ export default function EquipoPage() {
             </div>
 
             <div className={styles.modalFooter}>
-              <button type="button" className={styles.btnCancel} onClick={() => setPinTarget(null)}>
-                Cancelar
-              </button>
+              <button type="button" className={styles.btnCancel} onClick={() => setPinTarget(null)}>Cancelar</button>
               <button
                 type="button"
                 className={styles.btnSave}

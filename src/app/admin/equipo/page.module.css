@@ -502,3 +502,87 @@
 }
 .btnSave:hover:not(:disabled) { background: var(--color-primary-light); }
 .btnSave:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Edit button variant ────────────────────────────────── */
+
+.editBtn {
+  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+  color: var(--color-text-muted);
+}
+.editBtn:hover {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+  color: var(--color-text);
+}
+
+/* ─── Access schedule display (in card) ─────────────────── */
+
+.accessInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 4px 0;
+  flex-wrap: wrap;
+}
+
+.accessDays {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.accessTime {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--color-primary-light);
+}
+
+/* ─── Day picker ─────────────────────────────────────────── */
+
+.dayPicker {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.dayBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dayBtnOn {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* ─── Form hint / optional label ────────────────────────── */
+
+.fieldOptional {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.fieldHint {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  margin: -4px 0 0;
+  line-height: 1.4;
+}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   ArrowLeft, ShoppingCart, Beef, Utensils, Coffee,
-  Plus, Minus, Pencil, CheckCircle2, User, MapPin, ChevronRight, X,
+  Plus, Minus, Pencil, CheckCircle2, User, MapPin, ChevronRight, X, Info,
 } from "lucide-react";
 import Link from "next/link";
 import { formatRef, formatBs } from "@/lib/dollar-rate";
@@ -67,13 +67,14 @@ export default function NuevaOrdenPage() {
   const [sheetOpen,  setSheetOpen]  = useState(false);
 
   const [form, setForm] = useState({
-    zone:     "" as Zone | "",
-    seat:     "",
-    name:     "",
-    lastname: "",
-    cedula:   "",
-    note:     "",
+    zone:   "" as Zone | "",
+    seat:   "",
+    name:   "",
+    cedula: "",
+    note:   "",
   });
+
+  const [showZoneTooltip, setShowZoneTooltip] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -122,7 +123,7 @@ export default function NuevaOrdenPage() {
   const filtered   = products.filter((p) => p.category === category);
 
   async function handleSubmit() {
-    if (!userId || !form.zone || !form.name.trim() || !form.lastname.trim()) return;
+    if (!userId || !form.zone || !form.name.trim()) return;
     if (form.zone === "VIP" && !form.cedula.trim()) {
       setError("Cédula requerida para zona VIP");
       return;
@@ -134,11 +135,10 @@ export default function NuevaOrdenPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          origin:            "LOC",
-          created_by:        userId,
-          customer_name:     form.name.trim(),
-          customer_lastname: form.lastname.trim(),
-          customer_id:       form.cedula.trim() || undefined,
+          origin:        "LOC",
+          created_by:    userId,
+          customer_name: form.name.trim(),
+          customer_id:   form.cedula.trim() || undefined,
           zone:              form.zone,
           seat:              form.seat.trim() || undefined,
           note:              form.note.trim() || undefined,
@@ -164,7 +164,6 @@ export default function NuevaOrdenPage() {
   const canNext3 =
     form.zone !== "" &&
     form.name.trim() !== "" &&
-    form.lastname.trim() !== "" &&
     (form.zone !== "VIP" || form.cedula.trim() !== "");
 
   if (loading) {
@@ -324,9 +323,24 @@ export default function NuevaOrdenPage() {
             <motion.div key="s3" className={styles.step} custom={direction}
               variants={slideVariants} initial="enter" animate="center" exit="exit">
               <div className={styles.formGroup}>
-                <span className={styles.stepLabel}>
-                  Zona <span className={styles.fieldRequired}>*</span>
-                </span>
+                <div className={styles.zoneLabelRow}>
+                  <span className={styles.stepLabel}>
+                    Zona <span className={styles.fieldRequired}>*</span>
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.infoBtn}
+                    onClick={() => setShowZoneTooltip((v) => !v)}
+                    aria-label="Información sobre zona"
+                  >
+                    <Info size={13} />
+                  </button>
+                </div>
+                {showZoneTooltip && (
+                  <p className={styles.zoneTooltip}>
+                    Tu zona aparece impresa en tu ticket de entrada
+                  </p>
+                )}
                 <div className={styles.zoneGrid}>
                   {ZONES.map((z) => (
                     <button
@@ -353,29 +367,16 @@ export default function NuevaOrdenPage() {
                 />
               </div>
 
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.fieldLabel}>
-                    Nombre <span className={styles.fieldRequired}>*</span>
-                  </label>
-                  <input
-                    className={styles.input}
-                    placeholder="Carlos"
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.fieldLabel}>
-                    Apellido <span className={styles.fieldRequired}>*</span>
-                  </label>
-                  <input
-                    className={styles.input}
-                    placeholder="Pérez"
-                    value={form.lastname}
-                    onChange={(e) => setForm((f) => ({ ...f, lastname: e.target.value }))}
-                  />
-                </div>
+              <div className={styles.formGroup}>
+                <label className={styles.fieldLabel}>
+                  Nombre <span className={styles.fieldRequired}>*</span>
+                </label>
+                <input
+                  className={styles.input}
+                  placeholder="Nombre o nombre completo"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                />
               </div>
 
               <div className={styles.formGroup}>

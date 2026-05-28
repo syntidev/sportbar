@@ -6,6 +6,17 @@ import { prisma } from '@/lib/prisma'
 const PatchSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('toggle'), is_active: z.boolean() }),
   z.object({ op: z.literal('pin'),    pin: z.string().regex(/^\d{4}$/, 'PIN debe ser 4 dígitos numéricos') }),
+  z.object({
+    op:           z.literal('update'),
+    name:         z.string().min(1).max(100),
+    lastname:     z.string().min(1).max(100),
+    role:         z.enum(['mesero', 'cocina', 'bar', 'despacho', 'validador']),
+    venue_id:     z.number().int().positive().nullable().optional(),
+    access_start: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+    access_end:   z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+    access_days:  z.array(z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).nullable().optional(),
+    pin:          z.string().regex(/^\d{4}$/).optional(),
+  }),
 ])
 
 export async function PATCH(
@@ -38,6 +49,29 @@ export async function PATCH(
         where:  { id },
         data:   { is_active: parsed.data.is_active },
         select: { id: true, is_active: true },
+      })
+      return NextResponse.json({ success: true, user })
+    }
+
+    if (parsed.data.op === 'update') {
+      const d = parsed.data
+      const data: Parameters<typeof prisma.user.update>[0]['data'] = {
+        name:         d.name,
+        lastname:     d.lastname,
+        role:         d.role,
+        venue_id:     d.venue_id     ?? null,
+        access_start: d.access_start ?? null,
+        access_end:   d.access_end   ?? null,
+        access_days:  d.access_days  ?? null,
+      }
+      if (d.pin) data.pin = await bcrypt.hash(d.pin, 10)
+      const user = await prisma.user.update({
+        where:  { id },
+        data,
+        select: {
+          id: true, name: true, lastname: true, role: true,
+          venue_id: true, access_start: true, access_end: true, access_days: true,
+        },
       })
       return NextResponse.json({ success: true, user })
     }

@@ -21,6 +21,8 @@ export const CreateOrderItemSchema = z.object({
     .int()
     .min(1, 'La cantidad minima es 1')
     .max(99, 'La cantidad maxima es 99'),
+
+  price_usd: z.coerce.number().positive('price_usd debe ser un numero positivo'),
 })
 
 export type CreateOrderItemInput = z.infer<typeof CreateOrderItemSchema>
