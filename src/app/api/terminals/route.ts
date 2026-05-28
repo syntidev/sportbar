@@ -15,7 +15,7 @@ const CreateTerminalSchema = z.object({
 export async function GET() {
   try {
     const terminals = await prisma.terminal.findMany({
-      orderBy: [{ bank_name: 'asc' }, { name: 'asc' }],
+      orderBy: { bank_name: 'asc' },
     })
     return NextResponse.json({ success: true, terminals })
   } catch {
