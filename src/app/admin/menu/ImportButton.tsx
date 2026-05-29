@@ -39,7 +39,7 @@ function normalizeCategory(raw: unknown): Category | null {
   const v = raw.toLowerCase().trim()
   if (VALID_CATEGORIES.has(v)) return v as Category
   if (v === 'hamburguesa')                    return 'hamburguesas'
-  if (v === 'racion' || v === 'ración')       return 'raciones'
+  if (v === 'racion' || v === 'racion')       return 'raciones'
   if (v === 'bebida')                         return 'bebidas'
   return null
 }
@@ -49,7 +49,7 @@ function normalizeBoolean(raw: unknown): boolean {
   if (typeof raw === 'number')  return raw !== 0
   if (typeof raw === 'string') {
     const v = raw.toLowerCase().trim()
-    return v === 'si' || v === 'sí' || v === 'true' || v === '1' || v === 'yes'
+    return v === 'si' || v === 'si' || v === 'true' || v === '1' || v === 'yes'
   }
   return true
 }
@@ -70,10 +70,10 @@ function parseSheet(
       ? record['Nombre'].trim()
       : null
 
-    const catRaw = record['Categoria'] ?? record['Categoría']
+    const catRaw = record['Categoria'] ?? record['Categoria']
     const category = normalizeCategory(catRaw)
 
-    const descRaw = record['Descripción'] ?? record['Descripcion'] ?? null
+    const descRaw = record['Descripcion'] ?? record['Descripcion'] ?? null
     const description =
       typeof descRaw === 'string' ? (descRaw.trim() || null) : null
 
@@ -86,15 +86,15 @@ function parseSheet(
     const is_active = normalizeBoolean(record['Activo'])
 
     if (!name) {
-      parseErrors.push(`Fila ${rowNum}: columna "Nombre" vacía`)
+      parseErrors.push(`Fila ${rowNum}: columna "Nombre" vacia`)
       return
     }
     if (!category) {
-      parseErrors.push(`Fila ${rowNum}: categoría inválida "${catRaw}"`)
+      parseErrors.push(`Fila ${rowNum}: categoria invalida "${catRaw}"`)
       return
     }
     if (isNaN(price_usd) || price_usd < 0) {
-      parseErrors.push(`Fila ${rowNum}: precio inválido "${priceRaw}"`)
+      parseErrors.push(`Fila ${rowNum}: precio invalido "${priceRaw}"`)
       return
     }
 
@@ -106,7 +106,11 @@ function parseSheet(
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ImportButton() {
+interface ImportButtonProps {
+  onSuccess?: () => void
+}
+
+export default function ImportButton({ onSuccess }: ImportButtonProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [phase, setPhase]           = useState<Phase>('idle')
   const [progress, setProgress]     = useState(0)
@@ -144,7 +148,7 @@ export default function ImportButton() {
       setProgress(50)
 
       if (rows.length === 0) {
-        setFatalError('No se encontraron filas válidas en el archivo.')
+        setFatalError('No se encontraron filas validas en el archivo.')
         setPhase('error')
         return
       }
@@ -165,6 +169,7 @@ export default function ImportButton() {
       setResult({ imported: data.imported, skipped: data.skipped, errors: data.errors ?? [] } as ImportResult)
       setProgress(100)
       setPhase('done')
+      onSuccess?.()
     } catch (err: unknown) {
       setFatalError(err instanceof Error ? err.message : 'Error inesperado')
       setPhase('error')
@@ -195,19 +200,19 @@ export default function ImportButton() {
         aria-label="Importar productos desde Excel"
       >
         <Upload size={15} aria-hidden />
-        {isLoading ? 'Importando…' : 'Importar Excel'}
+        {isLoading ? 'Importando...' : 'Importar Excel'}
       </button>
 
       {/* Status panel */}
       {phase !== 'idle' && (
-        <div className={styles.panel} role="region" aria-label="Estado de importación">
+        <div className={styles.panel} role="region" aria-label="Estado de importacion">
           {/* Panel header */}
           <div className={styles.panelHeader}>
             <span className={styles.panelTitle}>
-              {phase === 'reading'   && 'Leyendo archivo…'}
-              {phase === 'uploading' && 'Importando productos…'}
-              {phase === 'done'      && 'Importación completa'}
-              {phase === 'error'     && 'Error en la importación'}
+              {phase === 'reading'   && 'Leyendo archivo...'}
+              {phase === 'uploading' && 'Importando productos...'}
+              {phase === 'done'      && 'Importacion completa'}
+              {phase === 'error'     && 'Error en la importacion'}
             </span>
             {!isLoading && (
               <button
@@ -229,7 +234,7 @@ export default function ImportButton() {
               aria-valuenow={progress}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Progreso de importación"
+              aria-label="Progreso de importacion"
             >
               <div className={styles.progressFill} style={{ width: `${progress}%` }} />
             </div>
@@ -277,7 +282,7 @@ export default function ImportButton() {
             <details className={styles.errDetails}>
               <summary className={styles.errSummary}>
                 <XCircle size={12} aria-hidden />
-                {result!.errors.length} fila{result!.errors.length !== 1 ? 's' : ''} rechazada{result!.errors.length !== 1 ? 's' : ''} por validación
+                {result!.errors.length} fila{result!.errors.length !== 1 ? 's' : ''} rechazada{result!.errors.length !== 1 ? 's' : ''} por validacion
               </summary>
               <ul className={styles.errList}>
                 {result!.errors.map((err, i) => (

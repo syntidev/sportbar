@@ -51,7 +51,8 @@ model User {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  orders       Order[]  @relation("CreatedBy")
+  orders            Order[]           @relation("CreatedBy")
+  cancellation_logs CancellationLog[]
 
   @@index([venue_id], map: "users_venue_id_fkey")
   @@map("users")
@@ -125,9 +126,10 @@ model Order {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  items       OrderItem[]
-  logs        OrderLog[]
-  validation  PaymentValidation?
+  items             OrderItem[]
+  logs              OrderLog[]
+  validation        PaymentValidation?
+  cancellation_logs CancellationLog[]
 
   @@index([created_by], map: "orders_created_by_fkey")
   @@map("orders")
@@ -285,4 +287,22 @@ enum TerminalMethod {
   pos_debit
   pos_credit
   biopago
+}
+
+// ── LOG DE ANULACIONES (INMUTABLE) ───────────────────
+model CancellationLog {
+  id              Int      @id @default(autoincrement())
+  order_id        Int
+  order_code      String   // snapshot PUB-XXXXX o LOC-XXXXX
+  cancelled_by    Int      // user.id
+  reason          String   @db.Text
+  previous_status String
+  created_at      DateTime @default(now())
+
+  order           Order    @relation(fields: [order_id], references: [id])
+  user            User     @relation(fields: [cancelled_by], references: [id])
+
+  @@index([order_id], map: "cancellation_logs_order_id_fkey")
+  @@index([cancelled_by], map: "cancellation_logs_cancelled_by_fkey")
+  @@map("cancellation_logs")
 }

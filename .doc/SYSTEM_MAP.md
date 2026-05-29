@@ -1,1045 +1,647 @@
-# SYSTEM MAP — SYNTImeat
-Actualizado: 2026-05-24
-Versión anterior: 2026-05-22
-Cambios desde v. anterior marcados con ▲
+# SYSTEM_MAP — SportBar POS
+# ▲ Actualizar este archivo en cada sesión con cambios estructurales
+**Generado:** 29/05/2026 | **Commit base:** `ac092e3` | **Versión:** 0.1.0
 
 ---
 
-## PRODUCCIÓN
+## 1. HEADER — ENTORNO
 
-| Campo | Valor |
-|-------|-------|
-| URL | https://meat.synti.cloud |
-| VPS | 187.124.241.213 (Ubuntu 24.04 — Hostinger KVM1) |
-| DB | syntimeat_db / syntimeat / SyntiMeat2026! |
-| Branch git | main |
-| Stress test | 18 fases (ver §10) |
+| Campo            | Valor                                                    |
+|------------------|----------------------------------------------------------|
+| **URL prod**     | https://tusport.bar                                      |
+| **VPS**          | 187.124.241.213 — PM2 proceso `sportbar`, puerto 3002    |
+| **DB**           | MySQL · `sportbar` @ 127.0.0.1:3306                      |
+| **Repo**         | https://github.com/syntidev/sportbar                    |
+| **Local**        | C:\laragon\www\sportbar                                  |
+| **Commit actual**| `ac092e3` — feat(admin): unified shell                   |
+| **Versión**      | 0.1.0 (package.json)                                     |
+| **Nombre pkg**   | `SportBar`                                               |
 
----
+### Stack
 
-## 1. Controllers
-
-### BovedaController
-| Línea | Método | Verb | Ruta |
-|-------|--------|------|------|
-| 22 | `index()` | GET | /boveda |
-| 86 | `store()` | POST | /boveda |
-| 188 | `surte()` | PATCH | /boveda/{entry}/surtir |
-| 306 | `close()` | PATCH | /boveda/{entry}/cerrar |
-| 334 | `registerMerma()` | PATCH | /boveda/{entry}/merma |
-| 379 | `storeProduct()` | POST | /boveda/productos |
-| 416 | `updateProduct()` | PUT | /boveda/productos/{product} |
-| 455 | `plantillaDespiece()` | GET | /boveda/{entry}/plantilla |
-| 506 | `destroyProduct()` | DELETE | /boveda/productos/{product} |
-
-**Request validated fields:**
-- `store()`: product_type, description, kg_entrada, costo_usd, supplier, entered_at, ▲ kg_par (nullable, numeric, min:0.001)
-- `surte()`: peso_real
-- `registerMerma()`: peso_actual
-- `storeProduct()`: name, unit, requires_despiece, vitrina_product_id
-- `updateProduct()`: name, unit, requires_despiece, vitrina_product_id
-
-▲ **Canal 1 / Canal 2 (pair_id):** Cuando product_type = 'RES - Medio Canal' y se envía kg_par, `store()` crea DOS BovedaEntries con `pair_id` cruzado (cada una apunta al ID de la otra). La segunda entrada hereda `costo_usd` prorrateado por peso.
-
-**catMap en plantillaDespiece():**
-```php
-$catMap = [
-    'RES - Medio Canal'        => 'Res',
-    'CERDO - Canal'            => 'Cerdo',
-    'POLLO - Entero Congelado' => 'Pollo',
-];
-$resOrder = ['Carne del Canal', 'Costilla', 'Hueso Redondo', 'Hueso Rojo'];
-```
-Nota: plantillaDespiece() NO tiene filtro `whereIn($resOrder)` — muestra todos los productos vitrina Res en el PDF.
-
-**Inertia::render props (`index()`):**
-- activas, historial, bovedaProducts, productosVitrina, kpis{entradasActivas, kgDisponible, costoActivo, surtidoHoy}
+| Capa           | Tecnología                                                              |
+|----------------|-------------------------------------------------------------------------|
+| Framework      | Next.js 14.2.35 · React 18 · TypeScript 5.x (strict)                   |
+| Estilos        | CSS Modules · tokens.css · sin Tailwind                                 |
+| Animaciones    | Framer Motion 12.x                                                      |
+| Componentes    | Radix UI (Dialog, DropdownMenu, Select) · Lucide React                  |
+| ORM            | Prisma 5.22 · MySQL                                                     |
+| Auth           | jose (JWT HS256) · bcryptjs                                             |
+| Realtime       | @supabase/supabase-js 2.x — **pendiente configurar**                    |
+| PWA            | sharp · service worker (pendiente next-pwa)                             |
+| Deploy         | PM2 + Nginx + Cloudflare + SSL                                          |
+| Otros          | xlsx (importación productos) · zod 4.x (validaciones)                  |
 
 ---
 
-### FabricaController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /fabrica |
-| `store()` | POST | /fabrica |
-| `storeDespiece()` | POST | /fabrica/despiece |
+## 2. ÁRBOL DE RUTAS COMPLETO
 
-**Request validated fields:**
-- `store()`: output_product_id, output_kg, output_units, inputs[].product_id, inputs[].quantity_kg, inputs[].cost_usd, notes, produced_at
-- `storeDespiece()`: boveda_entry_id, cortes[].product_id (Rule::exists scoped a business_id), cortes[].kg, notes
+### 2a. Rutas UI (page.tsx)
 
-▲ **catMap actualizado:**
-```php
-$catMap = [
-    'RES - Medio Canal'        => 'Res',
-    'CERDO - Canal'            => 'Cerdo',
-    'POLLO - Entero Congelado' => 'Pollo',
-];
-```
+| Ruta UI                    | Archivo                                    | Protegida | Roles            | Estado  |
+|----------------------------|--------------------------------------------|-----------|------------------|---------|
+| `/`                        | `src/app/page.tsx`                         | ✅ Sí     | Todos            | ✅      |
+| `/login`                   | `src/app/login/page.tsx`                   | ❌ No     | —                | ✅      |
+| `/menu`                    | `src/app/menu/page.tsx`                    | ❌ No     | Público (QR)     | ✅      |
+| `/pos/nueva-orden`         | `src/app/pos/nueva-orden/page.tsx`         | ✅ Sí     | mesero, admin    | ✅      |
+| `/pos/cobrar`              | `src/app/pos/cobrar/page.tsx`              | ✅ Sí     | mesero, admin    | ✅      |
+| `/pos/comandas`            | `src/app/pos/comandas/page.tsx`            | ✅ Sí     | mesero, admin    | ✅      |
+| `/kds/cocina`              | `src/app/kds/cocina/page.tsx`              | ✅ Sí     | cocina, admin    | ✅      |
+| `/kds/bar`                 | `src/app/kds/bar/page.tsx`                 | ✅ Sí     | bar, admin       | ✅      |
+| `/kds/despacho`            | `src/app/kds/despacho/page.tsx`            | ✅ Sí     | despacho, admin  | ✅      |
+| `/admin`                   | `src/app/admin/page.tsx`                   | ✅ Sí     | admin            | ✅      |
+| `/admin/turno`             | `src/app/admin/turno/page.tsx`             | ✅ Sí     | admin            | ✅      |
+| `/admin/caja`              | `src/app/admin/caja/page.tsx`              | ✅ Sí     | admin            | ✅      |
+| `/admin/menu`              | `src/app/admin/menu/page.tsx`              | ✅ Sí     | admin            | ✅      |
+| `/admin/equipo`            | `src/app/admin/equipo/page.tsx`            | ✅ Sí     | admin            | ✅      |
+| `/admin/estructura`        | `src/app/admin/estructura/page.tsx`        | ✅ Sí     | admin            | ✅      |
+| `/admin/config`            | `src/app/admin/config/page.tsx`            | ✅ Sí     | admin            | ✅      |
+| `/admin/partido`           | `src/app/admin/partido/page.tsx`           | ✅ Sí     | admin            | ✅      |
+| `/admin/partido/[id]`      | `src/app/admin/partido/[id]/page.tsx`      | ✅ Sí     | admin            | ✅      |
+| `/admin/perfil`            | `src/app/admin/perfil/page.tsx`            | ✅ Sí     | admin            | ✅      |
 
-▲ **resOrder (4 cortes Res — filtro UI):**
-```php
-$resOrder = ['Carne del Canal', 'Costilla', 'Hueso Redondo', 'Hueso Rojo'];
-// Filtro: ->when($catName === 'Res', fn($q) => $q->whereIn('name', $resOrder))
-```
-Premium, Primera, Segunda excluidos del UI de despiece. Solo aparecen 4 cortes Res en Fábrica.
+### 2b. Layouts
 
-**Inertia::render props (`index()`):**
-- fabricables, ingredientes, stockMap, historial, despiecePendiente, despieceHistorial
+| Layout              | Archivo                          | Aplica a          | Descripción                                          |
+|---------------------|----------------------------------|-------------------|------------------------------------------------------|
+| Root layout         | `src/app/layout.tsx`             | Todo              | HTML root, tokens.css, fonts                         |
+| Admin layout        | `src/app/admin/layout.tsx`       | `/admin/**`       | Shell unificado: sidebar 220px desktop + bottom nav mobile · Promise.allSettled(business/me/currency) |
 
----
+### 2c. Endpoints API (route.ts)
 
-### SaleController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /pos |
-| `store()` | POST | /pos/ventas |
-| `pay()` | PATCH | /pos/ventas/{sale}/pagar |
-| `cancel()` | PATCH | /pos/ventas/{sale}/cancelar |
-| `void()` | PATCH | /ventas/{sale}/anular |
-| `historial()` | GET | /ventas |
-
-▲ **Patrón pool stock_product_id en pay() y cancel():**
-```php
-$sale->load('items.product');
-foreach ($sale->items as $item) {
-    if ($item->input_type !== 'weight') continue;
-    $stockProductId = $item->product?->stock_product_id ?? $item->product_id;
-    InventoryEntry::create(['product_id' => $stockProductId, ...]);
-}
-```
-Premium, Primera y Segunda descuentan inventario de 'Carne del Canal' (su stock_product_id), no de sí mismos.
-
-**Request validated fields:**
-- `store()`: items[].product_id, items[].input_type, items[].amount_bs, items[].quantity_value, origin, channel, status, client_name, client_phone, client_id
-- `cancel()`: cancellation_reason (min:5)
-- `void()`: motivo (min:5)
-
-**Inertia::render props (`index()`):**
-- products, categories, cashRegister, todayRate, paymentMethods, ticketPrefix, stockMap, posShowKg, businessInfo, ticketPrefs
-
----
-
-### CashRegisterController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /caja |
-| `open()` | POST | /caja/abrir |
-| `close()` | POST | /caja/{register}/cerrar |
-| `movement()` | POST | /caja/{register}/movimiento |
-| `dayClose()` | GET | /caja/cierre |
-| `confirmClose()` | POST | /caja/cierre/{register} |
-
-**Request validated fields:**
-- `open()`: opening_amount_bs
-- `close()`: counted_cash_bs, notes
-- `movement()`: type (in/out/corte), amount_bs, concept
-- `confirmClose()`: counted_cash_bs, notes
-
-**Inertia::render props (`index()`):**
-- cashRegister, allOpenRegisters, history, kpis{expected_bs, sales_total_bs, movements_count, rate}, todayRate, isAdmin
+| Endpoint                               | Métodos           | Archivo                                              | Auth   | Descripción                                                  |
+|----------------------------------------|-------------------|------------------------------------------------------|--------|--------------------------------------------------------------|
+| `/api/auth/session`                    | POST, DELETE      | `api/auth/session/route.ts`                          | ❌     | Login PIN→JWT cookie 12h · Rate limit 5/min/IP · Logout      |
+| `/api/auth/pin`                        | POST              | `api/auth/pin/route.ts`                              | ❌     | Verifica PIN sin emitir sesión (uso interno)                  |
+| `/api/auth/me`                         | GET               | `api/auth/me/route.ts`                               | ✅     | Devuelve `{id, code, role}` desde JWT cookie                  |
+| `/api/orders`                          | GET, POST         | `api/orders/route.ts`                                | ✅     | GET: lista con filtros status/payment/zone/limit · POST: crear orden |
+| `/api/orders/[id]/status`              | PATCH             | `api/orders/[id]/status/route.ts`                    | ✅     | Actualiza kitchen_status o payment_status + log               |
+| `/api/orders/[id]/ticket`              | GET               | `api/orders/[id]/ticket/route.ts`                    | ✅     | Genera HTML ticket térmico 58/80mm con auto-print             |
+| `/api/kds/bump`                        | POST              | `api/kds/bump/route.ts`                              | ✅     | Bump de estación KDS (NUEVO→PREP→LISTO→ENTREGADO)             |
+| `/api/products`                        | GET, POST         | `api/products/route.ts`                              | ✅     | Catálogo activo · Crear producto                              |
+| `/api/products/[id]`                   | GET, PUT, DELETE  | `api/products/[id]/route.ts`                         | ✅     | CRUD producto individual                                      |
+| `/api/products/[id]/upload`            | POST              | `api/products/[id]/upload/route.ts`                  | ✅     | Subir foto producto                                           |
+| `/api/products/import`                 | POST              | `api/products/import/route.ts`                       | ✅     | Importar xlsx de productos                                    |
+| `/api/users`                           | GET, POST         | `api/users/route.ts`                                 | ✅     | Listar/crear usuarios                                         |
+| `/api/users/[id]`                      | GET, PUT, DELETE  | `api/users/[id]/route.ts`                            | ✅     | CRUD usuario individual                                       |
+| `/api/venues`                          | GET, POST         | `api/venues/route.ts`                                | ✅     | Listar/crear venues                                           |
+| `/api/venues/[id]`                     | GET, PUT, DELETE  | `api/venues/[id]/route.ts`                           | ✅     | CRUD venue individual                                         |
+| `/api/currency`                        | GET               | `api/currency/route.ts`                              | ❌     | Tasa BCV activa · fallback 50.0 Bs./USD                       |
+| `/api/currency/manual`                 | POST              | `api/currency/manual/route.ts`                       | ✅     | Registrar tasa manual                                         |
+| `/api/config`                          | GET, PATCH        | `api/config/route.ts`                                | ✅     | Config genérica key/value                                     |
+| `/api/config/business`                 | GET, PATCH        | `api/config/business/route.ts`                       | ✅     | 23 keys de perfil del negocio y ticket                        |
+| `/api/config/payment-data`             | GET               | `api/config/payment-data/route.ts`                   | ✅     | Datos de cobro consolidados (métodos + terminales)            |
+| `/api/payment-methods`                 | GET, POST         | `api/payment-methods/route.ts`                       | ✅     | Listar/crear métodos de pago dinámicos                        |
+| `/api/payment-methods/[id]`            | PUT, DELETE       | `api/payment-methods/[id]/route.ts`                  | ✅     | Editar/eliminar método                                        |
+| `/api/payment-methods/[id]/toggle`     | PATCH             | `api/payment-methods/[id]/toggle/route.ts`           | ✅     | Activar/desactivar método                                     |
+| `/api/payment-methods/reorder`         | PATCH             | `api/payment-methods/reorder/route.ts`               | ✅     | Reordenar métodos                                             |
+| `/api/terminals`                       | GET, POST         | `api/terminals/route.ts`                             | ✅     | Listar/crear terminales POS                                   |
+| `/api/terminals/[id]`                  | PUT, DELETE       | `api/terminals/[id]/route.ts`                        | ✅     | Editar/eliminar terminal                                      |
+| `/api/turno`                           | GET, POST         | `api/turno/route.ts`                                 | ✅     | Estado turno actual / cerrar turno                            |
+| `/api/caja`                            | GET               | `api/caja/route.ts`                                  | ✅     | Reporte de caja del turno                                     |
+| `/api/partido`                         | GET, POST         | `api/partido/route.ts`                               | ✅     | Listar/crear partidos                                         |
+| `/api/partido/[id]`                    | GET, PUT, DELETE  | `api/partido/[id]/route.ts`                          | ✅     | CRUD partido individual                                       |
 
 ---
 
-### CatalogController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /catalogo |
-| `store()` | POST | /catalogo/productos |
-| `update()` | PUT | /catalogo/productos/{product} |
-| `destroy()` | DELETE | /catalogo/productos/{product} |
-| `toggleFavorite()` | PATCH | /catalogo/productos/{product}/favorito |
-| `downloadProductTemplate()` | GET | /catalogo/plantilla-productos |
-| ▲ `importProducts()` | POST | /catalogo/importar |
-| `storeCategory()` | POST | /catalogo/categorias |
-| `updateCategory()` | PUT | /catalogo/categorias/{category} |
-| `destroyCategory()` | DELETE | /catalogo/categorias/{category} |
-| `storeSubcategory()` | POST | /catalogo/subcategorias |
-| `updateSubcategory()` | PUT | /catalogo/subcategorias/{subcategory} |
-| `destroySubcategory()` | DELETE | /catalogo/subcategorias/{subcategory} |
+## 3. MODELOS PRISMA
 
-**Request validated fields (store/update producto):**
-- name, sku, category_id, subcategory_id, sale_mode, price_per_kg_usd, price_per_unit_usd, location, active, fabricable, image (file)
+**Schema:** `prisma/schema.prisma` · **DB:** MySQL · **ORM:** Prisma 5.22
 
-▲ **importProducts():** Importa productos desde CSV/Excel. Devuelve JSON `{imported, updated, total, errors[]}`. Hace upsert por nombre dentro del business.
+### Venue
 
-**Inertia::render props (`index()`):**
-- categories (con subcategorías), products
-
----
-
-### InventoryController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /inventario |
-| `store()` | POST | /inventario |
-
-**Request validated fields (`store()`):**
-- product_id, quantity_kg, waste_kg, cost_per_kg_usd, supplier, notes, location, entered_at
-
-**Inertia::render props (`index()`):**
-- products, categories, todayEntries, stockMap, lastEntryMap, kpis
-
----
-
-### DashboardController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /dashboard |
-| `data()` | GET | /dashboard/data (JSON) |
-
-▲ **Filtro branch_id por rol:** data() filtra ventas por branch_id según rol del usuario. Owner/super_admin ven todas las sucursales.
-
-**Inertia::render props (`index()`):**
-- ventas_hoy, top_productos, stock_critico, ultimas_ventas, caja_activa, tasa_hoy, pedidos_pendientes, categorias_hoy, utilidad_boveda
-
----
-
-### OrderController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /pedidos |
-| `store()` | POST | /pedidos |
-| `collect()` | PATCH | /pedidos/{order}/cobrar |
-| `dispatch()` | PATCH | /pedidos/{order}/despachar |
-| `cancel()` | PATCH | /pedidos/{order}/cancelar |
-| `deliveryIndex()` | GET | /pedidos/delivery |
-| `confirmDelivery()` | PATCH | /ventas/{sale}/delivery-cobrado |
-| `collectPending()` | PATCH | /ventas/{sale}/cobrar-pendiente |
-
-**Request validated fields:**
-- `store()`: client_name, client_type, items[].product_id, items[].quantity_value, notes
-- `collect()`: payment_method_id, amount_bs, reference, rate
-- `cancel()`: motivo
-- `collectPending()`: payments[], rate
-
-**Inertia::render props (`index()`):**
-- pedidosActivos, historial, cobrosPendientes, products, paymentMethods, paymentTerminals, todayRate, kpis
-
----
-
-### ReportController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /reportes |
-| `sales()` | GET | /reportes/ventas (JSON) |
-| `inventory()` | GET | /reportes/inventario (JSON) |
-| `closings()` | GET | /reportes/cierres (JSON) |
-| `orders()` | GET | /reportes/pedidos (JSON) |
-| `dayReport()` | GET | /reportes/dia (JSON) |
-| `exportDayPdf()` | GET | /reportes/pdf-dia (PDF) |
-| `consolidated()` | GET | /reportes/consolidado |
-| `consolidatedData()` | GET | /reportes/consolidado/data (JSON) |
-| `export()` | GET | /reportes/exportar (XLSX) |
-
-▲ **buildDayData() — costo con pool stock_product_id:**
-```php
-$costProductId = $item->product?->stock_product_id ?? $item->product_id;
-$costPerKg     = (float) ($avgCosts[$costProductId] ?? 0);
-```
-Premium/Primera/Segunda usan el costo de 'Carne del Canal' para calcular utilidad correctamente.
-
-**Filtros comunes:** date_from, date_to, cashier_id, payment_method, status, ▲ branch_id
-
----
-
-### ClientController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /clientes |
-| `store()` | POST | /clientes |
-| `update()` | PUT | /clientes/{client} |
-| `show()` | GET | /clientes/{client} |
-| `search()` | GET | /clientes/buscar (JSON) |
-
-**Request validated fields:**
-- `store()/update()`: cedula, name, phone, email, address, notes
-
----
-
-### SettingsController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `general()` | GET | /configuracion/general |
-| `updateGeneral()` | POST | /configuracion/general |
-| `cashRegisters()` | GET | /configuracion/cajas |
-| `storeCashRegister()` | POST | /configuracion/cajas |
-| `updateCashRegister()` | PUT | /configuracion/cajas/{cashRegister} |
-| `destroyCashRegister()` | DELETE | /configuracion/cajas/{cashRegister} |
-| `terminals()` | GET | /configuracion/terminales |
-| `storeTerminal()` | POST | /configuracion/terminales |
-| `updateTerminal()` | PUT | /configuracion/terminales/{terminal} |
-| `destroyTerminal()` | DELETE | /configuracion/terminales/{terminal} |
-| `ticket()` | GET | /configuracion/ticket |
-| `updateTicket()` | POST | /configuracion/ticket |
-| ▲ `hardware()` (closure) | GET | /configuracion/hardware |
-| `branches()` | GET | /configuracion/sucursales |
-| `storeBranch()` | POST | /configuracion/sucursales |
-| `updateBranch()` | PUT | /configuracion/sucursales/{branch} |
-| `users()` | GET | /configuracion/usuarios |
-| `storeUser()` | POST | /configuracion/usuarios |
-| `updateUser()` | PUT | /configuracion/usuarios/{user} |
-| `destroyUser()` | DELETE | /configuracion/usuarios/{user} |
-| `setManualRate()` | POST | /tasa/manual |
-
----
-
-### PaymentMethodController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /configuracion/metodos-pago |
-| `store()` | POST | /configuracion/metodos-pago |
-| `update()` | PUT | /configuracion/metodos-pago/{paymentMethod} |
-| `toggle()` | PATCH | /configuracion/metodos-pago/{paymentMethod}/toggle |
-| `destroy()` | DELETE | /configuracion/metodos-pago/{paymentMethod} |
-| `reorder()` | POST | /configuracion/metodos-pago/reorder |
-
----
-
-### ContingencyController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /contingencia |
-| `downloadForm()` | GET | /contingencia/formato-papel |
-| `downloadTemplate()` | GET | /contingencia/plantilla-ventas |
-| `downloadInventoryTemplate()` | GET | /contingencia/plantilla-inventario |
-| `importSales()` | POST | /contingencia/importar-ventas |
-| `importInventory()` | POST | /contingencia/importar-inventario |
-
----
-
-### OnboardingController
-| Método | Verb | Ruta |
-|--------|------|------|
-| `show()` | GET | /setup |
-| `store()` | POST | /setup/{step} |
-
----
-
-### ▲ TeamController (NUEVO)
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | /configuracion/equipo (aprox.) |
-| `store()` | POST | — |
-| `update()` | PUT | — |
-| `toggleActive()` | PATCH | — |
-| `killSession()` | PATCH | — |
-| `destroy()` | DELETE | — |
-
-Gestión de usuarios del equipo (toggle activo, matar sesión, CRUD).
-
----
-
-### ▲ BranchController (NUEVO)
-| Método | Verb | Ruta |
-|--------|------|------|
-| `index()` | GET | — |
-| `store()` | POST | — |
-| `update()` | PUT | — |
-| `assignUser()` | PATCH | /sucursales/{branch}/asignar |
-| `unassignUser()` | PATCH | /sucursales/{branch}/desasignar |
-
-Asignación de usuarios a sucursales.
-
----
-
-## 2. Models
-
-### Business
-**fillable:** name, legal_name, rif, logo_path, address, city, state, phone, currency_default, rate_source, rate_margin, weight_unit, ticket_prefix, ticket_footer, sale_capture_mode, line_input_mode, preticket_enabled, preticket_expiry_minutes, price_lock_policy, onboarding_completed, active, max_branches, settings, theme_color
-
-▲ **Nueva columna DB:** `subscription_active` (boolean, default true) — kill switch del sistema. Usada por CheckSubscription middleware.
-
-▲ **Columnas ahora nullable:** legal_name, rif, theme_color, phone, city, state, address (fix 2026-05-23).
-
-**casts:** rate_margin:decimal:2, preticket_enabled:bool, onboarding_completed:bool, active:bool, max_branches:int, settings:array
-
-**relaciones:**
-| Tipo | Método | Modelo |
-|------|--------|--------|
-| hasMany | users() | User |
-| hasMany | branches() | Branch |
-| hasMany | categories() | Category |
-| hasMany | products() | Product |
-| hasMany | inventoryEntries() | InventoryEntry |
-| hasMany | cashRegisters() | CashRegister |
-| hasMany | sales() | Sale |
-| hasMany | orders() | Order |
-| hasMany | activityLogs() | ActivityLog |
-| hasMany | paymentMethods() | PaymentMethod |
-| hasMany | paymentTerminals() | PaymentTerminal |
-
----
+| Campo            | Tipo      | Nullable | Default      | Notas                       |
+|------------------|-----------|----------|--------------|-----------------------------|
+| `id`             | Int       | ❌       | autoincrement| PK                          |
+| `name`           | String    | ❌       | —            |                             |
+| `type`           | VenueType | ❌       | —            | matriz · quiosco · cocina   |
+| `capabilities`   | Json      | ❌       | —            | string[] de capacidades     |
+| `zona_geografica`| Json      | ✅       | —            | mapa Daniel pendiente       |
+| `is_active`      | Boolean   | ❌       | true         |                             |
+| `created_at`     | DateTime  | ❌       | now()        |                             |
+| `updated_at`     | DateTime  | ❌       | updatedAt    |                             |
+| **Relaciones**   | users: User[] |      |              |                             |
 
 ### User
-**fillable:** name, email, password, business_id, branch_id, role, theme, is_active, session_token, access_start, access_end, access_days
 
-▲ **Nueva columna DB:** `is_hidden` (boolean, default false) — oculta usuario de listings públicos (usado por super_admin).
-
-**roles activos:** super_admin, owner, branch_admin, supervisor, analyst, cashier, admin
-
-**casts:** email_verified_at:datetime, password:hashed, access_days:array
-
-**relaciones:**
-| Tipo | Método | Modelo |
-|------|--------|--------|
-| belongsTo | business() | Business |
-| belongsTo | branch() | Branch |
-| hasMany | sales() | Sale (FK: cashier_id) |
-| hasMany | orders() | Order (FK: created_by) |
-
-**helpers de rol:** isSuperAdmin(), isOwner(), isAdmin(), isCashier(), hasRole(), canManageBusiness(), canVoidSales(), seesTodasLasSucursales()
-
----
+| Campo          | Tipo     | Nullable | Default      | Notas                              |
+|----------------|----------|----------|--------------|------------------------------------|
+| `id`           | Int      | ❌       | autoincrement| PK                                 |
+| `code`         | String   | ❌       | —            | UNIQUE · USR-001, ADM-001, etc.    |
+| `name`         | String   | ❌       | —            |                                    |
+| `lastname`     | String   | ❌       | —            |                                    |
+| `pin`          | String   | ❌       | —            | bcrypt hash                        |
+| `role`         | Role     | ❌       | —            | mesero/cocina/bar/despacho/validador/admin |
+| `cedula`       | String   | ✅       | —            |                                    |
+| `telefono`     | String   | ✅       | —            |                                    |
+| `venue_id`     | Int      | ✅       | —            | FK → Venue                         |
+| `is_active`    | Boolean  | ❌       | true         |                                    |
+| `access_start` | String   | ✅       | —            | "HH:MM"                            |
+| `access_end`   | String   | ✅       | —            | "HH:MM"                            |
+| `access_days`  | Json     | ✅       | —            | ["mon","tue","fri"]                |
+| `created_at`   | DateTime | ❌       | now()        |                                    |
+| `updated_at`   | DateTime | ❌       | updatedAt    |                                    |
+| **Índice**     | venue_id |          |              |                                    |
 
 ### Product
-▲ **fillable actualizado:** business_id, branch_id, category_id, subcategory_id, name, sku, barcode, sale_mode, base_unit_label, fraction_allowed, price_per_kg_usd, price_per_unit_usd, min_stock, location, image_path, sort_order, active, fabricable, is_favorite, **stock_product_id**
 
-▲ **stock_product_id:** unsignedBigInteger nullable. Cuando != null, el descuento de inventario (pay/cancel) y el cálculo de costos (buildDayData) se hacen contra ese product_id en lugar del producto vendido. Patrón "pool de stock". Premium, Primera y Segunda apuntan a 'Carne del Canal'.
-
-**casts:** fraction_allowed:bool, fabricable:bool, price_per_kg_usd:decimal:2, price_per_unit_usd:decimal:2, active:bool, is_favorite:bool
-
-**relaciones:**
-| Tipo | Método | Modelo |
-|------|--------|--------|
-| belongsTo | business() | Business |
-| belongsTo | branch() | Branch |
-| belongsTo | category() | Category |
-| belongsTo | subcategory() | Subcategory |
-| hasMany | inventoryEntries() | InventoryEntry |
-| hasMany | saleItems() | SaleItem |
-| hasMany | orderItems() | OrderItem |
-
----
-
-### Sale
-**fillable:** business_id, ticket_number, status, total_usd, payment_method, amount_received_usd, change_usd, rate_used, total_bs, notes, sold_at, cashier_id, cash_register_id, cancelled_at, cancelled_by, cancellation_reason, client_name, client_phone, client_id, origin, channel, delivery_status, delivery_confirmed_at, payment_status, order_id
-
-▲ **Nueva columna DB:** `accounting_date` (date nullable) — fecha contable para ventas después del corte bancario (7pm → contabiliza el día siguiente).
-
-**with:** items (eager)
-
-**relaciones:**
-| Tipo | Método | Modelo |
-|------|--------|--------|
-| belongsTo | business() | Business |
-| belongsTo | cashier() | User (FK: cashier_id) |
-| belongsTo | cashRegister() | CashRegister |
-| belongsTo | canceller() | User (FK: cancelled_by) |
-| belongsTo | order() | Order |
-| hasMany | items() | SaleItem |
-| hasMany | salePayments() | SalePayment |
-
----
-
-### SaleItem
-**fillable:** sale_id, product_id, product_name, input_type, quantity_value, unit_label, price_per_kg_usd, price_per_unit_usd, subtotal_usd, subtotal_bs, rate_used, discount_usd
-
-**relaciones:** belongsTo sale(), belongsTo product()
-
----
+| Campo         | Tipo     | Nullable | Default      | Notas                         |
+|---------------|----------|----------|--------------|-------------------------------|
+| `id`          | Int      | ❌       | autoincrement| PK                            |
+| `name`        | String   | ❌       | —            |                               |
+| `description` | String   | ✅       | —            |                               |
+| `price_usd`   | Decimal  | ❌       | —            | Decimal(10,2)                 |
+| `category`    | Category | ❌       | —            | hamburguesas/raciones/bebidas |
+| `image_url`   | String   | ✅       | —            |                               |
+| `is_active`   | Boolean  | ❌       | true         |                               |
+| `created_at`  | DateTime | ❌       | now()        |                               |
+| `updated_at`  | DateTime | ❌       | updatedAt    |                               |
 
 ### Order
-**fillable:** business_id, client_name, client_type, status, total_usd, notes, created_by
 
-**with:** items (eager)
+| Campo              | Tipo          | Nullable | Default | Notas                                  |
+|--------------------|---------------|----------|---------|----------------------------------------|
+| `id`               | Int           | ❌       | auto    | PK                                     |
+| `code`             | String        | ❌       | —       | UNIQUE · PUB-00001 o LOC-00001         |
+| `origin`           | Origin        | ❌       | —       | PUB · LOC                              |
+| `flujo`            | OriginFlujo   | ✅       | —       | A · B                                  |
+| `kitchen_status`   | KitchenStatus | ❌       | NUEVO   | NUEVO→PREP→LISTO→ENTREGADO             |
+| `payment_status`   | PaymentStatus | ❌       | PEND    | PEND→PAID/CREDIT/CANCELLED             |
+| `payment_method`   | String        | ✅       | —       | Pago Móvil, Efectivo, Zelle…           |
+| `receipt_photo`    | String        | ✅       | —       | path foto comprobante                  |
+| `customer_name`    | String        | ❌       | —       |                                        |
+| `customer_lastname`| String        | ❌       | —       |                                        |
+| `customer_id`      | String        | ✅       | —       | cédula                                 |
+| `zone`             | Zone          | ❌       | —       | Norte/Sur/VIP/Externa                  |
+| `seat`             | String        | ✅       | —       | Fila G Asiento 12                      |
+| `total_usd`        | Decimal       | ❌       | —       | Decimal(10,2)                          |
+| `rate_used`        | Decimal       | ❌       | —       | Decimal(10,4) · tasa BCV al momento   |
+| `total_bs`         | Decimal       | ❌       | —       | Decimal(12,2) · total_usd × rate_used  |
+| `venue_assigned`   | Int           | ✅       | —       | venue destino de la orden              |
+| `created_by`       | Int           | ❌       | —       | FK → User                             |
+| `note`             | String        | ✅       | —       |                                        |
+| `paid_at`          | DateTime      | ✅       | —       |                                        |
+| `created_at`       | DateTime      | ❌       | now()   |                                        |
+| `updated_at`       | DateTime      | ❌       | updatedAt|                                       |
+| **Índice**         | created_by    |          |         |                                        |
 
-**relaciones:**
-| Tipo | Método | Modelo |
-|------|--------|--------|
-| belongsTo | business() | Business |
-| belongsTo | creator() | User (FK: created_by) |
-| hasMany | items() | OrderItem |
-| hasOne | sale() | Sale |
+### OrderItem
 
----
+| Campo        | Tipo    | Nullable | Notas                              |
+|--------------|---------|----------|------------------------------------|
+| `id`         | Int     | ❌       | PK                                 |
+| `order_id`   | Int     | ❌       | FK → Order                         |
+| `product_id` | Int     | ❌       | FK → Product                       |
+| `qty`        | Int     | ❌       |                                    |
+| `price_usd`  | Decimal | ❌       | Decimal(10,2) · snapshot al momento|
+| `subtotal`   | Decimal | ❌       | Decimal(10,2) · price_usd × qty   |
 
-### CashRegister
-**fillable:** business_id, branch_id, name, opened_at, closed_at, opening_amount_usd, opening_amount_bs, expected_cash_usd, counted_cash_usd, difference_usd, rate_at_opening, notes, opened_by, closed_by
+### TicketCounter
 
-▲ **Columnas ahora nullable:** opened_at, opening_amount_usd, opened_by (fix 2026-05-22).
+| Campo    | Tipo   | Nullable | Notas                 |
+|----------|--------|----------|-----------------------|
+| `id`     | Int    | ❌       | PK                    |
+| `prefix` | String | ❌       | UNIQUE · PUB o LOC    |
+| `last`   | Int    | ❌       | Default 0             |
 
-**relaciones:**
-| Tipo | Método | Modelo |
-|------|--------|--------|
-| belongsTo | business() | Business |
-| belongsTo | branch() | Branch |
-| belongsTo | opener() | User (FK: opened_by) |
-| belongsTo | closer() | User (FK: closed_by) |
-| hasMany | sales() | Sale |
-| hasMany | movements() | CashMovement |
+### OrderLog
 
----
+| Campo        | Tipo     | Nullable | Notas                                       |
+|--------------|----------|----------|---------------------------------------------|
+| `id`         | Int      | ❌       | PK                                          |
+| `order_id`   | Int      | ❌       | FK → Order                                  |
+| `action`     | String   | ❌       | CREATED · KITCHEN_STATUS_CHANGE · PAYMENT_STATUS_CHANGE |
+| `from_state` | String   | ✅       |                                             |
+| `to_state`   | String   | ✅       |                                             |
+| `actor_code` | String   | ❌       | USR-001, VAL-001, PUB                       |
+| `note`       | String   | ✅       |                                             |
+| `created_at` | DateTime | ❌       | now()                                       |
 
-### CashMovement
-**fillable:** cash_register_id, type (in/out/corte), amount_usd, amount_bs, concept, created_by
+### PaymentValidation
 
-**relaciones:** belongsTo cashRegister(), belongsTo creator() (User)
-
----
-
-### InventoryEntry
-**fillable:** business_id, product_id, boveda_entry_id, quantity_kg, waste_kg, cost_per_kg_usd, supplier, notes, location, entered_at, created_by
-
-**casts:** quantity_kg:decimal:3, waste_kg:decimal:3, net_kg:decimal:3 (columna virtual DB)
-
-**relaciones:** belongsTo business(), belongsTo product(), belongsTo bovedaEntry(), belongsTo creator() (User)
-
----
-
-### BovedaEntry
-**fillable:** business_id, product_type, description, kg_entrada, costo_usd, waste_kg, kg_surtido_vitrina, supplier, entered_at, closed_at, despiece_completado_at
-
-▲ **Nueva columna DB:** `pair_id` (unsignedBigInteger nullable) — apunta al ID de la entrada hermana en el par Canal 1/Canal 2. Ambas entradas se referencian mutuamente.
-
-**casts:** kg_entrada:decimal:3, costo_usd:decimal:2, waste_kg:decimal:3, kg_surtido_vitrina:decimal:3, kg_disponible:decimal:3 (GENERATED VIRTUAL = kg_entrada - kg_surtido_vitrina - waste_kg)
-
-**relaciones:** belongsTo business(), hasMany inventoryEntries(), hasOne bovedaProduct() (FK: name↔product_type)
-
-**scope:** scopeActive() → whereNull('closed_at')
-
----
-
-### BovedaProduct
-**fillable:** business_id, name, unit, active, sort_order, requires_despiece, vitrina_product_id
-
-**Catálogo Chaguaramas activo:**
-- RES - Medio Canal (requires_despiece: true)
-- POLLO - Entero Congelado (requires_despiece: false)
-- CERDO - Canal (requires_despiece: true)
-- Jamón Pierna Sellado (requires_despiece: true)
-
-**relaciones:** belongsTo business()
-
----
-
-### FabricaBatch
-**fillable:** business_id, created_by, output_product_id, output_kg, output_units, input_cost_usd, notes, produced_at
-
-**relaciones:** belongsTo business(), belongsTo creator() (User), belongsTo outputProduct() (Product), hasMany inputs() (FabricaInput)
-
----
-
-### FabricaInput
-**fillable:** fabrica_batch_id, product_id, despiece_item_id, inventory_entry_id, label, quantity_kg, cost_usd
-
-**relaciones:** belongsTo batch() (FabricaBatch), belongsTo product(), belongsTo despieceItem(), belongsTo inventoryEntry()
-
----
-
-### Category
-**fillable:** business_id, name, icon, color, macro_category, sort_order, active
-
-**macro_category valores Chaguaramas:** BOVEDA, RES, POLLO, CERDO, CHARCUTERIA, TRASTES, DESPENSA
-
-**relaciones:** belongsTo business(), hasMany subcategories() (ordered by sort_order), hasMany products()
-
----
-
-### Client
-**fillable:** business_id, cedula, name, phone, email, address, notes, active
-
-**relaciones:** belongsTo business(), hasMany sales()
-
----
-
-### Branch
-**fillable:** business_id, name, address, city, phone, is_active, access_start, access_end
-
-**relaciones:** belongsTo business(), hasMany users(), hasMany sales(), hasMany cashRegisters()
-
----
-
-### ActivityLog
-**fillable:** business_id, user_id, action, model_type, model_id, old_values, new_values, ip_address
-
-**casts:** old_values:array, new_values:array
-
-**relaciones:** belongsTo business(), belongsTo user()
-
----
+| Campo          | Tipo     | Nullable | Notas                           |
+|----------------|----------|----------|---------------------------------|
+| `id`           | Int      | ❌       | PK                              |
+| `order_id`     | Int      | ❌       | UNIQUE · FK → Order             |
+| `photo_path`   | String   | ✅       |                                 |
+| `validated_by` | String   | ✅       | code del validador              |
+| `status`       | String   | ❌       | PENDING/VALIDATED/FLAGGED       |
+| `note`         | String   | ✅       |                                 |
+| `validated_at` | DateTime | ✅       |                                 |
+| `created_at`   | DateTime | ❌       | now()                           |
 
 ### DollarRate
-**fillable:** rate, source (bcv/parallel/negotiated/manual), currency_type (USD/EUR), effective_from, effective_until, is_active
 
-**scopes:** scopeUsd(), scopeEur()
+| Campo             | Tipo     | Nullable | Notas                        |
+|-------------------|----------|----------|------------------------------|
+| `id`              | Int      | ❌       | PK                           |
+| `rate`            | Decimal  | ❌       | Decimal(12,4)                |
+| `source`          | String   | ❌       | "BCV", "manual", "fallback"  |
+| `is_active`       | Boolean  | ❌       | true                         |
+| `effective_from`  | DateTime | ❌       | now()                        |
+| `effective_until` | DateTime | ✅       |                              |
+| `created_at`      | DateTime | ❌       | now()                        |
 
-**nota:** UPDATED_AT = null | Conexión readonly `synticorex` DB (SYNTIWEB_DB_*)
+### Config
 
----
+| Campo   | Tipo   | Nullable | Notas                 |
+|---------|--------|----------|-----------------------|
+| `id`    | Int    | ❌       | PK                    |
+| `key`   | String | ❌       | UNIQUE                |
+| `value` | String | ❌       | Text — cualquier valor|
 
 ### PaymentMethod
-**fillable:** business_id, name, type, bank_name, is_active, sort_order
 
-**relaciones:** belongsTo business()
+| Campo        | Tipo          | Nullable | Default | Notas                              |
+|--------------|---------------|----------|---------|------------------------------------|
+| `id`         | Int           | ❌       | auto    | PK                                 |
+| `name`       | String        | ❌       | —       | VarChar(80)                        |
+| `type`       | PayMethodType | ❌       | —       | cash/transfer/mobile/biometric/other|
+| `bank_name`  | String        | ✅       | —       | VarChar(100)                       |
+| `is_active`  | Boolean       | ❌       | true    |                                    |
+| `sort_order` | Int           | ❌       | 0       |                                    |
+| `created_at` | DateTime      | ❌       | now()   |                                    |
+| `updated_at` | DateTime      | ❌       | updatedAt|                                   |
 
----
+### Terminal
 
-## 3. Services
+| Campo               | Tipo           | Nullable | Notas                          |
+|---------------------|----------------|----------|--------------------------------|
+| `id`                | Int            | ❌       | PK                             |
+| `method`            | TerminalMethod | ❌       | pos_debit/pos_credit/biopago   |
+| `bank_name`         | String         | ❌       | VarChar(100)                   |
+| `serial`            | String         | ✅       | VarChar(50)                    |
+| `commercial_number` | String         | ✅       | VarChar(50)                    |
+| `is_active`         | Boolean        | ❌       | true                           |
+| `created_at`        | DateTime       | ❌       | now()                          |
+| `updated_at`        | DateTime       | ❌       | updatedAt                      |
 
-### DollarRateService
-| Método | Firma | Propósito |
-|--------|-------|-----------|
-| `getTodayRate()` | `(string $source = 'bcv'): float` | Tasa del día, fallback a última disponible |
-| `getLatestRate()` | `(string $source = 'bcv'): float` | Última tasa activa sin importar fecha |
-| `fetchAndStore()` | `(): array{success, rate?, source?, message}` | Consulta APIs y persiste nueva tasa USD |
-| `storeManualRate()` | `(float $rate): bool` | Graba tasa manual del admin |
-| `formatBs()` | `(float $usd, float $rate): float` | usd × rate, redondeado a 2 decimales |
-| `getSources()` | `(): string[]` | ['bcv', 'parallel', 'negotiated', 'manual'] |
+### Enums
 
-**Constantes:** FALLBACK = 40.00 | MAX_CHANGE_PCT = 60% | CACHE_TTL = 3600s
-
----
-
-### CurrencyFetcherService
-| Método | Firma | Propósito |
-|--------|-------|-----------|
-| `fetchUSD()` | `(): array{success, rate, source}` | BCV oficial USD — dolarapi.com → brecha-cambiaria.com |
-| `fetchEUR()` | `(): array{success, rate, source}` | BCV oficial EUR — mismas fuentes |
-
----
-
-## 4. Middleware
-
-| Clase | Alias | Propósito |
-|-------|-------|-----------|
-| `EnsureRole` | `role` | Verifica que `user->role` esté en los roles permitidos, abort 403 si no |
-| `CheckOnboarding` | `check.onboarding` | Redirige a /setup si business no tiene onboarding_completed |
-| `EnforceUserSession` | (global) | Verifica is_active, sesión única por token, días habilitados, ventana horaria |
-| `HandleInertiaRequests` | (global) | Inyecta auth.user, flash, tasa, banking_alert en shared props de Inertia |
-| ▲ `CheckSubscription` | `subscription` | Kill switch: si business.subscription_active=false → logout + mensaje mantenimiento |
-
-**Stack middleware autenticado:**  `['auth', 'verified', 'check.onboarding', 'subscription']`
+| Enum            | Valores                                              |
+|-----------------|------------------------------------------------------|
+| `VenueType`     | `matriz` · `quiosco` · `cocina`                      |
+| `Role`          | `mesero` · `cocina` · `bar` · `despacho` · `validador` · `admin` |
+| `Category`      | `hamburguesas` · `raciones` · `bebidas`              |
+| `Origin`        | `PUB` · `LOC`                                        |
+| `OriginFlujo`   | `A` · `B`                                            |
+| `KitchenStatus` | `NUEVO` · `PREP` · `LISTO` · `ENTREGADO`             |
+| `PaymentStatus` | `PEND` · `PAID` · `CREDIT` · `CANCELLED`             |
+| `Zone`          | `Norte` · `Sur` · `VIP` · `Externa`                  |
+| `PayMethodType` | `cash` · `transfer` · `mobile` · `biometric` · `other` |
+| `TerminalMethod`| `pos_debit` · `pos_credit` · `biopago`               |
 
 ---
 
-## 5. Artisan Commands
+## 4. MIGRACIONES
 
-| Comando | Clase | Propósito |
-|---------|-------|-----------|
-| `dollar:fetch` | UpdateDollarRate | Consulta BCV y persiste tasa USD/EUR |
-| ▲ `cash:banking-alert` | BankingAlertCommand | Guarda alerta corte bancario en caché (--minutes=20\|10\|0) |
-| `demo:reset` | ResetDemoData | Resetea datos demo (desarrollo) |
-
-**Alerta bancaria:** El comando escribe en cache `banking_alert` → HandleInertiaRequests lo inyecta en shared props → AppLayout lo muestra como banner global en POS.
-
----
-
-## 6. Rutas
-
-### Públicas (sin auth)
-| URI | Verb | Controller@método | Nombre |
-|-----|------|-------------------|--------|
-| / | GET | closure (Welcome) | — |
-| /setup | GET | OnboardingController@show | onboarding |
-| /setup/{step} | POST | OnboardingController@store | onboarding.step |
-
-### Autenticadas — middleware base: `auth, verified, check.onboarding, subscription`
-
-#### Todos los roles (`super_admin,admin,owner,branch_admin,supervisor,analyst,cashier`)
-| URI | Verb | Controller@método | Nombre |
-|-----|------|-------------------|--------|
-| /dashboard | GET | DashboardController@index | dashboard |
-| /dashboard/data | GET | DashboardController@data | dashboard.data |
-| ▲ /set-branch | POST | closure | branch.set |
-| /caja/cierre | GET | CashRegisterController@dayClose | cash.day-close |
-| /pos | GET | SaleController@index | pos.index |
-| /pos/ventas | POST | SaleController@store | sales.store |
-| /pos/ventas/{sale}/pagar | PATCH | SaleController@pay | sales.pay |
-| /pos/ventas/{sale}/cancelar | PATCH | SaleController@cancel | sales.cancel |
-| /ventas | GET | SaleController@historial | sales.index |
-| /caja | GET | CashRegisterController@index | cash.index |
-| /caja/abrir | POST | CashRegisterController@open | cash.open |
-| /caja/{register}/cerrar | POST | CashRegisterController@close | cash.close |
-| /caja/{register}/movimiento | POST | CashRegisterController@movement | cash.movement |
-| /clientes/buscar | GET | ClientController@search | clients.search |
-| /clientes | GET | ClientController@index | clients.index |
-| /clientes | POST | ClientController@store | clients.store |
-| /clientes/{client} | GET | ClientController@show | clients.show |
-| /clientes/{client} | PUT | ClientController@update | clients.update |
-| /pedidos | GET | OrderController@index | orders.index |
-| /pedidos/delivery | GET | OrderController@deliveryIndex | orders.delivery |
-| /pedidos | POST | OrderController@store | orders.store |
-| /pedidos/{order}/cobrar | PATCH | OrderController@collect | orders.collect |
-| /pedidos/{order}/despachar | PATCH | OrderController@dispatch | orders.dispatch |
-| /pedidos/{order}/cancelar | PATCH | OrderController@cancel | orders.cancel |
-| /pedidos/{sale}/delivery-cobrado | PATCH | OrderController@confirmDelivery | sales.delivery-confirm |
-| /ventas/{sale}/cobrar-pendiente | PATCH | OrderController@collectPending | sales.collect-pending |
-| /profile | GET | ProfileController@edit | profile.edit |
-| /profile | PATCH | ProfileController@update | profile.update |
-| /profile | DELETE | ProfileController@destroy | profile.destroy |
-
-#### Solo `super_admin, owner`
-| URI | Verb | Controller@método | Nombre |
-|-----|------|-------------------|--------|
-| /reportes/consolidado | GET | ReportController@consolidated | reports.consolidated |
-| /reportes/consolidado/data | GET | ReportController@consolidatedData | reports.consolidated-data |
-
-#### `super_admin,admin,owner,branch_admin,supervisor,analyst`
-| URI | Verb | Nombre |
-|-----|------|--------|
-| /tasa/manual | POST | rate.manual |
-| /caja/cierre/{register} | POST | cash.confirm-close |
-| /ventas/{sale}/anular | PATCH | sales.void |
-| /catalogo | GET | catalog.index |
-| /catalogo/productos | POST | catalog.store |
-| /catalogo/productos/{product} | PUT | catalog.update |
-| /catalogo/productos/{product} | DELETE | catalog.destroy |
-| /catalogo/productos/{product}/favorito | PATCH | catalog.product.favorite |
-| ▲ /catalogo/importar | POST | catalog.import |
-| /catalogo/categorias | POST/PUT/DELETE | catalog.category.* |
-| /catalogo/subcategorias | POST/PUT/DELETE | catalog.subcategory.* |
-| /fabrica | GET/POST | fabrica.index / fabrica.store |
-| /fabrica/despiece | POST | fabrica.despiece |
-| /inventario | GET/POST | inventory.index / inventory.store |
-| /boveda | GET/POST | boveda.index / boveda.store |
-| /boveda/{entry}/surtir | PATCH | boveda.surte |
-| /boveda/{entry}/cerrar | PATCH | boveda.close |
-| /boveda/{entry}/merma | PATCH | boveda.merma |
-| /boveda/{entry}/plantilla | GET | boveda.plantilla |
-| /boveda/productos | POST/PUT/DELETE | boveda.product.* |
-| /reportes | GET + JSON endpoints | reports.* |
-| /configuracion/metodos-pago | GET/POST/PUT/PATCH/DELETE | payment-methods.* |
-| /configuracion/general | GET/POST | settings.general |
-| /configuracion/cajas | GET/POST/PUT/DELETE | settings.cash-registers.* |
-| /configuracion/terminales | GET/POST/PUT/DELETE | settings.terminals.* |
-| /configuracion/ticket | GET/POST | settings.ticket |
-| ▲ /configuracion/hardware | GET | settings.hardware |
-| /configuracion/sucursales | GET/POST/PUT | settings.branches.* |
-| /contingencia | GET + POST importar | contingency.* |
-
-#### Solo `super_admin`
-| URI | Verb | Nombre |
-|-----|------|--------|
-| /configuracion/usuarios | GET/POST/PUT/DELETE | settings.users.* |
+| Fecha/Hora          | Nombre                                        | Qué cambia                                                              |
+|---------------------|-----------------------------------------------|-------------------------------------------------------------------------|
+| 2026-05-27 18:44:04 | `20260527184404_init`                         | Schema inicial: User, Product, Order, OrderItem, TicketCounter, OrderLog, PaymentValidation, DollarRate, Config |
+| 2026-05-28 03:03:18 | `20260528030318_add_venues`                   | Añade modelo Venue · campo venue_id en User · campo venue_assigned en Order |
+| 2026-05-28 05:14:29 | `20260528051429_add_product_image`            | Campo `image_url` en Product                                            |
+| 2026-05-28 07:42:17 | `20260528074217_add_payment_methods_terminals_access` | Modelos PaymentMethod y Terminal · campos de acceso en User (access_start/end/days) |
+| 2026-05-28 07:44:07 | `20260528074407_add_terminals_user_access`    | Ajuste índices y campos cedula/telefono en User                         |
+| 2026-05-28 07:45:47 | `20260528074547_noop`                         | Sin cambios (migration fence)                                           |
 
 ---
 
-## 7. Roles y Permisos (AppLayout.vue)
+## 5. VALIDACIONES ZOD
 
-```javascript
-const rolePermissions = {
-    super_admin:  // todos
-    owner:        ['dashboard','pos','inventory','boveda','fabrica','orders','sales','dayclose','catalog','clients','contingency','users','settings','cash'],
-    branch_admin: ['dashboard','pos','inventory','boveda','fabrica','orders','sales','dayclose','catalog','clients','contingency','users','settings','cash'],
-    supervisor:   ['dashboard','pos','cash','sales','dayclose','inventory','catalog','boveda','fabrica','orders','clients','reports','contingency'],
-    analyst:      ['dashboard','sales','dayclose','cash','reports','inventory','catalog','clients','orders','contingency'],
-    admin:        // todos excepto super_admin features
-    cashier:      // pos, caja, pedidos, clientes
-}
-```
+Archivo: `src/lib/validations.ts` (Zod 4.x)
 
-**navOwner:** Nav alternativo para owner y branch_admin — prioriza Panel Empresarial arriba.
+| Schema                   | Campos                                              | Reglas clave                                                                 |
+|--------------------------|-----------------------------------------------------|------------------------------------------------------------------------------|
+| `OriginSchema`           | —                                                   | enum `['PUB', 'LOC']`                                                        |
+| `ZoneSchema`             | —                                                   | enum `['Norte', 'Sur', 'VIP', 'Externa']`                                    |
+| `CategorySchema`         | —                                                   | enum `['hamburguesas', 'raciones', 'bebidas']`                               |
+| `CreateOrderItemSchema`  | `product_id`, `qty`, `price_usd`                    | product_id: int positivo · qty: int 1-99 · price_usd: **coerce** number positivo |
+| `CreateOrderSchema`      | `origin`, `customer_name`, `customer_lastname`, `customer_id`, `zone`, `seat`, `items`, `created_by`, `note` | customer_name/lastname: trim, 1-100 chars · customer_id: regex `/^[VEve]?\d{6,8}$/` opcional · items: mín 1 · created_by: int positivo · note: max 500 |
 
----
+**Nota:** El route `/api/orders/route.ts` tiene su propia copia inline del schema (con `.coerce` añadido en esta sesión). Consolidar en `validations.ts` es deuda técnica pendiente.
 
-## 8. Vue Pages
+El route `/api/auth/session/route.ts` define su propio `LoginSchema` inline:
+- `code`: string min 1
+- `pin`: regex `/^\d{4}$/` (exactamente 4 dígitos)
 
-### POS/Index.vue
-**props:** products, categories, cashRegister, todayRate, paymentMethods, ticketPrefix, stockMap, posShowKg, businessInfo, ticketPrefs
-
-**refs principales:** tickets (multi-ticket), activeTicket, selectedCat, search, soloConStock, qtyModal, qtyProduct, payModal, payments, saleOrigin, showClientFields, clientId, clientName, clientPhone, successModal, successItems, showMobileCart
+El route `/api/config/business/route.ts` define `PatchSchema`:
+- `z.record(z.string(), z.string())` filtrado contra `BUSINESS_KEYS` (23 keys)
 
 ---
 
-### Boveda/Index.vue
-**props:** activas, historial, bovedaProducts, productosVitrina, kpis
+## 6. AUTENTICACIÓN Y ROLES
 
-**refs principales:** tab, flash, showEntradaModal, entradaForm, showSurtirModal, surtirEntry, surtirForm, surtirErrors, despiecePendiente, closing, showProductModal, editingProduct, productForm, localBovedaProducts, showHelp
-
-▲ **entradaForm ahora incluye:** conCanal2 (boolean), kg_par (number) — visibles solo cuando product_type === 'RES - Medio Canal'
-
----
-
-### Fabrica/Index.vue
-**props:** fabricables, ingredientes, stockMap, historial, despiecePendiente, despieceHistorial
-
-**refs principales:** tab, showModal, modalProduct, ingredSearch, despieceExpanded, despieceForms, despieceErrors, despieceSaving, despieceFlash, despiecePdfEntry, showHelp
-
-▲ **helpSteps actualizado:** Menciona 'Carne del Canal, Costilla, Hueso Redondo, Hueso Rojo' como los 4 cortes Res (Premium/Primera/Segunda eliminados del texto).
-
----
-
-### Cash/Index.vue
-**props:** cashRegister, allOpenRegisters, history, kpis, todayRate, isAdmin
-
-**refs principales:** activeTab, openModal, movModal, corteModal, showHelp
-
----
-
-### Catalog/Index.vue
-**props:** categories, products
-
-▲ **Nuevo:** Botón importar productos (CSV/Excel) → POST /catalogo/importar. Botón descarga plantilla → GET /catalogo/plantilla-productos.
-
-**refs principales:** activeTab, searchQuery, showModal, editProduct, submitting, selectedImagePreview, mainTab, showCatModal, editCategory, showSubModal, editSubcat, subParentId, showHelp
-
----
-
-### Inventory/Index.vue
-**props:** products, categories, todayEntries, stockMap, lastEntryMap, kpis
-
----
-
-### Dashboard.vue
-**props:** ventas_hoy, top_productos, stock_critico, ultimas_ventas, caja_activa, tasa_hoy, pedidos_pendientes, categorias_hoy, utilidad_boveda
-
----
-
-### Sales/Index.vue
-**props:** sales, totals, cashiers, paymentMethods, filters
-
----
-
-### Orders/Index.vue
-**props:** pedidosActivos, historial, cobrosPendientes, products, paymentMethods, paymentTerminals, todayRate, kpis
-
----
-
-### Clients/Index.vue
-**props:** clients, selectedClient (show mode), salesHistory
-
----
-
-### Reports/Index.vue
-**props:** paymentMethods, cashiers
-
----
-
-### Reports/Consolidado.vue
-**props:** branches, initialData
-
----
-
-### Settings/Hardware.vue ▲ (NUEVA)
-Página de configuración de hardware (scanner EAN-13, balanza, impresora térmica). Sin props externas — informativa.
-
----
-
-### Contingency/Index.vue
-**props:** (sin props externas — descarga archivos)
-
----
-
-### Auth/* (Login, Register, ForgotPassword, ResetPassword, ConfirmPassword, VerifyEmail)
-**props:** status, errors — componentes Breeze estándar
-
----
-
-## 9. Migraciones
-
-| Archivo | Tabla | Operación |
-|---------|-------|-----------|
-| 0001_01_01_000000_create_users_table | users | CREATE |
-| 0001_01_01_000001_create_cache_table | cache, cache_locks | CREATE |
-| 0001_01_01_000002_create_jobs_table | jobs, job_batches, failed_jobs | CREATE |
-| 2026_05_09_000001 | businesses | CREATE |
-| 2026_05_09_000002 | users | ADD business_id |
-| 2026_05_09_000003 | categories | CREATE |
-| 2026_05_09_000004 | subcategories | CREATE |
-| 2026_05_09_000005 | products | CREATE (name, sku, sale_mode, price_per_kg_usd, price_per_unit_usd, location, active…) |
-| 2026_05_09_000006 | inventory_entries | CREATE (product_id, quantity_kg, waste_kg, net_kg virtual, cost_per_kg_usd…) |
-| 2026_05_09_000007 | cash_registers | CREATE |
-| 2026_05_09_000008 | sales | CREATE (ticket_number, status, total_usd, total_bs, rate_used…) |
-| 2026_05_09_000009 | sale_items | CREATE (snapshots: product_name, price_per_kg_usd…) |
-| 2026_05_09_000010 | orders | CREATE |
-| 2026_05_09_000011 | order_items | CREATE |
-| 2026_05_09_000012 | cash_movements | CREATE |
-| 2026_05_09_000013 | activity_logs | CREATE |
-| 2026_05_09_000014 | businesses | ADD settings JSON, rate_margin… |
-| 2026_05_10_000001 | dollar_rates | CREATE (rate, source, currency_type, effective_from, is_active) |
-| 2026_05_10_000010 | payment_methods | CREATE |
-| 2026_05_10_000013 | sale_payments | CREATE |
-| 2026_05_10_000014 | sales | ADD client_name, client_phone, client_id |
-| 2026_05_10_000015 | clients | CREATE |
-| 2026_05_11_000001 | businesses | ADD theme_color |
-| 2026_05_11_000002 | payment_terminals | CREATE |
-| 2026_05_12_000001 | users | ADD role, theme |
-| 2026_05_12_000002 | users | CHANGE role a ENUM |
-| 2026_05_12_000010 | inventory_entries | ADD location |
-| 2026_05_12_000011 | despiece_logs | CREATE |
-| 2026_05_12_000012 | despiece_items | CREATE |
-| 2026_05_12_000013 | sales | ADD delivery_status, delivery fields |
-| 2026_05_12_000014 | products | ADD location |
-| 2026_05_13_000015 | boveda_entries | CREATE |
-| 2026_05_13_000016 | boveda_entries | NORMALIZE (agregar kg_surtido_vitrina, refactor) |
-| 2026_05_13_000017 | boveda_products | CREATE |
-| 2026_05_13_000018 | despiece_items | ADD tipo |
-| 2026_05_13_165047 | boveda_entries | ADD waste_kg |
-| 2026_05_13_190001 | inventory_entries | ADD boveda_entry_id |
-| 2026_05_13_190002 | boveda_entries | ADD kg_disponible GENERATED VIRTUAL |
-| 2026_05_13_190003 | sale_items | ADD subtotal_bs |
-| 2026_05_13_200001 | categories | ADD macro_category |
-| 2026_05_13_200002 | fabrica_batches | CREATE |
-| 2026_05_13_200003 | fabrica_inputs | CREATE |
-| 2026_05_13_210001 | products | ADD fabricable |
-| 2026_05_13_210002 | fabrica_inputs | ADD product_id |
-| 2026_05_13_220001 | branches | CREATE |
-| 2026_05_13_220002 | users | EXPAND roles ENUM |
-| 2026_05_13_220003 | sales, inventory_entries, etc. | ADD branch_id |
-| 2026_05_13_230001 | products | ADD cost_per_unit_usd |
-| 2026_05_14_000001 | sales | ADD payment_status, order_id |
-| 2026_05_14_010001 | businesses | ADD max_branches |
-| 2026_05_14_050743 | sales | ADD 'credit' al ENUM origin |
-| 2026_05_14_065526 | products | ADD branch_id |
-| 2026_05_14_071527 | users | ADD team fields (position, avatar…) |
-| 2026_05_14_074358 | users | ADD access_days JSON |
-| 2026_05_14_080924 | clients | RENAME client_code → cedula |
-| 2026_05_14_100001 | cash_registers | ADD opening_amount_bs |
-| 2026_05_14_180427 | boveda_products | ADD requires_despiece, vitrina_product_id |
-| 2026_05_14_194421 | boveda_entries | ADD despiece_completado_at |
-| 2026_05_15_000001 | products | DROP cost fields legacy |
-| 2026_05_16_000001 | cash_movements | ADD 'corte' al ENUM type |
-| 2026_05_16_000002 | cash_movements | ADD amount_bs |
-| 2026_05_16_000003 | products | ADD is_favorite |
-| ▲ 2026_05_22_000001 | cash_registers | NULLABLE: opened_at, opening_amount_usd, opened_by |
-| ▲ 2026_05_22_214705 | users | ADD is_hidden (boolean, default false) |
-| ▲ 2026_05_23_000001 | businesses | ADD subscription_active (boolean, default true) |
-| ▲ 2026_05_23_000002 | sales | ADD accounting_date (date nullable) |
-| ▲ 2026_05_23_123937 | businesses | FIX NULLABLE: legal_name, rif, theme_color, phone, city, state, address |
-| ▲ 2026_05_24_000001 | boveda_entries | ADD pair_id (unsignedBigInteger nullable) |
-| ▲ 2026_05_24_000002 | products | ADD stock_product_id (unsignedBigInteger nullable) |
-
-**Total: 72 migraciones** (era 65)
-
----
-
-## 10. Stress Test
-
-**Archivo:** `stress_test.php` (raíz del proyecto)
-**Total fases: 18** (era 16)
-
-| Fase | Módulo | Estado |
-|------|--------|--------|
-| 1 | Auth + DollarRateService | ✅ |
-| 2 | Bóveda: Entradas, Surtidos, Límites | ✅ |
-| 3 | Fábrica: Despiece y Validaciones | ✅ |
-| 4 | POS: Ventas, Pagos, Anulaciones | ✅ |
-| 5 | Cierre de Caja y Utilidad | ✅ |
-| 6 | InventoryController | ✅ |
-| 7 | OrderController | ✅ |
-| 8 | ClientController | ✅ |
-| 9 | ReportController | ✅ |
-| 10 | SettingsController + PaymentMethodController | ✅ |
-| 11 | Configuración Ticket | ✅ |
-| 12 | Configuración General | ✅ |
-| 13 | Sucursales (storeBranch) | ✅ |
-| 14 | Contingencia (importSales) | ✅ |
-| 15 | Dashboard data endpoint | ✅ |
-| 16 | CatalogController::importProducts() | ✅ |
-| ▲ 17 | FabricaController::index() — props despiecePendiente | ✅ (3 subtests: RES/POLLO/CERDO) |
-| ▲ 18 | Configuración completa: 18.1 General / 18.2 Cajas / … | En desarrollo |
-
-**Convención:** Fixtures del test usan prefijo `[ST]` en description/name para cleanup al final.
-
----
-
-## 11. Seeders
-
-| Seeder | Propósito |
-|--------|-----------|
-| `DatabaseSeeder` | Orquestador principal |
-| `PaymentMethodSeeder` | Métodos de pago base: efectivo Bs, efectivo USD, transferencia, pago móvil, punto de venta |
-| `CatalogSeeder` | Categorías y productos genéricos de demostración |
-| `CatalogSeederChaguaramas` | ▲ Catálogo real Chaguaramas actualizado: catMap corregido, resItems sin legacy, pool 'Carne del Canal', stock_product_id asignado a Premium/Primera/Segunda |
-| `ChaguaramasBaseSeeder` | Datos base del negocio piloto: business, admin user, configuración |
-| `InventorySeeder` | Entradas de inventario de prueba para vitrina |
-| `TestFlowSeeder` | Flujo completo A→Z (22 checks): boveda → despiece → vitrina → POS → cierre |
-
-**Catálogo Chaguaramas — Categorías:**
-
-| Categoría | Color | macro_category |
-|-----------|-------|----------------|
-| Bóveda | #64748B | BOVEDA |
-| Res | #EF4444 | RES |
-| Pollo | #2563EB | POLLO |
-| Cerdo | #8B5CF6 | CERDO |
-| Charcutería | #06B6D4 | CHARCUTERIA |
-| Trastes | #F97316 | TRASTES |
-| Víveres | #10B981 | DESPENSA |
-
-**Pool stock Res:** 'Carne del Canal' (active=false, location=vitrina, sort_order=99) ← Premium, Primera, Segunda apuntan aquí vía stock_product_id.
-
----
-
-## 12. Variables de entorno (.env keys)
+### Flujo JWT
 
 ```
-APP_NAME / APP_ENV / APP_KEY / APP_DEBUG / APP_URL
-APP_LOCALE / APP_FALLBACK_LOCALE / APP_FAKER_LOCALE
-LOG_CHANNEL / LOG_LEVEL
-DB_CONNECTION / DB_HOST / DB_PORT / DB_DATABASE / DB_USERNAME / DB_PASSWORD
-SYNTIWEB_DB_HOST / SYNTIWEB_DB_PORT / SYNTIWEB_DB_DATABASE
-SYNTIWEB_DB_USERNAME / SYNTIWEB_DB_PASSWORD
-DOLLAR_FALLBACK_RATE
-SESSION_DRIVER / SESSION_LIFETIME / SESSION_ENCRYPT / SESSION_PATH / SESSION_DOMAIN
-BROADCAST_CONNECTION / FILESYSTEM_DISK / QUEUE_CONNECTION / CACHE_STORE
-MAIL_MAILER / MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD / MAIL_FROM_ADDRESS
-VITE_APP_NAME
+POST /api/auth/session
+  body: { code, pin }
+  → bcrypt.compare(pin, user.pin)
+  → SignJWT({ id, code, role }, HS256, 12h)
+  → Set-Cookie: cafeball_session (httpOnly, secure prod, sameSite lax)
+
+GET /api/auth/me
+  → jwtVerify(cookie, JWT_SECRET)
+  → { id, code, role }
+
+DELETE /api/auth/session
+  → cookies.delete('cafeball_session')
 ```
 
-**Claves críticas:**
-- `SYNTIWEB_DB_*` → conexión readonly a synticorex (dollar_rates)
-- `DOLLAR_FALLBACK_RATE` → tasa de último recurso (default 40.00)
+| Parámetro       | Valor                                      |
+|-----------------|--------------------------------------------|
+| Cookie name     | `cafeball_session`                         |
+| Algoritmo       | HS256                                      |
+| Duración        | 12 horas                                   |
+| Payload         | `{ id, code, role }`                       |
+| Rate limit      | 5 intentos/minuto/IP (Map en memoria)      |
+| PIN default     | `1234` (bcrypt hash en seed)               |
+| Throttle login  | 429 después de 5 intentos por minuto por IP|
+
+### Roles
+
+| Rol         | Puede hacer                                                                 |
+|-------------|-----------------------------------------------------------------------------|
+| `mesero`    | Nueva orden, comandas propias, cobrar                                       |
+| `cocina`    | KDS Cocina, bump NUEVO→PREP→LISTO                                           |
+| `bar`       | KDS Bar, bump NUEVO→PREP→LISTO                                              |
+| `despacho`  | KDS Despacho, asignar mesero, ver todas las órdenes LISTO                   |
+| `validador` | Revisar fotos comprobantes, marcar VALIDATED/FLAGGED                        |
+| `admin`     | Todo lo anterior + Admin panel completo + anular órdenes + cerrar turno     |
+
+### Middleware Edge
+
+Archivo: `src/middleware.ts`
+
+```
+Rutas protegidas: /admin/:path*, /pos/:path*, /kds/:path*
+Cookie: cafeball_session → jwtVerify(JWT_SECRET)
+Sin token: redirect /login
+Token inválido: redirect /login + delete cookie
+Matcher: solo rutas protegidas (Edge Runtime)
+```
+
+**No implementado en middleware:** verificación de rol por ruta (solo verifica autenticación, no autorización). El control de roles es responsabilidad de cada page/API.
 
 ---
 
-## 13. Comandos VPS
+## 7. DESIGN SYSTEM
+
+### Design Tokens (`src/styles/tokens.css`)
+
+| Variable                  | Valor                         | Uso                              |
+|---------------------------|-------------------------------|----------------------------------|
+| `--color-primary`         | `#2E7D32`                     | Verde Guaiqueríes — acción principal |
+| `--color-primary-light`   | `#4CAF50`                     | Verde claro — texto sobre oscuro |
+| `--color-accent`          | `#C62828`                     | Rojo llama — error, anular       |
+| `--color-brand`           | `#F5A623`                     | Naranja Café ConBike             |
+| `--color-brand-warm`      | `#8B6914`                     | Marrón rueda ConBike             |
+| `--color-bg`              | `#0a0a0a`                     | Negro estadio — fondo página     |
+| `--color-surface`         | `#111411`                     | Negro con toque verde — panels   |
+| `--color-surface-2`       | `#1a1f1a`                     | Cards y formularios              |
+| `--color-surface-3`       | `#222822`                     | Capas adicionales                |
+| `--color-border`          | `rgba(46,125,50,0.25)`        | Bordes verde translúcido         |
+| `--color-border-strong`   | `rgba(46,125,50,0.5)`         | Bordes más visibles              |
+| `--color-text`            | `#f0f5f0`                     | Texto principal                  |
+| `--color-text-muted`      | `rgba(240,245,240,0.5)`       | Texto secundario                 |
+| `--color-text-subtle`     | `rgba(240,245,240,0.3)`       | Texto terciario                  |
+| `--color-nuevo`           | `#F5A623`                     | Naranja — orden NUEVO            |
+| `--color-prep`            | `#2E7D32`                     | Verde — en PREP                  |
+| `--color-listo`           | `#4CAF50`                     | Verde claro — LISTO para entregar|
+| `--color-entregado`       | `rgba(240,245,240,0.2)`       | Gris suave — ENTREGADO           |
+| `--color-pagado`          | `#4CAF50`                     | Verde — cobrado                  |
+| `--color-credito`         | `#7C4DFF`                     | Violeta — fiado                  |
+| `--color-pendiente`       | `#F5A623`                     | Naranja — pendiente              |
+| `--color-cancelado`       | `#C62828`                     | Rojo — anulado                   |
+| `--font-sans`             | `'Inter', system-ui, sans-serif` |                               |
+| `--space-{1-10}`          | 4·8·12·16·20·24·32·40 px      | Escala de espaciado              |
+| `--radius-sm/md/lg/xl`    | 8·12·16·20 px                 |                                  |
+| `--radius-full`           | 9999px                        | Pills                            |
+| `--shadow-sm/md/lg`       | rgba(0,0,0,0.4/0.5/0.6)       |                                  |
+| `--shadow-glow`           | `0 0 20px rgba(46,125,50,0.3)`| Glow verde                       |
+| `--touch-min`             | `44px`                        | Touch target mínimo              |
+| `--transition-fast/base/slow` | 150·250·350ms ease        |                                  |
+
+### Breakpoints
+
+| Breakpoint | Valor  | Uso                                              |
+|------------|--------|--------------------------------------------------|
+| Mobile     | < 480px| fieldRow single column en forms                  |
+| Tablet     | < 700px| Comandas KDS: 3col→1col                          |
+| Desktop    | < 768px| Admin layout: sidebar 220px visible, bottom nav oculto |
+
+### Componentes reutilizables
+
+| Componente              | Archivo                             | Descripción                                      |
+|-------------------------|-------------------------------------|--------------------------------------------------|
+| `TicketPrint`           | `src/components/ui/TicketPrint.tsx` | `<a target="_blank">` al ticket HTML · solo PAID |
+| `CourtBackground`       | `src/components/ui/CourtBackground.tsx` | Fondo decorativo cancha                      |
+| `ProductCard`           | `src/components/ProductCard.tsx`    | Card de producto en catálogo público             |
+
+---
+
+## 8. MÓDULOS ADMIN — ESTADO
+
+| Módulo               | Ruta admin           | API endpoints principales                              | CRUD | Estado |
+|----------------------|----------------------|--------------------------------------------------------|------|--------|
+| Mission Control      | `/admin`             | `/api/orders`, `/api/currency`, `/api/turno`           | —    | ✅     |
+| Turno                | `/admin/turno`       | `/api/turno`                                           | R·C  | ✅     |
+| Caja                 | `/admin/caja`        | `/api/caja`                                            | R    | ✅     |
+| Menú / Productos     | `/admin/menu`        | `/api/products`, `/api/products/[id]`, `/api/products/[id]/upload`, `/api/products/import` | CRUD+foto+xlsx | ✅ |
+| Equipo               | `/admin/equipo`      | `/api/users`, `/api/users/[id]`                        | CRUD | ✅     |
+| Estructura / Venues  | `/admin/estructura`  | `/api/venues`, `/api/venues/[id]`                      | CRUD | ✅     |
+| Config cobros        | `/admin/config`      | `/api/payment-methods/**`, `/api/terminals/**`, `/api/config/payment-data` | CRUD | ✅ |
+| Partidos             | `/admin/partido`     | `/api/partido`, `/api/partido/[id]`                    | CRUD | ✅     |
+| Perfil negocio       | `/admin/perfil`      | `/api/config/business`                                 | R·U  | ✅     |
+| Admin layout shell   | `src/app/admin/layout.tsx` | /api/config/business + /api/auth/me + /api/currency | — | ✅ |
+| Módulo inventario    | —                    | —                                                      | —    | ❌     |
+| KPIs post-partido    | —                    | —                                                      | —    | ❌     |
+| Analytics visitantes | —                    | —                                                      | —    | ❌     |
+| Score en vivo LPB    | —                    | —                                                      | —    | ❌     |
+
+### Config Business Keys (23 keys en `src/lib/business-config.ts`)
+
+```
+business_name · business_subtitle · business_rif · business_phone
+business_address · business_city · business_logo_url
+ticket_footer · ticket_show_bs · ticket_show_description · ticket_show_ref
+ticket_show_address · ticket_show_phone · ticket_show_client · ticket_show_rif
+ticket_show_cashier · ticket_show_rate · ticket_show_payment
+ticket_currency_symbol · ticket_prefix · ticket_width_mm
+event_name · event_venue
+```
+
+---
+
+## 9. FLUJOS OPERATIVOS
+
+### Flujo A — Orden Pública (QR)
+
+```
+Cliente escanea QR → /menu (público, sin auth)
+  → selecciona productos → completa formulario (nombre, zona, asiento)
+  → POST /api/orders { origin: 'PUB', flujo: 'A', created_by: sysUser.id }
+  → Código generado: PUB-XXXXX (TicketCounter prefix='PUB')
+  → kitchen_status: NUEVO · payment_status: PEND
+  → KDS routing automático (ver abajo)
+  → Despacho ve orden en KDS → asigna mesero → mesero entrega
+  → Mesero registra cobro en /pos/cobrar
+```
+
+### Flujo B — Orden por Mesero (LOC)
+
+```
+Mesero autenticado → /pos/nueva-orden (4 pasos)
+  Paso 1: Datos cliente (nombre, apellido, cédula opcional)
+  Paso 2: Zona + asiento
+  Paso 3: Selección de productos (catálogo por categoría)
+  Paso 4: Revisión + confirmar
+  → POST /api/orders { origin: 'LOC', flujo: 'B', created_by: me.id }
+  → Código generado: LOC-XXXXX (TicketCounter prefix='LOC')
+  → Redirect a / tras éxito
+  → Mesero sigue en /pos/comandas sus órdenes personales
+```
+
+### KDS Routing — IRROMPIBLE
+
+```
+hamburguesas / raciones  →  KDS Cocina (/kds/cocina)
+bebidas                  →  KDS Bar    (/kds/bar)
+orden mixta              →  ambos KDS simultáneo
+                         →  KDS Despacho espera bumps de cocina Y bar
+NUNCA enviar bebida a cocina
+```
+
+### Flujo de Pago
+
+```
+/pos/cobrar → lista órdenes payment_status: PEND o CREDIT
+  → Seleccionar orden → modal
+  → Modo COBRAR: elegir método (6 dinámicos) + referencia + foto
+    → PATCH /api/orders/[id]/status { payment_status: 'PAID', payment_method, ... }
+    → Post-pago: mensaje éxito + código · botones [Imprimir ticket] [Siguiente en 5...]
+    → Auto-redirect a / en 5 segundos
+    → "Imprimir ticket": <a href="/api/orders/[id]/ticket" target="_blank">
+       → HTML térmico con window.addEventListener('load', () => window.print())
+  → Modo FIAR: nota obligatoria → CREDIT
+  → Modo ANULAR (solo admin): motivo ≥ 10 chars → CANCELLED
+```
+
+### Ticket Térmico
+
+```
+GET /api/orders/[id]/ticket
+  → HTML auto-contenido con CSS @page { size: {58|80}mm auto }
+  → Auto-print: window.addEventListener('load', () => window.print())
+  → Secciones condicionales según config keys ticket_show_*
+  → Símbolo configurable: REF | $ | Bs.
+  → Botón manual "Imprimir ticket" como fallback (no-print class)
+```
+
+---
+
+## 10. DEUDA TÉCNICA REGISTRADA
+
+### Crítico (bloquea funcionalidad)
+
+| # | Ítem                                                      | Módulo        |
+|---|-----------------------------------------------------------|---------------|
+| 1 | Supabase Realtime no configurado (URL + ANON_KEY en .env VPS) | Global    |
+| 2 | Middleware no verifica roles por ruta (solo autenticación) | Auth         |
+| 3 | Schema Zod duplicado: `validations.ts` vs inline en `orders/route.ts` | Validaciones |
+
+### Alta prioridad
+
+| # | Ítem                                                      | Módulo        |
+|---|-----------------------------------------------------------|---------------|
+| 4 | Venues reales de Daniel no creados en producción          | Estructura    |
+| 5 | Probar comandas personales en producción (último deploy)  | POS Comandas  |
+| 6 | Logos nuevos no subidos al VPS `public/`                  | Branding      |
+| 7 | Importar productos xlsx en producción (15 productos en dev)| Menú         |
+
+### Media prioridad
+
+| # | Ítem                                                      | Módulo        |
+|---|-----------------------------------------------------------|---------------|
+| 8  | Módulo inventario/lotes (abrir → asignar venue → cierre → cuadre) | Nuevo |
+| 9  | KPIs post-partido                                         | Partidos      |
+| 10 | Catálogo público /menu pulido (fotos fotógrafo)           | Menú público  |
+| 11 | Analytics visitantes por canal (QR/www/local, OS, device) | Nuevo        |
+| 12 | Script certify.ts en producción                           | Deploy        |
+
+### Backlog
+
+| # | Ítem                                                      |
+|---|-----------------------------------------------------------|
+| 13 | Score en vivo LPB                                        |
+| 14 | E-commerce merchandising                                 |
+| 15 | Zonas geográficas estadio (mapa Daniel pendiente)        |
+| 16 | Plan B: agente IA                                        |
+| 17 | Catálogo offline completo (IndexedDB + Service Worker)   |
+| 18 | PWA instalable (next-pwa)                                |
+
+---
+
+## 11. REGLAS CRÍTICAS — NO VIOLAR
+
+### Código
+
+| Regla                                       | Por qué                                           |
+|---------------------------------------------|---------------------------------------------------|
+| TypeScript estricto en TODO archivo — nunca `any` | Tipado garantiza integridad entre capas      |
+| CSS Modules únicamente — nunca Tailwind     | Design tokens propios, coherencia visual           |
+| Tokens en `tokens.css` — nunca colores hardcodeados | Un cambio de marca = un archivo           |
+| Server Components por default — Client solo con estado/eventos | Performance, SEO              |
+| Prisma: eager loading — cero N+1            | MySQL en VPS limitado, latencia real               |
+| Lógica de negocio en API routes — nunca en componentes | Reutilizable, testeable, seguro       |
+| Early return obligatorio — nesting máximo 2 niveles | Legibilidad, mantenibilidad              |
+
+### Moneda — IRROMPIBLE
+
+| Regla                              | Valor                               |
+|------------------------------------|-------------------------------------|
+| Precios internos                   | USD (Decimal en DB)                 |
+| Símbolo divisas                    | `REF` (nunca `$` en UI)            |
+| Símbolo bolívares                  | `Bs.`                               |
+| Conversión                         | `price_usd × getCurrentRate() = total_bs` |
+| Tasa                               | `DollarRate` · fallback 50.0       |
+| NUNCA bloquear operación           | Por falta de tasa → usar fallback   |
+
+### UX — IRROMPIBLE
+
+| Regla                                     | Valor          |
+|-------------------------------------------|----------------|
+| Touch target mínimo acciones críticas     | 56px height    |
+| Touch target mínimo general               | 44px (`--touch-min`) |
+| Acciones críticas visibles sin scroll     | Siempre        |
+| Íconos                                    | Lucide React ÚNICAMENTE — nunca emojis en UI |
+
+### Deploy
 
 ```bash
-# Conectar
-ssh -i C:\Users\carbo\.ssh\id_ed25519 root@187.124.241.213
-
-# Deploy completo
-cd /var/www/syntimeat
-git pull origin main
+# Flujo siempre:
+git push origin main  (local)
+ssh root@187.124.241.213
+cd /var/www/sportbar
+git pull
+npx prisma generate
+npx prisma migrate deploy
 npm run build
-php artisan migrate --force
-php artisan config:cache
-php artisan route:cache
+pm2 restart sportbar
 
-# Kill switch — apagar
-php artisan tinker --execute="DB::table('businesses')->where('id',1)->update(['subscription_active'=>0]);"
+# NUNCA tocar: C:\laragon\www\synticorex (repo referencia SOLO LECTURA)
+```
 
-# Kill switch — encender
-php artisan tinker --execute="DB::table('businesses')->where('id',1)->update(['subscription_active'=>1]);"
+### KDS — IRROMPIBLE
 
-# Tasa BCV
-php artisan dollar:fetch
-
-# Alerta bancaria (ejecutar con cron a las 6:40pm, 6:50pm, 7:00pm)
-php artisan cash:banking-alert --minutes=20
-php artisan cash:banking-alert --minutes=10
-php artisan cash:banking-alert --minutes=0
-
-# Logs
-tail -50 storage/logs/laravel.log
-grep "ERROR\|Exception" storage/logs/laravel.log | tail -20
+```
+hamburguesas/raciones → cocina ÚNICAMENTE
+bebidas → bar ÚNICAMENTE
+NUNCA mezclar routing
+Orden mixta → ambos KDS, despacho espera los dos bumps
 ```
 
 ---
 
-## 14. Deuda técnica activa (post-entrega)
-
-### Crítico
-- [ ] BUG-001: Productos duplicados en vistas (filtro branch_id en session null)
-- [ ] BUG-002: Producto creado no aparece en Catálogo (CatalogController branch_id)
-
-### V1.1 (acordado con cliente)
-- [ ] Corte bancario configurable desde UI (hora, on/off)
-- [ ] Reportes por cajero, por método de pago
-- [ ] Paginación reportes (hoy cap 500 filas)
-- [ ] CRUD Proveedores
-- [ ] Módulo respaldo manual tickets post-apagón
-- [ ] Kits/Cestas en Fábrica
-- [ ] Email/reset contraseña (Resend)
-- [ ] Logo en ticket impreso
-- [ ] Scanner EAN-13 calibración con balanza real
-- [ ] Ticket térmico 80mm calibración con impresora real
-- [ ] FASE 18 stress test completar (config CRUD completo)
-- [ ] FASE 19: Multi-rol — cada rol accede solo a lo que debe
-- [ ] FASE 20: Multi-sucursal — filtros correctos por branch_id
-
----
-
-*SYNTIdev — syntimeat — 2026-05-24 — Confidencial*
+*SYSTEM_MAP.md — SportBar v1.0 — Generado 29/05/2026 — commit ac092e3*
+*▲ Actualizar en cada sesión que modifique rutas, modelos, migraciones o reglas críticas*
