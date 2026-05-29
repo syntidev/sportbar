@@ -151,7 +151,7 @@ export default function NuevaOrdenPage() {
       });
       const data = await res.json();
       if (data.success) {
-        window.location.href = "/pos";
+        window.location.href = "/";
       } else {
         setError(Array.isArray(data.errors) ? data.errors[0] : (data.error ?? "Error al crear orden"));
       }
