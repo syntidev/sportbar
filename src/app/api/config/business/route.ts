@@ -1,40 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-
-// ── Keys gestionados por este endpoint ───────────────────────────────────────
-
-export const BUSINESS_KEYS = [
-  'business_name',
-  'business_subtitle',
-  'business_rif',
-  'business_phone',
-  'business_address',
-  'business_city',
-  'business_logo_url',
-  'ticket_footer',
-  'ticket_show_bs',
-  'ticket_width_mm',
-  'event_name',
-  'event_venue',
-] as const
-
-export type BusinessKey = (typeof BUSINESS_KEYS)[number]
-
-const DEFAULTS: Record<BusinessKey, string> = {
-  business_name:     'Sport Bar',
-  business_subtitle: 'Guaiqueríes de Margarita',
-  business_rif:      '',
-  business_phone:    '',
-  business_address:  '',
-  business_city:     'Margarita, Venezuela',
-  business_logo_url: '',
-  ticket_footer:     'Gracias por su visita',
-  ticket_show_bs:    'true',
-  ticket_width_mm:   '58',
-  event_name:        '',
-  event_venue:       '',
-}
+import { BUSINESS_KEYS, BUSINESS_DEFAULTS, type BusinessKey } from '@/lib/business-config'
 
 // ── GET — devuelve todos los keys del perfil ─────────────────────────────────
 
@@ -49,7 +16,7 @@ export async function GET() {
     // Merge con defaults para keys no guardados aún
     const profile: Record<string, string> = {}
     for (const key of BUSINESS_KEYS) {
-      profile[key] = stored[key] ?? DEFAULTS[key]
+      profile[key] = stored[key] ?? BUSINESS_DEFAULTS[key]
     }
 
     return NextResponse.json({ success: true, profile })
