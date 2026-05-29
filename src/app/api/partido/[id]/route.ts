@@ -80,14 +80,27 @@ export interface TimelineHour {
   count: number
 }
 
+export interface OrdenItem {
+  id:             number
+  code:           string
+  customer_name:  string
+  total_usd:      number
+  payment_status: string
+  kitchen_status: string
+  zone:           string
+  origin:         string
+  created_at:     string
+}
+
 export interface PartidoData {
-  meta:         PartidoMeta
-  resumen:      ResumenEjecutivo
+  meta:          PartidoMeta
+  resumen:       ResumenEjecutivo
   top_productos: TopProductos
-  por_venue:    VenueStats[]
-  anomalias:    Anomalias
-  timeline:     TimelineHour[]
-  peak_hour:    TimelineHour | null
+  por_venue:     VenueStats[]
+  anomalias:     Anomalias
+  timeline:      TimelineHour[]
+  peak_hour:     TimelineHour | null
+  ordenes:       OrdenItem[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -321,7 +334,23 @@ export async function GET(
       ? timeline.reduce((max, t) => t.count > max.count ? t : max)
       : null
 
-    // ── 9. Assemble ─────────────────────────────────────────────────────────
+    // ── 9. Ordenes list ─────────────────────────────────────────────────────
+
+    const ordenes: OrdenItem[] = [...orders]
+      .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+      .map((o) => ({
+        id:             o.id,
+        code:           o.code,
+        customer_name:  `${o.customer_name} ${o.customer_lastname}`,
+        total_usd:      Number(o.total_usd),
+        payment_status: o.payment_status,
+        kitchen_status: o.kitchen_status,
+        zone:           o.zone,
+        origin:         o.origin,
+        created_at:     o.created_at.toISOString(),
+      }))
+
+    // ── 10. Assemble ─────────────────────────────────────────────────────────
 
     const durationMs = (closedAt ?? new Date()).getTime() - openedAt.getTime()
 
@@ -342,6 +371,7 @@ export async function GET(
       anomalias: { canceladas, creditos, sin_venue },
       timeline,
       peak_hour,
+      ordenes,
     }
 
     return NextResponse.json({ success: true, partido: data })

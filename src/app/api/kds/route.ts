@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
 
       // Si la venue no tiene ninguna capability conocida → mostrar todo
       // (evitar que un venue mal configurado quede con lista vacía)
-      allowedCategories = cats.size > 0 ? [...cats] : null
+      allowedCategories = cats.size > 0 ? Array.from(cats) : null
     } else {
       // Sin venue → fallback por rol
       const fallback = ROLE_FALLBACK[userRole]

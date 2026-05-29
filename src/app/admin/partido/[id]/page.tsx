@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import * as Dialog from '@radix-ui/react-dialog'
 import { animate, motion } from 'framer-motion'
 import {
-  AlertCircle, AlertTriangle, ArrowLeft, BarChart2,
-  Banknote, Clock, CreditCard, Hash, MapPin,
-  ShoppingBag, Target, TrendingUp, Users, Zap,
+  AlertCircle, AlertTriangle, ArrowLeft, Ban, BarChart2,
+  Banknote, Clock, CreditCard, Hash, List, MapPin,
+  ShoppingBag, Target, TrendingUp, Users, X, Zap,
 } from 'lucide-react'
 import type {
-  PartidoData, TopProductoItem, VenueStats, AnomaliaOrden, TimelineHour,
+  PartidoData, TopProductoItem, VenueStats, AnomaliaOrden, TimelineHour, OrdenItem,
 } from '@/app/api/partido/[id]/route'
 import styles from './page.module.css'
 
@@ -62,16 +63,29 @@ const CAT_LABEL: Record<string, string> = {
   bebidas:      'Bebidas',
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  PEND:      'Pendiente',
+  PAID:      'Pagado',
+  CREDIT:    'Crédito',
+  CANCELLED: 'Anulado',
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PartidoDetailPage({ params }: { params: { id: string } }) {
-  const [data,    setData]    = useState<PartidoData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState<string | null>(null)
+  const [data,         setData]         = useState<PartidoData | null>(null)
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState<string | null>(null)
+  const [userRole,     setUserRole]     = useState<string | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<OrdenItem | null>(null)
+  const [reason,       setReason]       = useState('')
+  const [cancelling,   setCancelling]   = useState(false)
+  const [cancelError,  setCancelError]  = useState<string | null>(null)
 
-  useEffect(() => {
-    const ctrl = new AbortController()
-    fetch(`/api/partido/${params.id}`, { signal: ctrl.signal, cache: 'no-store' })
+  function loadData(signal?: AbortSignal) {
+    setLoading(true)
+    setError(null)
+    fetch(`/api/partido/${params.id}`, { signal, cache: 'no-store' })
       .then((r) => r.json())
       .then((d: { success: boolean; partido?: PartidoData; error?: string }) => {
         if (!d.success) throw new Error(d.error ?? 'Error al cargar partido')
@@ -82,8 +96,49 @@ export default function PartidoDetailPage({ params }: { params: { id: string } }
         setError(e instanceof Error ? e.message : 'Error de red')
       })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    const ctrl = new AbortController()
+    loadData(ctrl.signal)
     return () => ctrl.abort()
-  }, [params.id])
+  }, [params.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d: { success: boolean; user?: { role: string } }) => {
+        if (d.success && d.user) setUserRole(d.user.role)
+      })
+      .catch(() => {})
+  }, [])
+
+  async function handleCancel() {
+    if (!cancelTarget || reason.trim().length < 10) return
+    setCancelling(true)
+    setCancelError(null)
+    try {
+      const res  = await fetch(`/api/orders/${cancelTarget.id}/cancel`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ reason: reason.trim() }),
+      })
+      const json = await res.json() as { success: boolean; error?: string }
+      if (!json.success) {
+        setCancelError(json.error ?? 'Error al anular')
+        return
+      }
+      setCancelTarget(null)
+      setReason('')
+      loadData()
+    } catch {
+      setCancelError('Error de red')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  const canCancel = userRole === 'admin'
 
   return (
     <div className={styles.page}>
@@ -281,8 +336,102 @@ export default function PartidoDetailPage({ params }: { params: { id: string } }
             </h2>
             <TimelineChart timeline={data.timeline} peak={data.peak_hour} />
           </section>
+
+          {/* ─────────────────────────────────────────────────────────────── */}
+          {/* SECCIÓN 6 — ÓRDENES DEL PARTIDO                                 */}
+          {/* ─────────────────────────────────────────────────────────────── */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              <List size={13} aria-hidden />
+              Órdenes del partido
+              <span className={styles.sectionCount}>{data.ordenes.length}</span>
+            </h2>
+            <OrdersTable
+              ordenes={data.ordenes}
+              canCancel={canCancel}
+              onCancel={(o) => { setCancelTarget(o); setReason(''); setCancelError(null) }}
+            />
+          </section>
         </>
       )}
+
+      {/* ── Cancel Modal ────────────────────────────────────────────────────── */}
+      <Dialog.Root
+        open={cancelTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) { setCancelTarget(null); setReason(''); setCancelError(null) }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className={styles.overlay} />
+          <Dialog.Content className={styles.modal} aria-describedby={undefined}>
+
+            <div className={styles.modalHeader}>
+              <Dialog.Title className={styles.modalTitle}>
+                Anular {cancelTarget?.code}
+              </Dialog.Title>
+              <Dialog.Close className={styles.modalClose} aria-label="Cerrar">
+                <X size={16} aria-hidden />
+              </Dialog.Close>
+            </div>
+
+            <div className={styles.modalBody}>
+              {cancelTarget && (
+                <div className={styles.cancelInfo}>
+                  <span className={styles.cancelCustomer}>{cancelTarget.customer_name}</span>
+                  <span className={styles.cancelTotal}>REF {cancelTarget.total_usd.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className={styles.formField}>
+                <label htmlFor="cancelReason" className={styles.formLabel}>
+                  Motivo de anulación
+                </label>
+                <textarea
+                  id="cancelReason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Mínimo 10 caracteres"
+                  className={styles.formTextarea}
+                  rows={3}
+                  maxLength={500}
+                  autoFocus
+                />
+                <span className={`${styles.charCount} ${reason.trim().length < 10 ? styles.charCountWarn : ''}`}>
+                  {reason.length}/500
+                </span>
+              </div>
+
+              {cancelError && (
+                <div className={styles.cancelError} role="alert">
+                  <AlertCircle size={13} aria-hidden />
+                  {cancelError}
+                </div>
+              )}
+
+              <div className={styles.modalActions}>
+                <Dialog.Close className={styles.btnSecondary}>
+                  Cancelar
+                </Dialog.Close>
+                <button
+                  type="button"
+                  className={styles.btnDestructive}
+                  disabled={reason.trim().length < 10 || cancelling}
+                  onClick={handleCancel}
+                >
+                  {cancelling
+                    ? <span className={styles.spinnerSm} aria-hidden />
+                    : <Ban size={13} aria-hidden />
+                  }
+                  Confirmar anulación
+                </button>
+              </div>
+            </div>
+
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
     </div>
   )
 }
@@ -501,6 +650,79 @@ function TimelineChart({ timeline, peak }: { timeline: TimelineHour[]; peak: Tim
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// ── OrdersTable ───────────────────────────────────────────────────────────────
+
+const PAY_STATUS_CLASS: Record<string, string> = {
+  PEND:      'statusPEND',
+  PAID:      'statusPAID',
+  CREDIT:    'statusCREDIT',
+  CANCELLED: 'statusCANCELLED',
+}
+
+function OrdersTable({
+  ordenes,
+  canCancel,
+  onCancel,
+}: {
+  ordenes:   OrdenItem[]
+  canCancel: boolean
+  onCancel:  (o: OrdenItem) => void
+}) {
+  if (ordenes.length === 0) {
+    return <p className={styles.emptyAnomaly}>Sin órdenes registradas en este turno</p>
+  }
+
+  return (
+    <div className={styles.ordersTable} role="table" aria-label="Órdenes del partido">
+      <div className={`${styles.ordersHead} ${canCancel ? styles.ordersHeadAdmin : ''}`} role="row">
+        <span className={styles.thCell} role="columnheader">Código</span>
+        <span className={styles.thCell} role="columnheader">Cliente</span>
+        <span className={styles.thCell} role="columnheader">Zona</span>
+        <span className={styles.thCell} role="columnheader">Total</span>
+        <span className={styles.thCell} role="columnheader">Estado</span>
+        {canCancel && <span className={styles.thCell} role="columnheader" />}
+      </div>
+
+      {ordenes.map((o) => {
+        const isCancelled = o.payment_status === 'CANCELLED'
+        const statusKey   = PAY_STATUS_CLASS[o.payment_status] ?? 'statusPEND'
+        return (
+          <div
+            key={o.id}
+            className={`${styles.orderRow} ${isCancelled ? styles.orderRowDimmed : ''} ${canCancel ? styles.orderRowAdmin : ''}`}
+            role="row"
+          >
+            <span className={styles.orderCode} role="cell">{o.code}</span>
+            <span className={styles.orderCustomer} role="cell">{o.customer_name}</span>
+            <span className={styles.orderZone} role="cell">{o.zone}</span>
+            <span className={styles.orderTotal} role="cell">REF {o.total_usd.toFixed(2)}</span>
+            <span role="cell">
+              <span className={`${styles.statusBadge} ${styles[statusKey]}`}>
+                {STATUS_LABEL[o.payment_status] ?? o.payment_status}
+              </span>
+            </span>
+            {canCancel && (
+              <span role="cell" className={styles.orderActionCell}>
+                {!isCancelled && (
+                  <button
+                    type="button"
+                    className={styles.cancelRowBtn}
+                    onClick={() => onCancel(o)}
+                    aria-label={`Anular orden ${o.code}`}
+                  >
+                    <Ban size={11} aria-hidden />
+                    Anular
+                  </button>
+                )}
+              </span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
