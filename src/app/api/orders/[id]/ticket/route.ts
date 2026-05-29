@@ -87,6 +87,7 @@ export async function GET(
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ticket ${order.code}</title>
+<script>window.addEventListener('load', () => window.print())</script>
 <style>
   @page {
     margin: 0;
