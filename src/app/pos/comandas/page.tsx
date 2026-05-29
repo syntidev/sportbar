@@ -174,7 +174,7 @@ export default function ComandasPage() {
 
   async function handleEntregar(orderId: number) {
     if (!me) return
-    setDelivering((prev) => new Set([...prev, orderId]))
+    setDelivering((prev) => { const next = new Set(prev); next.add(orderId); return next })
     try {
       await fetch(`/api/orders/${orderId}/status`, {
         method:  'PATCH',
