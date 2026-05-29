@@ -374,3 +374,266 @@
   white-space: nowrap;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
+
+/* ── Ticket config grid ───────────────────────────────────────────────────── */
+
+.ticketGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .ticketGrid { grid-template-columns: 1fr; }
+}
+
+.ticketControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ticketSubsection {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ticketSubtitle {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+
+/* ── Toggle list ──────────────────────────────────────────────────────────── */
+
+.toggleList {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  min-height: 44px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.toggleRow:last-child { border-bottom: none; }
+
+.toggleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.toggleTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.toggleDesc {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* ── Switch ───────────────────────────────────────────────────────────────── */
+
+.switchWrap {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  position: relative;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.switchOn {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.switchKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.switchOn .switchKnob {
+  transform: translateX(18px);
+  background: #fff;
+}
+
+/* ── Ticket preview ───────────────────────────────────────────────────────── */
+
+.ticketPreviewWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  position: sticky;
+  top: var(--space-4);
+}
+
+.previewLabel {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+
+.ticketPreview {
+  background: #fff;
+  color: #111;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 12px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  max-height: 560px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pvCenter {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pvBizName {
+  font-weight: bold;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pvSmall {
+  font-size: 10px;
+  color: #555;
+}
+
+.pvSep {
+  border: none;
+  border-top: 1px dashed #bbb;
+  margin: 4px 0;
+}
+
+.pvCode {
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 0.1em;
+  margin: 3px 0;
+}
+
+.pvRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  gap: var(--space-2);
+}
+
+.pvMuted { color: #666; }
+
+.pvItemHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.pvItemRow {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 10.5px;
+}
+
+.pvQty {
+  color: #666;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.pvItemName {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pvItemPrice {
+  flex-shrink: 0;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.pvItemDesc {
+  font-size: 9.5px;
+  color: #666;
+  padding-left: 18px;
+  font-style: italic;
+}
+
+.pvItemBs {
+  font-size: 9.5px;
+  color: #666;
+  text-align: right;
+  padding-left: 18px;
+}
+
+.pvTotal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 12px;
+  margin: 3px 0;
+}
+
+.pvFooter {
+  font-size: 9.5px;
+  font-style: italic;
+  color: #666;
+}

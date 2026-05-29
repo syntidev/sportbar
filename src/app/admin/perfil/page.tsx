@@ -22,19 +22,53 @@ import styles from './page.module.css'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface BusinessProfile {
-  business_name:     string
-  business_subtitle: string
-  business_rif:      string
-  business_phone:    string
-  business_address:  string
-  business_city:     string
-  business_logo_url: string
-  ticket_footer:     string
-  ticket_show_bs:    string
-  ticket_width_mm:   string
-  event_name:        string
-  event_venue:       string
+  business_name:           string
+  business_subtitle:       string
+  business_rif:            string
+  business_phone:          string
+  business_address:        string
+  business_city:           string
+  business_logo_url:       string
+  ticket_footer:           string
+  ticket_show_bs:          string
+  ticket_show_description: string
+  ticket_show_ref:         string
+  ticket_show_address:     string
+  ticket_show_phone:       string
+  ticket_show_client:      string
+  ticket_show_rif:         string
+  ticket_show_cashier:     string
+  ticket_show_rate:        string
+  ticket_show_payment:     string
+  ticket_currency_symbol:  string
+  ticket_prefix:           string
+  ticket_width_mm:         string
+  event_name:              string
+  event_venue:             string
 }
+
+// ── Toggle definitions ────────────────────────────────────────────────────────
+
+const TICKET_TOGGLES: { key: keyof BusinessProfile; label: string; desc: string }[] = [
+  { key: 'ticket_show_description', label: 'Descripción del producto',  desc: 'Texto descriptivo debajo del nombre de cada ítem' },
+  { key: 'ticket_show_ref',         label: 'Monto en divisas',          desc: 'Subtotales y total en la moneda de referencia configurada' },
+  { key: 'ticket_show_bs',          label: 'Monto en Bolívares',        desc: 'Subtotales y total en Bs. según tasa del día' },
+  { key: 'ticket_show_rate',        label: 'Tasa BCV del día',          desc: 'Imprime la tasa de cambio usada en el ticket' },
+  { key: 'ticket_show_client',      label: 'Datos del cliente',         desc: 'Nombre y cédula del cliente que ordenó' },
+  { key: 'ticket_show_cashier',     label: 'Cajero / Mesero',           desc: 'Nombre del mesero que tomó la orden' },
+  { key: 'ticket_show_payment',     label: 'Método de pago',            desc: 'Pago Móvil, Zelle, Efectivo, Tarjeta…' },
+  { key: 'ticket_show_rif',         label: 'RIF del negocio',           desc: 'RIF fiscal en la cabecera del ticket' },
+  { key: 'ticket_show_address',     label: 'Dirección del negocio',     desc: 'Dirección en la cabecera del ticket' },
+  { key: 'ticket_show_phone',       label: 'Teléfono del negocio',      desc: 'Teléfono en la cabecera del ticket' },
+]
+
+const TICKET_SAVE_KEYS: (keyof BusinessProfile)[] = [
+  'ticket_show_description', 'ticket_show_bs', 'ticket_show_ref',
+  'ticket_show_address', 'ticket_show_phone', 'ticket_show_client',
+  'ticket_show_rif', 'ticket_show_cashier', 'ticket_show_rate',
+  'ticket_show_payment', 'ticket_currency_symbol', 'ticket_prefix',
+  'ticket_width_mm', 'ticket_footer',
+]
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -44,18 +78,29 @@ export default function PerfilPage() {
   const [toast,    setToast]    = useState<string | null>(null)
   const [error,    setError]    = useState<string | null>(null)
   const [profile,  setProfile]  = useState<BusinessProfile>({
-    business_name:     'Sport Bar',
-    business_subtitle: 'Guaiqueríes de Margarita',
-    business_rif:      '',
-    business_phone:    '',
-    business_address:  '',
-    business_city:     'Margarita, Venezuela',
-    business_logo_url: '',
-    ticket_footer:     'Gracias por su visita',
-    ticket_show_bs:    'true',
-    ticket_width_mm:   '58',
-    event_name:        '',
-    event_venue:       '',
+    business_name:           'Sport Bar',
+    business_subtitle:       'Guaiqueríes de Margarita',
+    business_rif:            '',
+    business_phone:          '',
+    business_address:        '',
+    business_city:           'Margarita, Venezuela',
+    business_logo_url:       '',
+    ticket_footer:           'Gracias por su visita',
+    ticket_show_bs:          'true',
+    ticket_show_description: 'false',
+    ticket_show_ref:         'true',
+    ticket_show_address:     'false',
+    ticket_show_phone:       'false',
+    ticket_show_client:      'true',
+    ticket_show_rif:         'false',
+    ticket_show_cashier:     'true',
+    ticket_show_rate:        'false',
+    ticket_show_payment:     'true',
+    ticket_currency_symbol:  'REF',
+    ticket_prefix:           'LOC',
+    ticket_width_mm:         '58',
+    event_name:              '',
+    event_venue:             '',
   })
 
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -83,6 +128,12 @@ export default function PerfilPage() {
   function set(key: keyof BusinessProfile, value: string) {
     setProfile((p) => ({ ...p, [key]: value }))
   }
+
+  function toggleBool(key: keyof BusinessProfile) {
+    setProfile((p) => ({ ...p, [key]: p[key] === 'true' ? 'false' : 'true' }))
+  }
+
+  const on = (key: keyof BusinessProfile) => profile[key] === 'true'
 
   // ── Save section ──────────────────────────────────────────────────────────
 
@@ -115,12 +166,15 @@ export default function PerfilPage() {
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    // En producción: upload a /api/products/[id]/upload o similar
-    // Por ahora genera preview local y avisa al usuario
     const url = URL.createObjectURL(file)
     set('business_logo_url', url)
     showToast('Logo cargado localmente — guarda para confirmar')
   }
+
+  // ── Derived preview values ─────────────────────────────────────────────────
+
+  const sym = profile.ticket_currency_symbol || 'REF'
+  const pfx = profile.ticket_prefix || 'LOC'
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -336,65 +390,229 @@ export default function PerfilPage() {
             Configuración de ticket
           </div>
         </div>
-        <div className={styles.card}>
 
-          <div className={styles.fieldGroup}>
-            <label className={styles.label} htmlFor="ticket-footer">
-              <FileText size={12} aria-hidden />
-              Pie del ticket
-            </label>
-            <input
-              id="ticket-footer"
-              className={styles.input}
-              value={profile.ticket_footer}
-              onChange={(e) => set('ticket_footer', e.target.value)}
-              placeholder="Gracias por su visita"
-            />
-          </div>
+        <div className={styles.ticketGrid}>
 
-          <div className={styles.fieldRow}>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Ancho del ticket</label>
-              <div className={styles.pillGroup}>
-                {(['58', '80'] as const).map((w) => (
-                  <button
-                    key={w}
-                    type="button"
-                    className={`${styles.pill} ${profile.ticket_width_mm === w ? styles.pillActive : ''}`}
-                    onClick={() => set('ticket_width_mm', w)}
-                  >
-                    {w} mm
-                  </button>
+          {/* ── LEFT: Controls ── */}
+          <div className={styles.ticketControls}>
+
+            {/* Toggles */}
+            <div className={styles.ticketSubsection}>
+              <span className={styles.ticketSubtitle}>Elementos visibles</span>
+              <div className={styles.toggleList}>
+                {TICKET_TOGGLES.map(({ key, label, desc }) => (
+                  <div key={key} className={styles.toggleRow}>
+                    <div className={styles.toggleInfo}>
+                      <span className={styles.toggleTitle}>{label}</span>
+                      <span className={styles.toggleDesc}>{desc}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.switchWrap}
+                      onClick={() => toggleBool(key)}
+                      aria-pressed={on(key)}
+                      aria-label={label}
+                    >
+                      <div className={`${styles.switch} ${on(key) ? styles.switchOn : ''}`}>
+                        <div className={styles.switchKnob} />
+                      </div>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Mostrar total en Bs.</label>
-              <button
-                type="button"
-                className={styles.toggleWrap}
-                onClick={() => set('ticket_show_bs', profile.ticket_show_bs === 'true' ? 'false' : 'true')}
-                aria-pressed={profile.ticket_show_bs === 'true'}
-              >
-                <div className={`${styles.toggle} ${profile.ticket_show_bs === 'true' ? styles.on : ''}`}>
-                  <div className={styles.toggleKnob} />
+
+            {/* Formato */}
+            <div className={styles.ticketSubsection}>
+              <span className={styles.ticketSubtitle}>Formato</span>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Símbolo de moneda</label>
+                <div className={styles.pillGroup}>
+                  {(['REF', '$', 'Bs.'] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`${styles.pill} ${profile.ticket_currency_symbol === s ? styles.pillActive : ''}`}
+                      onClick={() => set('ticket_currency_symbol', s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
-                <span className={styles.toggleLabel}>
-                  {profile.ticket_show_bs === 'true' ? 'Activado' : 'Desactivado'}
+              </div>
+
+              <div className={styles.fieldRow}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label} htmlFor="ticket-prefix">Prefijo del ticket</label>
+                  <input
+                    id="ticket-prefix"
+                    className={styles.input}
+                    value={profile.ticket_prefix}
+                    onChange={(e) => set('ticket_prefix', e.target.value.toUpperCase().slice(0, 6))}
+                    placeholder="LOC"
+                    maxLength={6}
+                  />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Ancho</label>
+                  <div className={styles.pillGroup}>
+                    {(['58', '80'] as const).map((w) => (
+                      <button
+                        key={w}
+                        type="button"
+                        className={`${styles.pill} ${profile.ticket_width_mm === w ? styles.pillActive : ''}`}
+                        onClick={() => set('ticket_width_mm', w)}
+                      >
+                        {w} mm
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label} htmlFor="ticket-footer">
+                  <FileText size={12} aria-hidden />
+                  Pie del ticket
+                </label>
+                <input
+                  id="ticket-footer"
+                  className={styles.input}
+                  value={profile.ticket_footer}
+                  onChange={(e) => set('ticket_footer', e.target.value)}
+                  placeholder="Gracias por su visita"
+                />
+              </div>
+            </div>
+
+            <button
+              className={styles.btnSave}
+              onClick={() => saveSection(TICKET_SAVE_KEYS)}
+              disabled={saving}
+            >
+              <Save size={14} aria-hidden />
+              {saving ? 'Guardando…' : 'Guardar configuración de ticket'}
+            </button>
+          </div>
+
+          {/* ── RIGHT: Preview ── */}
+          <div className={styles.ticketPreviewWrap}>
+            <span className={styles.previewLabel}>Vista previa</span>
+            <div className={styles.ticketPreview} aria-label="Vista previa del ticket">
+
+              <div className={styles.pvCenter}>
+                <div className={styles.pvBizName}>{profile.business_name || 'Sport Bar'}</div>
+                {profile.business_subtitle && (
+                  <div className={styles.pvSmall}>{profile.business_subtitle}</div>
+                )}
+                {on('ticket_show_rif') && profile.business_rif && (
+                  <div className={styles.pvSmall}>RIF: {profile.business_rif}</div>
+                )}
+                {on('ticket_show_address') && profile.business_address && (
+                  <div className={styles.pvSmall}>{profile.business_address}</div>
+                )}
+                {on('ticket_show_phone') && profile.business_phone && (
+                  <div className={styles.pvSmall}>Tel: {profile.business_phone}</div>
+                )}
+              </div>
+
+              <div className={styles.pvSep} />
+              <div className={styles.pvCode}>{pfx}-001</div>
+
+              <div className={styles.pvRow}>
+                <span className={styles.pvMuted}>Fecha:</span>
+                <span>01/06/2025 20:00</span>
+              </div>
+              {on('ticket_show_client') && (
+                <div className={styles.pvRow}>
+                  <span className={styles.pvMuted}>Cliente:</span>
+                  <span>Juan Pérez CI 7654321</span>
+                </div>
+              )}
+              {on('ticket_show_cashier') && (
+                <div className={styles.pvRow}>
+                  <span className={styles.pvMuted}>Atendido:</span>
+                  <span>María G.</span>
+                </div>
+              )}
+              {on('ticket_show_rate') && (
+                <div className={styles.pvRow}>
+                  <span className={styles.pvMuted}>Tasa BCV:</span>
+                  <span>42.50 Bs./USD</span>
+                </div>
+              )}
+
+              <div className={styles.pvSep} />
+
+              <div className={styles.pvItemHeader}>
+                <span>DESCRIPCIÓN</span>
+                {on('ticket_show_ref') && <span>TOTAL</span>}
+              </div>
+
+              {/* Item 1 */}
+              <div className={styles.pvItemRow}>
+                <span className={styles.pvQty}>2x</span>
+                <span className={styles.pvItemName}>Hamburguesa Clásica</span>
+                {on('ticket_show_ref') && (
+                  <span className={styles.pvItemPrice}>{sym} 8.00</span>
+                )}
+              </div>
+              {on('ticket_show_description') && (
+                <div className={styles.pvItemDesc}>Con papas y refresco incluido</div>
+              )}
+              {on('ticket_show_bs') && (
+                <div className={styles.pvItemBs}>Bs. 340.00</div>
+              )}
+
+              {/* Item 2 */}
+              <div className={styles.pvItemRow}>
+                <span className={styles.pvQty}>1x</span>
+                <span className={styles.pvItemName}>Malta</span>
+                {on('ticket_show_ref') && (
+                  <span className={styles.pvItemPrice}>{sym} 2.00</span>
+                )}
+              </div>
+              {on('ticket_show_description') && (
+                <div className={styles.pvItemDesc}>Fría, 355ml</div>
+              )}
+              {on('ticket_show_bs') && (
+                <div className={styles.pvItemBs}>Bs. 85.00</div>
+              )}
+
+              <div className={styles.pvSep} />
+
+              <div className={styles.pvTotal}>
+                <span>TOTAL</span>
+                {on('ticket_show_ref') && <span>{sym} 10.00</span>}
+              </div>
+              {on('ticket_show_bs') && (
+                <div className={styles.pvRow}>
+                  <span className={styles.pvMuted}>En Bolívares:</span>
+                  <span>Bs. 425.00</span>
+                </div>
+              )}
+
+              {on('ticket_show_payment') && (
+                <>
+                  <div className={styles.pvSep} />
+                  <div className={styles.pvCenter}>
+                    <span className={styles.pvSmall}>Pago: Pago Móvil</span>
+                  </div>
+                </>
+              )}
+
+              <div className={styles.pvSep} />
+              <div className={styles.pvCenter}>
+                <span className={styles.pvFooter}>
+                  {profile.ticket_footer || 'Gracias por su visita'}
                 </span>
-              </button>
+              </div>
+
             </div>
           </div>
 
         </div>
-        <button
-          className={styles.btnSave}
-          onClick={() => saveSection(['ticket_footer', 'ticket_show_bs', 'ticket_width_mm'])}
-          disabled={saving}
-        >
-          <Save size={14} aria-hidden />
-          {saving ? 'Guardando…' : 'Guardar configuración de ticket'}
-        </button>
       </section>
 
       {/* ── 4. Información del evento ── */}
