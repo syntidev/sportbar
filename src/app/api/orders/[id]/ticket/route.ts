@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { BUSINESS_KEYS } from '@/app/api/config/business/route'
+import { BUSINESS_KEYS } from '@/lib/business-config'
 
 // ── Defaults inline (mirror de DEFAULTS en business/route.ts) ────────────────
 
