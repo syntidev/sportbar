@@ -1,15 +1,18 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
+  ArrowRight,
   Banknote,
   Camera,
   CheckCircle2,
   ChevronRight,
   CreditCard,
+  Printer,
   RefreshCw,
   X,
   XCircle,
@@ -91,6 +94,8 @@ async function fetchMe(): Promise<SessionUser | null> {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CobrarPage() {
+  const router = useRouter()
+
   const [orders,     setOrders]     = useState<PayOrder[]>([])
   const [loading,    setLoading]    = useState(true)
   const [listError,  setListError]  = useState<string | null>(null)
@@ -107,6 +112,8 @@ export default function CobrarPage() {
   const [submitting, setSubmitting] = useState(false)
   const [modalError, setModalError] = useState<string | null>(null)
   const [success,    setSuccess]    = useState<string | null>(null)
+  const [countdown,  setCountdown]  = useState<number | null>(null)
+  const [showTicket, setShowTicket] = useState(false)
 
   const pollRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const photoRef = useRef<HTMLInputElement>(null)
@@ -131,6 +138,13 @@ export default function CobrarPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [poll])
 
+  useEffect(() => {
+    if (countdown === null) return
+    if (countdown === 0) { router.push('/'); return }
+    const t = setTimeout(() => setCountdown((c) => (c !== null ? c - 1 : null)), 1000)
+    return () => clearTimeout(t)
+  }, [countdown, router])
+
   function openModal(order: PayOrder, m: ModalMode) {
     setSelected(order)
     setMode(m)
@@ -144,6 +158,8 @@ export default function CobrarPage() {
 
   function closeModal() {
     if (submitting) return
+    setCountdown(null)
+    setShowTicket(false)
     setSelected(null)
   }
 
@@ -183,8 +199,9 @@ export default function CobrarPage() {
         mode === 'fiar'   ? 'Crédito registrado' :
                             'Orden anulada',
       )
+      setShowTicket(false)
+      setCountdown(5)
       await poll()
-      setTimeout(closeModal, 1100)
     } catch (e: unknown) {
       setModalError(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
@@ -490,9 +507,9 @@ export default function CobrarPage() {
                   >
                     <p className={styles.successMsg}>
                       <CheckCircle2 size={14} aria-hidden />
-                      {success}
+                      {success} · {selected?.code}
                     </p>
-                    {mode === 'cobrar' && selected && (
+                    {showTicket && mode === 'cobrar' && selected && (
                       <TicketPrint orderId={selected.id} paymentStatus="PAID" />
                     )}
                   </motion.div>
@@ -501,31 +518,54 @@ export default function CobrarPage() {
 
               {/* ── Modal footer ── */}
               <div className={styles.modalFooter}>
-                <button
-                  type="button"
-                  className={styles.cancelBtn}
-                  onClick={closeModal}
-                  disabled={submitting}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.confirmBtn} ${
-                    mode === 'anular' ? styles.confirmAnular :
-                    mode === 'fiar'   ? styles.confirmFiar   : ''
-                  }`}
-                  onClick={handleConfirm}
-                  disabled={confirmDisabled}
-                >
-                  {submitting
-                    ? <span className={styles.spinnerSm} aria-hidden />
-                    : <ChevronRight size={16} aria-hidden />
-                  }
-                  {mode === 'cobrar' ? 'Confirmar Pago' :
-                   mode === 'fiar'   ? 'Confirmar Crédito' :
-                                       'Anular Orden'}
-                </button>
+                {success ? (
+                  <div className={styles.successActions}>
+                    <button
+                      type="button"
+                      className={styles.btnImprimir}
+                      onClick={() => { setShowTicket(true); setCountdown(null) }}
+                    >
+                      <Printer size={16} aria-hidden />
+                      Imprimir ticket
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnSiguiente}
+                      onClick={() => router.push('/')}
+                    >
+                      {countdown !== null ? `Siguiente en ${countdown}…` : 'Siguiente'}
+                      <ArrowRight size={16} aria-hidden />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.cancelBtn}
+                      onClick={closeModal}
+                      disabled={submitting}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.confirmBtn} ${
+                        mode === 'anular' ? styles.confirmAnular :
+                        mode === 'fiar'   ? styles.confirmFiar   : ''
+                      }`}
+                      onClick={handleConfirm}
+                      disabled={confirmDisabled}
+                    >
+                      {submitting
+                        ? <span className={styles.spinnerSm} aria-hidden />
+                        : <ChevronRight size={16} aria-hidden />
+                      }
+                      {mode === 'cobrar' ? 'Confirmar Pago' :
+                       mode === 'fiar'   ? 'Confirmar Crédito' :
+                                           'Anular Orden'}
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           </>
