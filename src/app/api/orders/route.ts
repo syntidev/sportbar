@@ -6,9 +6,9 @@ import { generateTicketCode } from '@/lib/ticket'
 import type { KitchenStatus, Zone } from '@/types'
 
 const OrderItemSchema = z.object({
-  product_id: z.number().int().positive(),
-  qty: z.number().int().min(1),
-  price_usd: z.number().positive(),
+  product_id: z.coerce.number().int().positive(),
+  qty:        z.coerce.number().int().min(1),
+  price_usd:  z.coerce.number().positive(),
 })
 
 const CreateOrderSchema = z.object({
@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    console.log('ORDER BODY:', JSON.stringify(body, null, 2))
     const result = CreateOrderSchema.safeParse(body)
 
     if (!result.success) {

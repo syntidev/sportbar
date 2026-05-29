@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080a08">
+<title>Sport Bar · Guaiqueríes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a08;
+  --surface: #0f120f;
+  --surface2: #161a16;
+  --surface3: #1e241e;
+  --primary: #2E7D32;
+  --primary-light: #4CAF50;
+  --accent: #F5A623;
+  --accent-dark: #c47d00;
+  --red: #C62828;
+  --text: #f0f5f0;
+  --muted: rgba(240,245,240,0.5);
+  --subtle: rgba(240,245,240,0.25);
+  --border: rgba(46,125,50,0.2);
+  --glow: rgba(46,125,50,0.15);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100dvh;
+  max-width:480px;
+  margin:0 auto;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ── HERO ── */
+.hero{
+  position:relative;
+  height:260px;
+  overflow:hidden;
+}
+.hero-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  filter:brightness(0.55);
+}
+.hero-bg{
+  width:100%;
+  height:100%;
+  background: linear-gradient(135deg, #0f2010 0%, #1a3010 40%, #0a1a0a 100%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:80px;
+  filter:none;
+}
+.hero-overlay{
+  position:absolute;
+  inset:0;
+  background: linear-gradient(to bottom, transparent 30%, var(--bg) 100%);
+}
+.hero-content{
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  right:20px;
+}
+.hero-logo{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:var(--surface2);
+  border:2px solid var(--accent);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  margin-bottom:10px;
+  box-shadow: 0 0 20px rgba(245,166,35,0.3);
+}
+.hero-name{
+  font-family:var(--font-display);
+  font-size:28px;
+  letter-spacing:.06em;
+  line-height:1;
+}
+.hero-sub{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:500;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-top:3px;
+}
+.hero-status{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  background:rgba(34,197,94,.12);
+  border:1px solid rgba(34,197,94,.25);
+  border-radius:20px;
+  padding:3px 10px;
+  font-size:10px;
+  font-weight:700;
+  color:#4ade80;
+  margin-top:6px;
+  letter-spacing:.06em;
+}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#4ade80;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.5)}}
+
+/* ── STICKY NAV ── */
+.cat-nav{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+}
+.cat-tabs{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{
+  flex-shrink:0;
+  padding:7px 16px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+  font-family:var(--font-body);
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+.cat-tab.active{
+  background:var(--primary);
+  border-color:var(--primary);
+  color:#fff;
+  box-shadow: 0 0 12px rgba(46,125,50,.4);
+}
+.cat-tab:active{transform:scale(.95)}
+
+/* ── CONTENT ── */
+.content{padding:0 16px 100px}
+
+/* ── FEATURED SECTION ── */
+.section-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:20px 0 12px;
+}
+.section-icon{
+  width:28px;height:28px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+}
+.section-title{
+  font-family:var(--font-display);
+  font-size:22px;
+  letter-spacing:.04em;
+}
+.section-count{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:700;
+  margin-left:auto;
+}
+
+/* ── FEATURED CARDS (horizontal scroll) ── */
+.featured-scroll{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  padding-bottom:4px;
+  margin:0 -16px;
+  padding:0 16px 4px;
+}
+.featured-scroll::-webkit-scrollbar{display:none}
+
+.featured-card{
+  flex-shrink:0;
+  width:200px;
+  background:var(--surface);
+  border-radius:var(--r-xl);
+  border:1px solid var(--border);
+  overflow:visible;
+  position:relative;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .2s, box-shadow .2s;
+}
+.featured-card:active{transform:scale(.97)}
+.featured-card.hot{
+  border-color:var(--accent);
+  box-shadow: 0 0 20px rgba(245,166,35,.15);
+}
+
+/* La imagen que "flota" */
+.featured-img-wrap{
+  height:130px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding-bottom:0;
+  position:relative;
+  overflow:visible;
+}
+.featured-img{
+  width:160px;
+  height:160px;
+  object-fit:cover;
+  border-radius:50%;
+  position:absolute;
+  top:-30px;
+  left:50%;
+  transform:translateX(-50%);
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.featured-card.hot .featured-img{
+  animation: float-img 3s ease-in-out infinite;
+}
+@keyframes float-img{
+  0%,100%{transform:translateX(-50%) translateY(0) rotate(-1deg)}
+  50%{transform:translateX(-50%) translateY(-8px) rotate(1deg)}
+}
+.featured-card:hover .featured-img{
+  transform:translateX(-50%) translateY(-6px) scale(1.05);
+}
+
+/* Emoji como placeholder de foto */
+.featured-emoji{
+  width:160px;
+  height:160px;
+  border-radius:50%;
+  background:var(--surface2);
+  position:absolute;
+  top:-30px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:64px;
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.featured-card.hot .featured-emoji{
+  animation: float-img 3s ease-in-out infinite;
+}
+
+.featured-body{
+  padding:90px 14px 14px;
+  text-align:center;
+}
+.featured-badge-row{
+  display:flex;
+  gap:5px;
+  justify-content:center;
+  margin-bottom:6px;
+  flex-wrap:wrap;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:3px 8px;
+  border-radius:20px;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.badge-hot{background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.3)}
+.badge-new{background:rgba(46,125,50,.15);color:var(--primary-light);border:1px solid rgba(46,125,50,.3)}
+.badge-pop{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+
+.featured-name{
+  font-family:var(--font-display);
+  font-size:20px;
+  letter-spacing:.04em;
+  line-height:1.1;
+  margin-bottom:4px;
+}
+.featured-desc{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.5;
+  margin-bottom:10px;
+}
+.featured-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.featured-price{
+  font-family:var(--font-display);
+  font-size:22px;
+  color:var(--accent);
+  letter-spacing:.04em;
+}
+.featured-price span{
+  font-family:var(--font-body);
+  font-size:10px;
+  color:var(--muted);
+  font-weight:700;
+  display:block;
+  margin-top:-2px;
+}
+.btn-add{
+  width:36px;height:36px;
+  border-radius:50%;
+  background:var(--primary);
+  border:none;
+  color:#fff;
+  font-size:20px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow: 0 4px 12px rgba(46,125,50,.4);
+}
+.btn-add:active{transform:scale(.88);filter:brightness(.9)}
+.btn-add.added{
+  background:var(--accent);
+  animation:pop-add .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop-add{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* ── LIST CARDS ── */
+.list-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--surface);
+  border-radius:var(--r-lg);
+  border:1px solid var(--border);
+  padding:10px;
+  margin-bottom:10px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.list-card::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:var(--primary);
+  opacity:0;
+  transition:opacity .2s;
+}
+.list-card:active{transform:scale(.985)}
+.list-card.selected::before{opacity:1}
+.list-card.selected{border-color:rgba(46,125,50,.4);background:rgba(46,125,50,.05)}
+
+.list-img{
+  width:72px;height:72px;
+  border-radius:var(--r-md);
+  object-fit:cover;
+  flex-shrink:0;
+  background:var(--surface2);
+}
+.list-emoji{
+  width:72px;height:72px;
+  border-radius:var(--r-md);
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  flex-shrink:0;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.list-card:active .list-emoji{transform:scale(.92) rotate(-5deg)}
+
+.list-info{flex:1;min-width:0}
+.list-name{
+  font-weight:700;
+  font-size:14px;
+  margin-bottom:2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.list-desc{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:6px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  line-height:1.4;
+}
+.list-footer{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.list-price{
+  font-family:var(--font-display);
+  font-size:18px;
+  color:var(--accent);
+  letter-spacing:.04em;
+}
+.list-price-bs{
+  font-size:10px;
+  color:var(--muted);
+  font-weight:600;
+}
+.list-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
+  flex-shrink:0;
+}
+
+/* qty control */
+.qty-control{
+  display:flex;
+  align-items:center;
+  gap:0;
+  background:var(--surface2);
+  border-radius:20px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.qty-btn{
+  width:30px;height:30px;
+  border:none;
+  background:transparent;
+  color:var(--text);
+  font-size:16px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .15s;
+}
+.qty-btn:active{background:rgba(255,255,255,.06)}
+.qty-num{
+  min-width:24px;
+  text-align:center;
+  font-size:13px;
+  font-weight:800;
+  color:var(--text);
+}
+
+/* ── FLOATING CART ── */
+.cart-bar{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);
+  max-width:448px;
+  background: linear-gradient(135deg, var(--primary) 0%, #1b5e20 100%);
+  border-radius:var(--r-xl);
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+  box-shadow: 0 8px 32px rgba(46,125,50,.4), 0 2px 8px rgba(0,0,0,.4);
+  -webkit-tap-highlight-color:transparent;
+  transition:all .2s;
+  z-index:200;
+  opacity:0;
+  pointer-events:none;
+  transform:translateX(-50%) translateY(20px);
+}
+.cart-bar.visible{
+  opacity:1;
+  pointer-events:all;
+  transform:translateX(-50%) translateY(0);
+}
+.cart-bar:active{transform:translateX(-50%) scale(.98)}
+.cart-badge{
+  background:var(--accent);
+  color:#000;
+  width:26px;height:26px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+  font-weight:900;
+}
+.cart-text{
+  font-weight:700;
+  font-size:14px;
+  flex:1;
+  text-align:center;
+}
+.cart-total{
+  font-family:var(--font-display);
+  font-size:18px;
+  letter-spacing:.04em;
+}
+
+/* ── HEATMAP INDICATOR ── */
+.heat-ring{
+  position:absolute;
+  top:-4px;right:-4px;
+  width:12px;height:12px;
+  border-radius:50%;
+  background:var(--red);
+  border:2px solid var(--bg);
+  animation:heat-pulse 1.5s ease-in-out infinite;
+}
+@keyframes heat-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.6)}
+  50%{box-shadow:0 0 0 6px rgba(198,40,40,0)}
+}
+
+/* ── DEMAND INDICATOR (heatmap visual) ── */
+.demand-bar{
+  height:3px;
+  border-radius:2px;
+  margin-top:6px;
+  background:var(--surface3);
+  overflow:hidden;
+}
+.demand-fill{
+  height:100%;
+  border-radius:2px;
+  transition:width .5s ease;
+}
+.demand-high .demand-fill{background:var(--red);width:90%}
+.demand-med .demand-fill{background:var(--accent);width:55%}
+.demand-low .demand-fill{background:var(--primary);width:25%}
+
+/* ── SECTION ANCHOR ── */
+.cat-section{scroll-margin-top:60px}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%) translateY(-80px);
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:10px 16px;
+  font-size:13px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  z-index:999;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── ENTRADA ANIMADA ── */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.featured-card{animation:fadeUp .4s ease both}
+.featured-card:nth-child(1){animation-delay:.05s}
+.featured-card:nth-child(2){animation-delay:.1s}
+.featured-card:nth-child(3){animation-delay:.15s}
+.list-card{animation:fadeUp .3s ease both}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg">🏀</div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-logo">🏀</div>
+    <div class="hero-name">Sport Bar</div>
+    <div class="hero-sub">Guaiqueríes · Gimnasio Ciudad de La Asunción</div>
+    <div class="hero-status"><span class="status-dot"></span>PARTIDO EN CURSO · 2do Cuarto</div>
+  </div>
+</div>
+
+<!-- STICKY CATEGORIES -->
+<nav class="cat-nav">
+  <div class="cat-tabs" id="catTabs">
+    <button class="cat-tab active" onclick="scrollTo('destacados',this)">⭐ Destacados</button>
+    <button class="cat-tab" onclick="scrollTo('hamburguesas',this)">🍔 Hamburguesas</button>
+    <button class="cat-tab" onclick="scrollTo('raciones',this)">🍟 Raciones</button>
+    <button class="cat-tab" onclick="scrollTo('bebidas',this)">🍺 Bebidas</button>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- DESTACADOS -->
+  <div class="cat-section" id="destacados">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(245,166,35,.12)">⭐</div>
+      <div class="section-title">LO MÁS PEDIDO</div>
+      <div class="section-count">4 items</div>
+    </div>
+    <div class="featured-scroll">
+
+      <!-- CARD 1 — HOT -->
+      <div class="featured-card hot" onclick="addItem('La Clásica',7)">
+        <div class="featured-img-wrap">
+          <div class="featured-emoji">🍔</div>
+          <div class="heat-ring"></div>
+        </div>
+        <div class="featured-body">
+          <div class="featured-badge-row">
+            <span class="badge badge-hot">🔥 Más pedido</span>
+          </div>
+          <div class="featured-name">La Clásica</div>
+          <div class="featured-desc">120g carne, queso, tocineta, rúcula, salsa secreta</div>
+          <div class="demand-bar demand-high"><div class="demand-fill"></div></div>
+          <div class="featured-footer" style="margin-top:10px">
+            <div class="featured-price">
+              REF 7.00
+              <span>Bs. 350,00</span>
+            </div>
+            <button class="btn-add" onclick="event.stopPropagation();addItem('La Clásica',7,this)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="featured-card" onclick="addItem('Tequeños',5)">
+        <div class="featured-img-wrap">
+          <div class="featured-emoji" style="animation:float-img 4s ease-in-out infinite">🧀</div>
+        </div>
+        <div class="featured-body">
+          <div class="featured-badge-row">
+            <span class="badge badge-new">✨ Nuevo</span>
+          </div>
+          <div class="featured-name">Tequeños</div>
+          <div class="featured-desc">Recién fritos, queso derretido</div>
+          <div class="demand-bar demand-med"><div class="demand-fill"></div></div>
+          <div class="featured-footer" style="margin-top:10px">
+            <div class="featured-price">
+              REF 5.00
+              <span>Bs. 250,00</span>
+            </div>
+            <button class="btn-add" onclick="event.stopPropagation();addItem('Tequeños',5,this)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="featured-card" onclick="addItem('Polar Light',1.25)">
+        <div class="featured-img-wrap">
+          <div class="featured-emoji">🍺</div>
+        </div>
+        <div class="featured-body">
+          <div class="featured-badge-row">
+            <span class="badge badge-pop">❄️ La más fría</span>
+          </div>
+          <div class="featured-name">Cerveza</div>
+          <div class="featured-desc">Polar Light · 330ml bien fría</div>
+          <div class="demand-bar demand-high"><div class="demand-fill"></div></div>
+          <div class="featured-footer" style="margin-top:10px">
+            <div class="featured-price">
+              REF 1.25
+              <span>Bs. 62,50</span>
+            </div>
+            <button class="btn-add" onclick="event.stopPropagation();addItem('Polar Light',1.25,this)">+</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HAMBURGUESAS -->
+  <div class="cat-section" id="hamburguesas">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(245,166,35,.12)">🍔</div>
+      <div class="section-title">HAMBURGUESAS</div>
+      <div class="section-count">4 items</div>
+    </div>
+
+    <div class="list-card" onclick="addItem('La Clásica',7)">
+      <div class="list-emoji">🍔</div>
+      <div class="list-info">
+        <div class="list-name">La Clásica</div>
+        <div class="list-desc">120g carne, queso, tocineta, rúcula, tomate, salsa</div>
+        <div class="list-footer">
+          <div class="list-price">REF 7.00</div>
+          <div class="list-price-bs">Bs. 350,00</div>
+          <span class="badge badge-hot" style="margin-left:4px">🔥 TOP</span>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('La Clásica',7,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Pollo Crispy',7)">
+      <div class="list-emoji">🍗</div>
+      <div class="list-info">
+        <div class="list-name">Pollo Crispy</div>
+        <div class="list-desc">60g pollo, queso, tocineta, rúcula, salsa</div>
+        <div class="list-footer">
+          <div class="list-price">REF 7.00</div>
+          <div class="list-price-bs">Bs. 350,00</div>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Pollo Crispy',7,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('La Mini',3)">
+      <div class="list-emoji">🍔</div>
+      <div class="list-info">
+        <div class="list-name">La Mini</div>
+        <div class="list-desc">80g carne, queso, tocineta y salsa</div>
+        <div class="list-footer">
+          <div class="list-price">REF 3.00</div>
+          <div class="list-price-bs">Bs. 150,00</div>
+          <span class="badge badge-new" style="margin-left:4px">✨ Ideal</span>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('La Mini',3,this)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACIONES -->
+  <div class="cat-section" id="raciones">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(46,125,50,.12)">🍟</div>
+      <div class="section-title">RACIONES</div>
+      <div class="section-count">5 items</div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Papas Fritas',3.5)">
+      <div class="list-emoji">🍟</div>
+      <div class="list-info">
+        <div class="list-name">Papas Fritas</div>
+        <div class="list-desc">Porción estándar, crujientes</div>
+        <div class="list-footer">
+          <div class="list-price">REF 3.50</div>
+          <div class="list-price-bs">Bs. 175,00</div>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Papas Fritas',3.5,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Papas con Queso y Tocineta',7)">
+      <div class="list-emoji">🧀</div>
+      <div class="list-info">
+        <div class="list-name">Papas con Queso</div>
+        <div class="list-desc">Papas fritas con queso fundido y tocineta crocante</div>
+        <div class="list-footer">
+          <div class="list-price">REF 7.00</div>
+          <div class="list-price-bs">Bs. 350,00</div>
+          <span class="badge badge-hot" style="margin-left:4px">🔥 Popular</span>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Papas con Queso',7,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Tequeños',5)">
+      <div class="list-emoji">🧀</div>
+      <div class="list-info">
+        <div class="list-name">Tequeños</div>
+        <div class="list-desc">Recién fritos, queso venezolano derretido</div>
+        <div class="list-footer">
+          <div class="list-price">REF 5.00</div>
+          <div class="list-price-bs">Bs. 250,00</div>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Tequeños',5,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Brownie',5)">
+      <div class="list-emoji">🍫</div>
+      <div class="list-info">
+        <div class="list-name">Brownie</div>
+        <div class="list-desc">Chocolate intenso, húmedo por dentro</div>
+        <div class="list-footer">
+          <div class="list-price">REF 5.00</div>
+          <div class="list-price-bs">Bs. 250,00</div>
+          <span class="badge badge-new" style="margin-left:4px">✨ Nuevo</span>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Brownie',5,this)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BEBIDAS -->
+  <div class="cat-section" id="bebidas">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(59,130,246,.12)">🍺</div>
+      <div class="section-title">BEBIDAS</div>
+      <div class="section-count">6 items</div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Cerveza',1.25)">
+      <div class="list-emoji">🍺</div>
+      <div class="list-info">
+        <div class="list-name">Cerveza</div>
+        <div class="list-desc">Polar Light o Pilsen · 330ml bien fría</div>
+        <div class="list-footer">
+          <div class="list-price">REF 1.25</div>
+          <div class="list-price-bs">Bs. 62,50</div>
+          <span class="badge badge-hot" style="margin-left:4px">🔥 TOP</span>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Cerveza',1.25,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Refresco',1.5)">
+      <div class="list-emoji">🥤</div>
+      <div class="list-info">
+        <div class="list-name">Refresco</div>
+        <div class="list-desc">Pepsi, Seven Up u otra</div>
+        <div class="list-footer">
+          <div class="list-price">REF 1.50</div>
+          <div class="list-price-bs">Bs. 75,00</div>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Refresco',1.5,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Gatorade',3)">
+      <div class="list-emoji">🏃</div>
+      <div class="list-info">
+        <div class="list-name">Gatorade</div>
+        <div class="list-desc">Hidratante deportivo</div>
+        <div class="list-footer">
+          <div class="list-price">REF 3.00</div>
+          <div class="list-price-bs">Bs. 150,00</div>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Gatorade',3,this)">+</button>
+      </div>
+    </div>
+
+    <div class="list-card" onclick="addItem('Malta',1)">
+      <div class="list-emoji">🍺</div>
+      <div class="list-info">
+        <div class="list-name">Malta</div>
+        <div class="list-desc">Malta Polar · clásico venezolano</div>
+        <div class="list-footer">
+          <div class="list-price">REF 1.00</div>
+          <div class="list-price-bs">Bs. 50,00</div>
+        </div>
+      </div>
+      <div class="list-right">
+        <button class="btn-add" onclick="event.stopPropagation();addItem('Malta',1,this)">+</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FLOATING CART -->
+<div class="cart-bar" id="cartBar" onclick="openCart()">
+  <div class="cart-badge" id="cartCount">0</div>
+  <div class="cart-text">Ver mi pedido</div>
+  <div class="cart-total" id="cartTotal">REF 0.00</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastText">Agregado</span>
+</div>
+
+<script>
+// ── ESTADO ──
+let cart = {};
+let total = 0;
+let count = 0;
+
+// ── SCROLL SPY ──
+const sections = ['destacados','hamburguesas','raciones','bebidas'];
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting && e.intersectionRatio > 0.3) {
+      const id = e.target.id;
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      const tab = [...document.querySelectorAll('.cat-tab')].find(t => 
+        t.getAttribute('onclick').includes(id)
+      );
+      if(tab) {
+        tab.classList.add('active');
+        tab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+      }
+    }
+  });
+}, {threshold: 0.3, rootMargin: '-60px 0px -40% 0px'});
+
+sections.forEach(id => {
+  const el = document.getElementById(id);
+  if(el) observer.observe(el);
+});
+
+// ── NAVEGACIÓN ──
+function scrollTo(id, btn) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'});
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── AGREGAR AL CARRITO ──
+function addItem(name, price, btn) {
+  if(!cart[name]) cart[name] = {price, qty: 0};
+  cart[name].qty++;
+  total = Object.values(cart).reduce((s,i) => s + i.price * i.qty, 0);
+  count = Object.values(cart).reduce((s,i) => s + i.qty, 0);
+  
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartTotal').textContent = 'REF ' + total.toFixed(2);
+  
+  const bar = document.getElementById('cartBar');
+  bar.classList.add('visible');
+  
+  if(btn) {
+    btn.classList.add('added');
+    btn.textContent = '✓';
+    setTimeout(() => {
+      btn.classList.remove('added');
+      btn.textContent = '+';
+    }, 800);
+  }
+  
+  showToast('✓', name + ' agregado');
+  if(navigator.vibrate) navigator.vibrate(40);
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(icon, text) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastText').textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ── ABRIR CARRITO ──
+function openCart() {
+  if(count === 0) return;
+  showToast('🛒', count + ' items · REF ' + total.toFixed(2));
+}
+</script>
+</body>
+</html>
