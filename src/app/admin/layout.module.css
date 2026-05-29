@@ -1,0 +1,351 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin Shell Layout  —  CSS Modules  —  Dark theme
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Shell ──────────────────────────────────────────────────────────────── */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+@media (min-width: 768px) {
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: 1fr;
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* ── Sidebar (desktop only) ─────────────────────────────────────────────── */
+
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+}
+
+/* Brand block */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.brandLogo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.brandLogoFallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Sidebar nav */
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 8px;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  position: relative;
+}
+
+.sidebarLink:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+.sidebarLinkActive {
+  color: var(--color-primary-light) !important;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
+  border-color: rgba(46, 125, 50, 0.35) !important;
+}
+
+.sidebarLinkActive::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 25%;
+  bottom: 25%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-primary-light);
+}
+
+/* Sidebar footer — user + BCV */
+.sidebarFooter {
+  padding: 12px 14px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.footerUser {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.footerRate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-brand);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Body column (header + main) ────────────────────────────────────────── */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .body {
+    height: 100dvh;
+  }
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 52px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* Logo + business name in header — visible on mobile, hidden on desktop */
+.headerBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .headerBrand {
+    display: none;
+  }
+}
+
+.headerLogo {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.headerLogoFallback {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.headerName {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right side: BCV pill + user pill */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ratePill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, transparent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-brand);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.userPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Main content ───────────────────────────────────────────────────────── */
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Mobile: breathing room above the fixed bottom nav */
+  padding-bottom: 64px;
+}
+
+@media (min-width: 768px) {
+  .main {
+    padding-bottom: 0;
+  }
+}
+
+/* ── Bottom nav (mobile only) ───────────────────────────────────────────── */
+
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  height: 60px;
+  z-index: 50;
+  /* Respect notch/home-bar on iOS */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottomNav::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .bottomNav {
+    display: none;
+  }
+}
+
+.bottomNavItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 13px;
+  min-width: 58px;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.bottomNavItem:hover {
+  color: var(--color-text);
+}
+
+.bottomNavItemActive {
+  color: var(--color-primary-light) !important;
+}
+
+.bottomNavItemActive svg {
+  filter: drop-shadow(0 0 4px rgba(76, 175, 80, 0.6));
+}
