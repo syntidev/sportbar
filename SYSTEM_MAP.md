@@ -1,6 +1,6 @@
 # SYSTEM_MAP — SportBar POS
 # ▲ Actualizar este archivo en cada sesión con cambios estructurales
-**Generado:** 29/05/2026 | **Commit base:** `ac092e3` | **Versión:** 0.1.0
+**Generado:** 29/05/2026 | **Commit base:** `33d2f87` | **Versión:** 1.1
 
 ---
 
@@ -13,8 +13,8 @@
 | **DB**           | MySQL · `sportbar` @ 127.0.0.1:3306                      |
 | **Repo**         | https://github.com/syntidev/sportbar                    |
 | **Local**        | C:\laragon\www\sportbar                                  |
-| **Commit actual**| `ac092e3` — feat(admin): unified shell                   |
-| **Versión**      | 0.1.0 (package.json)                                     |
+| **Commit actual**| `33d2f87` — sprint cierre 29/05/2026                     |
+| **Versión**      | 1.1 (SYSTEM_MAP — package.json sigue 0.1.0)              |
 | **Nombre pkg**   | `SportBar`                                               |
 
 ### Stack
@@ -77,11 +77,14 @@
 | `/api/orders`                          | GET, POST         | `api/orders/route.ts`                                | ✅     | GET: lista con filtros status/payment/zone/limit · POST: crear orden |
 | `/api/orders/[id]/status`              | PATCH             | `api/orders/[id]/status/route.ts`                    | ✅     | Actualiza kitchen_status o payment_status + log               |
 | `/api/orders/[id]/ticket`              | GET               | `api/orders/[id]/ticket/route.ts`                    | ✅     | Genera HTML ticket térmico 58/80mm con auto-print             |
+| `/api/orders/[id]/cancel`              | POST              | `api/orders/[id]/cancel/route.ts`                    | ✅ admin | ▲ Anula orden: payment_status→CANCELLED + CancellationLog · Zod reason mín 10 chars |
+| `/api/kds`                             | GET               | `api/kds/route.ts`                                   | ✅     | ▲ Órdenes KDS filtradas por venue.capabilities del usuario logueado           |
 | `/api/kds/bump`                        | POST              | `api/kds/bump/route.ts`                              | ✅     | Bump de estación KDS (NUEVO→PREP→LISTO→ENTREGADO)             |
 | `/api/products`                        | GET, POST         | `api/products/route.ts`                              | ✅     | Catálogo activo · Crear producto                              |
-| `/api/products/[id]`                   | GET, PUT, DELETE  | `api/products/[id]/route.ts`                         | ✅     | CRUD producto individual                                      |
+| `/api/products/[id]`                   | GET, PUT, PATCH, DELETE | `api/products/[id]/route.ts`                   | ✅     | ▲ CRUD producto individual · PATCH: toggle is_active          |
 | `/api/products/[id]/upload`            | POST              | `api/products/[id]/upload/route.ts`                  | ✅     | Subir foto producto                                           |
 | `/api/products/import`                 | POST              | `api/products/import/route.ts`                       | ✅     | Importar xlsx de productos                                    |
+| `/api/categories`                      | GET               | `api/categories/route.ts`                            | ✅     | ▲ Lista categorías activas con conteo de productos            |
 | `/api/users`                           | GET, POST         | `api/users/route.ts`                                 | ✅     | Listar/crear usuarios                                         |
 | `/api/users/[id]`                      | GET, PUT, DELETE  | `api/users/[id]/route.ts`                            | ✅     | CRUD usuario individual                                       |
 | `/api/venues`                          | GET, POST         | `api/venues/route.ts`                                | ✅     | Listar/crear venues                                           |
@@ -230,6 +233,19 @@
 | `validated_at` | DateTime | ✅       |                                 |
 | `created_at`   | DateTime | ❌       | now()                           |
 
+### CancellationLog ▲
+
+| Campo             | Tipo     | Nullable | Notas                                       |
+|-------------------|----------|----------|---------------------------------------------|
+| `id`              | Int      | ❌       | PK                                          |
+| `order_id`        | Int      | ❌       | FK → Order                                  |
+| `order_code`      | String   | ❌       | snapshot PUB-XXXXX o LOC-XXXXX              |
+| `cancelled_by`    | Int      | ❌       | FK → User (id del admin que anuló)          |
+| `reason`          | String   | ❌       | Text — motivo mín 10 chars                  |
+| `previous_status` | String   | ❌       | PEND / PAID / CREDIT al momento de anular   |
+| `created_at`      | DateTime | ❌       | now()                                       |
+| **Índices**       | order_id · cancelled_by | | |
+
 ### DollarRate
 
 | Campo             | Tipo     | Nullable | Notas                        |
@@ -303,6 +319,7 @@
 | 2026-05-28 07:42:17 | `20260528074217_add_payment_methods_terminals_access` | Modelos PaymentMethod y Terminal · campos de acceso en User (access_start/end/days) |
 | 2026-05-28 07:44:07 | `20260528074407_add_terminals_user_access`    | Ajuste índices y campos cedula/telefono en User                         |
 | 2026-05-28 07:45:47 | `20260528074547_noop`                         | Sin cambios (migration fence)                                           |
+| 2026-05-29 23:02:03 | `20260529230203_add_cancellation_log` ▲       | Modelo CancellationLog · FK order_id→Order · FK cancelled_by→User · aplicada en prod |
 
 ---
 
@@ -442,22 +459,25 @@ Matcher: solo rutas protegidas (Edge Runtime)
 
 ## 8. MÓDULOS ADMIN — ESTADO
 
-| Módulo               | Ruta admin           | API endpoints principales                              | CRUD | Estado |
-|----------------------|----------------------|--------------------------------------------------------|------|--------|
-| Mission Control      | `/admin`             | `/api/orders`, `/api/currency`, `/api/turno`           | —    | ✅     |
-| Turno                | `/admin/turno`       | `/api/turno`                                           | R·C  | ✅     |
-| Caja                 | `/admin/caja`        | `/api/caja`                                            | R    | ✅     |
-| Menú / Productos     | `/admin/menu`        | `/api/products`, `/api/products/[id]`, `/api/products/[id]/upload`, `/api/products/import` | CRUD+foto+xlsx | ✅ |
-| Equipo               | `/admin/equipo`      | `/api/users`, `/api/users/[id]`                        | CRUD | ✅     |
-| Estructura / Venues  | `/admin/estructura`  | `/api/venues`, `/api/venues/[id]`                      | CRUD | ✅     |
-| Config cobros        | `/admin/config`      | `/api/payment-methods/**`, `/api/terminals/**`, `/api/config/payment-data` | CRUD | ✅ |
-| Partidos             | `/admin/partido`     | `/api/partido`, `/api/partido/[id]`                    | CRUD | ✅     |
-| Perfil negocio       | `/admin/perfil`      | `/api/config/business`                                 | R·U  | ✅     |
-| Admin layout shell   | `src/app/admin/layout.tsx` | /api/config/business + /api/auth/me + /api/currency | — | ✅ |
-| Módulo inventario    | —                    | —                                                      | —    | ❌     |
-| KPIs post-partido    | —                    | —                                                      | —    | ❌     |
-| Analytics visitantes | —                    | —                                                      | —    | ❌     |
-| Score en vivo LPB    | —                    | —                                                      | —    | ❌     |
+| Módulo               | Ruta admin           | API endpoints principales                              | CRUD | Estado | Último cambio |
+|----------------------|----------------------|--------------------------------------------------------|------|--------|---------------|
+| Mission Control      | `/admin`             | `/api/orders`, `/api/currency`, `/api/turno`           | —    | ✅     | —             |
+| Turno                | `/admin/turno`       | `/api/turno`                                           | R·C  | ✅     | —             |
+| Caja                 | `/admin/caja`        | `/api/caja`                                            | R    | ✅     | —             |
+| ▲ Menú / Productos   | `/admin/menu`        | `/api/products`, `/api/products/[id]`, `/api/products/[id]/upload`, `/api/products/import`, `/api/categories` | CRUD+foto+xlsx+categorías | ✅ | c585aa6 |
+| Equipo               | `/admin/equipo`      | `/api/users`, `/api/users/[id]`                        | CRUD | ✅     | —             |
+| Estructura / Venues  | `/admin/estructura`  | `/api/venues`, `/api/venues/[id]`                      | CRUD | ✅     | —             |
+| Config cobros        | `/admin/config`      | `/api/payment-methods/**`, `/api/terminals/**`, `/api/config/payment-data` | CRUD | ✅ | — |
+| ▲ Partidos / analytics | `/admin/partido`   | `/api/partido`, `/api/partido/[id]`                    | CRUD | ✅     | 082b385       |
+| ▲ Partidos detalle   | `/admin/partido/[id]`| `/api/partido/[id]`, `/api/orders/[id]/cancel`         | R·cancelar | ✅ | 50b1ffc |
+| Perfil negocio       | `/admin/perfil`      | `/api/config/business`                                 | R·U  | ✅     | —             |
+| ▲ Admin layout shell | `src/app/admin/layout.tsx` | /api/config/business + /api/auth/me + /api/currency | — | ✅ | ac092e3 |
+| ▲ KDS Cocina         | `/kds/cocina`        | `/api/kds` (venue.capabilities), `/api/kds/bump`       | —    | ✅     | c585aa6       |
+| ▲ KDS Bar            | `/kds/bar`           | `/api/kds` (venue.capabilities), `/api/kds/bump`       | —    | ✅     | c585aa6       |
+| Módulo inventario    | —                    | —                                                      | —    | ❌     | —             |
+| KPIs post-partido    | —                    | —                                                      | —    | ❌     | —             |
+| Analytics visitantes | —                    | —                                                      | —    | ❌     | —             |
+| Score en vivo LPB    | —                    | —                                                      | —    | ❌     | —             |
 
 ### Config Business Keys (23 keys en `src/lib/business-config.ts`)
 
@@ -542,6 +562,16 @@ GET /api/orders/[id]/ticket
 
 ## 10. DEUDA TÉCNICA REGISTRADA
 
+### ✅ Resueltos este sprint (29/05/2026)
+
+| # | Ítem resuelto                                                           | Commit   |
+|---|-------------------------------------------------------------------------|----------|
+| — | Admin layout shell unificado (sidebar desktop + bottom nav mobile)      | ac092e3  |
+| — | Menú admin CRUD completo: crear/editar/toggle/imagen/xlsx + categorías  | c585aa6  |
+| — | KDS cocina y bar filtrados por `venue.capabilities` via `/api/kds`      | c585aa6  |
+| — | Sistema de anulación: `CancellationLog` + `/api/orders/[id]/cancel` + UI modal en `/admin/partido/[id]` | 50b1ffc |
+| 7 | ImportButton funcional en `/admin/menu` — admin puede importar xlsx     | c585aa6  |
+
 ### Crítico (bloquea funcionalidad)
 
 | # | Ítem                                                      | Módulo        |
@@ -557,7 +587,7 @@ GET /api/orders/[id]/ticket
 | 4 | Venues reales de Daniel no creados en producción          | Estructura    |
 | 5 | Probar comandas personales en producción (último deploy)  | POS Comandas  |
 | 6 | Logos nuevos no subidos al VPS `public/`                  | Branding      |
-| 7 | Importar productos xlsx en producción (15 productos en dev)| Menú         |
+| 7 | ~~Importar productos xlsx~~ — ImportButton entregado; pendiente ejecutar import en prod con xlsx real | Menú |
 
 ### Media prioridad
 
@@ -568,17 +598,18 @@ GET /api/orders/[id]/ticket
 | 10 | Catálogo público /menu pulido (fotos fotógrafo)           | Menú público  |
 | 11 | Analytics visitantes por canal (QR/www/local, OS, device) | Nuevo        |
 | 12 | Script certify.ts en producción                           | Deploy        |
+| 13 | KDS `/kds/cocina` y `/kds/bar` migrados a `/api/kds` — verificar en prod con venues reales configurados | KDS |
 
 ### Backlog
 
 | # | Ítem                                                      |
 |---|-----------------------------------------------------------|
-| 13 | Score en vivo LPB                                        |
-| 14 | E-commerce merchandising                                 |
-| 15 | Zonas geográficas estadio (mapa Daniel pendiente)        |
-| 16 | Plan B: agente IA                                        |
-| 17 | Catálogo offline completo (IndexedDB + Service Worker)   |
-| 18 | PWA instalable (next-pwa)                                |
+| 14 | Score en vivo LPB                                        |
+| 15 | E-commerce merchandising                                 |
+| 16 | Zonas geográficas estadio (mapa Daniel pendiente)        |
+| 17 | Plan B: agente IA                                        |
+| 18 | Catálogo offline completo (IndexedDB + Service Worker)   |
+| 19 | PWA instalable (next-pwa)                                |
 
 ---
 
@@ -643,5 +674,5 @@ Orden mixta → ambos KDS, despacho espera los dos bumps
 
 ---
 
-*SYSTEM_MAP.md — SportBar v1.0 — Generado 29/05/2026 — commit ac092e3*
+*SYSTEM_MAP.md — SportBar v1.1 — Actualizado 29/05/2026 — commit 33d2f87*
 *▲ Actualizar en cada sesión que modifique rutas, modelos, migraciones o reglas críticas*
