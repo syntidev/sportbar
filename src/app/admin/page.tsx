@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { motion, useSpring, useTransform, animate } from 'framer-motion'
 import {
   AlertCircle, Clock, ShoppingBag, CreditCard,
   Banknote, Building2, Users, Timer,
+  Settings, UserSquare2, Briefcase, CalendarDays,
 } from 'lucide-react'
 import type { KitchenStatus, PaymentStatus } from '@/types'
 import styles from './page.module.css'
@@ -176,6 +178,34 @@ export default function AdminPage() {
           {clock}
         </div>
       </header>
+
+      {/* ── Nav rápida ─────────────────────────────────────────────────── */}
+      <nav className={styles.quickNav} aria-label="Secciones de administración">
+        <Link href="/admin/perfil"    className={styles.navItem}>
+          <UserSquare2 size={15} aria-hidden />
+          Perfil
+        </Link>
+        <Link href="/admin/config"    className={styles.navItem}>
+          <Settings size={15} aria-hidden />
+          Config
+        </Link>
+        <Link href="/admin/equipo"    className={styles.navItem}>
+          <Users size={15} aria-hidden />
+          Equipo
+        </Link>
+        <Link href="/admin/turno"     className={styles.navItem}>
+          <Briefcase size={15} aria-hidden />
+          Turno
+        </Link>
+        <Link href="/admin/partido"   className={styles.navItem}>
+          <CalendarDays size={15} aria-hidden />
+          Partido
+        </Link>
+        <Link href="/admin/caja"      className={styles.navItem}>
+          <Banknote size={15} aria-hidden />
+          Caja
+        </Link>
+      </nav>
 
       {/* ── Loading ─────────────────────────────────────────────────────── */}
       {loading && (

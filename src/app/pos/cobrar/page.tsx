@@ -15,6 +15,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import type { PaymentStatus, Zone } from '@/types'
+import { TicketPrint } from '@/components/ui/TicketPrint'
 import styles from './page.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -482,14 +483,19 @@ export default function CobrarPage() {
                 )}
 
                 {success && (
-                  <motion.p
-                    className={styles.successMsg}
+                  <motion.div
+                    className={styles.successBlock}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
-                    <CheckCircle2 size={14} aria-hidden />
-                    {success}
-                  </motion.p>
+                    <p className={styles.successMsg}>
+                      <CheckCircle2 size={14} aria-hidden />
+                      {success}
+                    </p>
+                    {mode === 'cobrar' && selected && (
+                      <TicketPrint orderId={selected.id} paymentStatus="PAID" />
+                    )}
+                  </motion.div>
                 )}
               </div>
 
