@@ -22,6 +22,8 @@ interface Product {
   description: string | null;
   price_usd:   string;
   category:    string;
+  is_featured: boolean;
+  badge:       string | null;
   image_url:   string | null;
 }
 
@@ -34,6 +36,27 @@ interface CartEntry { product: Product; qty: number }
 
 interface FeatCardProps { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
 interface ProdRowProps  { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
+
+// ── Group navigation config — edit here, not in UI ───────────────────────────
+const CATEGORY_GROUPS: Record<string, string[]> = {
+  comida:  ["hamburguesas", "raciones"],
+  bebidas: ["bebidas", "cerveza"],
+  licores: ["licores"],
+};
+
+const GROUP_LABELS: Record<string, string> = {
+  comida:  "Comida",
+  bebidas: "Bebidas",
+  licores: "Licores",
+  otros:   "Otros",
+};
+
+const GROUP_ICONS: Record<string, LucideIcon> = {
+  comida:  Beef,
+  bebidas: Wine,
+  licores: Wine,
+  otros:   UtensilsCrossed,
+};
 
 const CAT_ICONS: Record<string, LucideIcon> = {
   hamburguesas: Beef,
@@ -50,7 +73,9 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function CatPlaceholder({ category, size, opacity = 0.4 }: { category: string; size: number; opacity?: number }) {
+function CatPlaceholder({ category, size, opacity = 0.4 }: {
+  category: string; size: number; opacity?: number
+}) {
   const Icon = getCatIcon(category);
   return <Icon size={size} color={`rgba(240,245,240,${opacity})`} />;
 }
@@ -84,11 +109,13 @@ function FeatCard({ p, rate, qty, onAdd }: FeatCardProps) {
       <div className={styles.featPhotoOuter}>
         {p.image_url
           ? <img src={p.image_url} alt={p.name} className={styles.featPhotoImg} />
-          : <div className={styles.featPhotoEmpty}><CatPlaceholder category={p.category} size={52} opacity={0.3} /></div>
+          : <div className={styles.featPhotoEmpty}>
+              <CatPlaceholder category={p.category} size={52} opacity={0.3} />
+            </div>
         }
       </div>
       <div className={styles.featName}>{p.name}</div>
-      <div className={styles.featDesc}>{p.description ?? " "}</div>
+      <div className={styles.featDesc}>{p.description ?? " "}</div>
       <div className={styles.featFoot}>
         <div>
           <div className={styles.featPrice}>REF {Number(p.price_usd).toFixed(2)}</div>
@@ -151,17 +178,17 @@ function ProdRow({ p, rate, qty, onAdd }: ProdRowProps) {
 // ── Main page ────────────────────────────────────────────────
 
 export default function MenuPublicoPage() {
-  const [turno,      setTurno]      = useState<TurnoData | null>(null);
-  const [products,   setProducts]   = useState<Product[]>([]);
-  const [rate,       setRate]       = useState(50.0);
-  const [loading,    setLoading]    = useState(true);
-  const [activeTab,  setActiveTab]  = useState<string>("todos");
-  const [appScreen,  setAppScreen]  = useState<AppScreen>("menu");
-  const [cart,       setCart]       = useState<Map<number, CartEntry>>(new Map());
-  const [orderCode,  setOrderCode]  = useState<string | null>(null);
-  const [orderCount, setOrderCount] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [formError,  setFormError]  = useState<string | null>(null);
+  const [turno,       setTurno]       = useState<TurnoData | null>(null);
+  const [products,    setProducts]    = useState<Product[]>([]);
+  const [rate,        setRate]        = useState(50.0);
+  const [loading,     setLoading]     = useState(true);
+  const [activeGroup, setActiveGroup] = useState<string>("comida");
+  const [appScreen,   setAppScreen]   = useState<AppScreen>("menu");
+  const [cart,        setCart]        = useState<Map<number, CartEntry>>(new Map());
+  const [orderCode,   setOrderCode]   = useState<string | null>(null);
+  const [orderCount,  setOrderCount]  = useState(0);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [formError,   setFormError]   = useState<string | null>(null);
   const [form, setForm] = useState({
     zone:     "" as Zone | "",
     seat:     "",
@@ -171,10 +198,12 @@ export default function MenuPublicoPage() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const secRefs   = useRef<Partial<Record<string, HTMLElement>>>({});
 
-  // Categorías únicas derivadas de los productos (orden de aparición en DB)
-  const cats = useMemo(() => Array.from(new Set(products.map(p => p.category))), [products]);
+  // Set of all categorias that belong to a known group
+  const allGroupCats = useMemo(
+    () => new Set(Object.values(CATEGORY_GROUPS).flat()),
+    [],
+  );
 
   // Bootstrap
   useEffect(() => {
@@ -201,6 +230,15 @@ export default function MenuPublicoPage() {
     init();
   }, []);
 
+  // After products load, set activeGroup to first group that has products
+  useEffect(() => {
+    if (products.length === 0) return;
+    const first = Object.keys(CATEGORY_GROUPS).find(gk =>
+      CATEGORY_GROUPS[gk].some(cat => products.some(p => p.category === cat)),
+    );
+    if (first) setActiveGroup(first);
+  }, [products]);
+
   // Supabase Realtime — detectar apertura de turno
   useEffect(() => {
     const client = getSupabase();
@@ -221,26 +259,62 @@ export default function MenuPublicoPage() {
     return () => { void client.removeChannel(ch); };
   }, []);
 
-  // Scroll spy
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const top  = scrollRef.current.scrollTop + 80;
-    const keys = ["todos", ...cats];
-    let cur = "todos";
-    for (const k of keys) {
-      const el = secRefs.current[k];
-      if (el && el.offsetTop <= top) cur = k;
-    }
-    setActiveTab(cur);
-  }, [cats]);
+  // Group tabs — only groups with at least one product
+  const groupTabs = useMemo(() => {
+    const tabs = Object.keys(CATEGORY_GROUPS)
+      .filter(gk =>
+        CATEGORY_GROUPS[gk].some(cat => products.some(p => p.category === cat)),
+      )
+      .map(gk => ({ key: gk, label: GROUP_LABELS[gk] ?? capitalize(gk) }));
+    const hasOthers = products.some(p => !allGroupCats.has(p.category));
+    if (hasOthers) tabs.push({ key: "otros", label: GROUP_LABELS.otros });
+    return tabs;
+  }, [products, allGroupCats]);
 
-  const goTo = (key: string) => {
-    setActiveTab(key);
-    const el = secRefs.current[key];
-    if (el && scrollRef.current) {
-      scrollRef.current.scrollTo({ top: el.offsetTop - 10, behavior: "smooth" });
+  // All products belonging to the active group
+  const activeGroupProducts = useMemo(() => {
+    if (activeGroup === "otros") {
+      return products.filter(p => !allGroupCats.has(p.category));
     }
-  };
+    const cats = CATEGORY_GROUPS[activeGroup] ?? [];
+    return products.filter(p => cats.includes(p.category));
+  }, [activeGroup, products, allGroupCats]);
+
+  // Hero — first is_featured in active group, fallback first product
+  const hero = useMemo(
+    () => activeGroupProducts.find(p => p.is_featured) ?? activeGroupProducts[0] ?? null,
+    [activeGroupProducts],
+  );
+
+  // Featured rail — is_featured products excluding hero, max 6
+  const featured = useMemo(
+    () => activeGroupProducts.filter(p => p.is_featured && p.id !== hero?.id).slice(0, 6),
+    [activeGroupProducts, hero],
+  );
+
+  // Subcategory sections within the active group
+  const subCatSections = useMemo(() => {
+    if (activeGroup === "otros") {
+      const otherCats = Array.from(
+        new Set(
+          products.filter(p => !allGroupCats.has(p.category)).map(p => p.category),
+        ),
+      );
+      return otherCats.map(cat => ({
+        cat,
+        items: products.filter(p => p.category === cat),
+      }));
+    }
+    return (CATEGORY_GROUPS[activeGroup] ?? [])
+      .map(cat => ({ cat, items: products.filter(p => p.category === cat) }))
+      .filter(s => s.items.length > 0);
+  }, [activeGroup, products, allGroupCats]);
+
+  // Switch group tab and reset scroll
+  const switchGroup = useCallback((key: string) => {
+    setActiveGroup(key);
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, []);
 
   // Cart
   const addToCart = useCallback((p: Product) => {
@@ -269,6 +343,10 @@ export default function MenuPublicoPage() {
   const cartCount = cartItems.reduce((s, e) => s + e.qty, 0);
   const cartTotal = cartItems.reduce((s, e) => s + Number(e.product.price_usd) * e.qty, 0);
 
+  const seatLabel = form.zone
+    ? form.seat ? form.zone + " - " + form.seat : form.zone
+    : "Mi zona";
+
   // Submit order
   async function handleSubmit() {
     if (!form.zone || !form.name.trim() || !form.lastname.trim()) {
@@ -282,7 +360,7 @@ export default function MenuPublicoPage() {
     setSubmitting(true);
     setFormError(null);
     try {
-      const res  = await fetch("/api/orders", {
+      const res = await fetch("/api/orders", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -321,29 +399,6 @@ export default function MenuPublicoPage() {
       setSubmitting(false);
     }
   }
-
-  // Derived data — dinámico desde productos
-  const grouped = useMemo(() => {
-    const g: Record<string, Product[]> = {};
-    for (const cat of cats) g[cat] = products.filter(p => p.category === cat);
-    return g;
-  }, [cats, products]);
-
-  const allTabs = useMemo(() => [
-    { key: "todos", label: "Todos" },
-    ...cats.map(cat => ({ key: cat, label: capitalize(cat) })),
-  ], [cats]);
-
-  const hero = products[0] ?? null;
-  const featured = [
-    ...(grouped[cats[0]] ?? []).slice(1, 3),
-    ...(grouped[cats[1]] ?? []).slice(0, 2),
-    ...(grouped[cats[2]] ?? []).slice(0, 1),
-  ].slice(0, 5);
-
-  const seatLabel = form.zone
-    ? form.seat ? form.zone + " - " + form.seat : form.zone
-    : "Mi zona";
 
   // ── Loading ──
   if (loading) {
@@ -400,15 +455,15 @@ export default function MenuPublicoPage() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Group tabs */}
         <nav className={styles.custTabs}>
-          {allTabs.map(({ key, label }) => {
-            const Icon = key === "todos" ? Star : getCatIcon(key);
+          {groupTabs.map(({ key, label }) => {
+            const Icon = GROUP_ICONS[key] ?? Star;
             return (
               <button
                 key={key}
-                className={styles.custTab + (activeTab === key ? " " + styles.custTabActive : "")}
-                onClick={() => goTo(key)}
+                className={styles.custTab + (activeGroup === key ? " " + styles.custTabActive : "")}
+                onClick={() => switchGroup(key)}
               >
                 <Icon size={14} />
                 {label}
@@ -421,53 +476,52 @@ export default function MenuPublicoPage() {
         <div
           className={styles.mScroll}
           ref={scrollRef}
-          onScroll={handleScroll}
           style={{ paddingBottom: cartCount > 0 ? 110 : 24 }}
         >
 
-          {/* Hero */}
-          <div ref={el => { if (el) secRefs.current.todos = el; }}>
-            {hero && (
-              <div className={styles.hero}>
-                <div className={styles.heroHalo} />
-                <div className={styles.heroWm}>
-                  {hero.name.split(" ")[0].toUpperCase()}
-                </div>
-                <div className={styles.heroTop}>
-                  <div>
-                    <div className={styles.heroPrice}>
-                      REF {Number(hero.price_usd).toFixed(2)}
-                    </div>
-                    <div className={styles.heroPriceBs}>
-                      {formatBs(Number(hero.price_usd) * rate)}
-                    </div>
-                  </div>
-                  <span className={styles.socialPill}>
-                    <Flame size={13} color="var(--color-brand)" />
-                    {turno.partido_nombre}
-                  </span>
-                </div>
-                <div className={styles.heroPhoto}>
-                  {hero.image_url
-                    ? <img src={hero.image_url} alt={hero.name} className={styles.heroImg} />
-                    : <div className={styles.heroImgEmpty}><Beef size={90} color="rgba(240,245,240,0.25)" /></div>
-                  }
-                </div>
-                <div className={styles.heroInfo}>
-                  <div className={styles.heroName}>{hero.name}</div>
-                  {hero.description && (
-                    <div className={styles.heroDesc}>{hero.description}</div>
-                  )}
-                  <button className={styles.heroCta} onClick={() => addToCart(hero)}>
-                    <Plus size={22} color="#1a1308" strokeWidth={2.6} />
-                    AGREGAR AL PEDIDO
-                  </button>
-                </div>
+          {/* Hero — first is_featured product of active group */}
+          {hero && (
+            <div className={styles.hero}>
+              <div className={styles.heroHalo} />
+              <div className={styles.heroWm}>
+                {hero.name.split(" ")[0].toUpperCase()}
               </div>
-            )}
-          </div>
+              <div className={styles.heroTop}>
+                <div>
+                  <div className={styles.heroPrice}>
+                    REF {Number(hero.price_usd).toFixed(2)}
+                  </div>
+                  <div className={styles.heroPriceBs}>
+                    {formatBs(Number(hero.price_usd) * rate)}
+                  </div>
+                </div>
+                <span className={styles.socialPill}>
+                  <Flame size={13} color="var(--color-brand)" />
+                  {turno.partido_nombre}
+                </span>
+              </div>
+              <div className={styles.heroPhoto}>
+                {hero.image_url
+                  ? <img src={hero.image_url} alt={hero.name} className={styles.heroImg} />
+                  : <div className={styles.heroImgEmpty}>
+                      <Beef size={90} color="rgba(240,245,240,0.25)" />
+                    </div>
+                }
+              </div>
+              <div className={styles.heroInfo}>
+                <div className={styles.heroName}>{hero.name}</div>
+                {hero.description && (
+                  <div className={styles.heroDesc}>{hero.description}</div>
+                )}
+                <button className={styles.heroCta} onClick={() => addToCart(hero)}>
+                  <Plus size={22} color="#1a1308" strokeWidth={2.6} />
+                  AGREGAR AL PEDIDO
+                </button>
+              </div>
+            </div>
+          )}
 
-          {/* Featured rail */}
+          {/* Featured rail — is_featured products excluding hero */}
           {featured.length > 0 && (
             <>
               <div className={styles.secHead}>
@@ -488,17 +542,15 @@ export default function MenuPublicoPage() {
             </>
           )}
 
-          {/* Category sections */}
-          {cats.map(cat => {
-            const items = grouped[cat] ?? [];
-            if (items.length === 0) return null;
+          {/* Subcategory sections within active group */}
+          {subCatSections.map(({ cat, items }) => {
             const Icon = getCatIcon(cat);
             return (
-              <div key={cat} ref={el => { if (el) secRefs.current[cat] = el; }}>
-                <div className={styles.secHead}>
-                  <Icon size={20} />
-                  <span className={styles.secHeadT}>{capitalize(cat)}</span>
-                  <span className={styles.secHeadN}>{items.length} opciones</span>
+              <div key={cat}>
+                <div className={styles.subSecHead}>
+                  <Icon size={18} />
+                  <span className={styles.subSecHeadT}>{capitalize(cat)}</span>
+                  <span className={styles.subSecHeadN}>{items.length} opciones</span>
                 </div>
                 <div className={styles.prodList}>
                   {items.map(p => (
@@ -514,6 +566,7 @@ export default function MenuPublicoPage() {
               </div>
             );
           })}
+
           <div style={{ height: 8 }} />
         </div>
 

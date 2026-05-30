@@ -147,6 +147,15 @@
   color:#fff; border-radius:999px; min-width:22px; height:22px; padding:0 6px;
   font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; }
 
+/* ============ SUBCATEGORY SECTION HEAD ============ */
+/* Separator within a group — smaller than .secHead */
+.subSecHead { display:flex; align-items:center; gap:10px;
+  padding:16px 16px 10px; color:var(--color-text);
+  border-top:1px solid var(--color-border); margin-top:8px; }
+.subSecHeadT { font-family:var(--font-display); font-size:22px;
+  letter-spacing:.02em; line-height:1; }
+.subSecHeadN { margin-left:auto; font-size:11px; color:var(--color-text-subtle); }
+
 /* ============ PRODUCT ROWS ============ */
 .prodList { display:flex; flex-direction:column; gap:10px; padding:0 16px; }
 
