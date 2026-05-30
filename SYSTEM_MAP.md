@@ -1,6 +1,6 @@
 # SYSTEM_MAP — SportBar POS
 # ▲ Actualizar este archivo en cada sesión con cambios estructurales
-**Generado:** 29/05/2026 | **Commit base:** `33d2f87` | **Versión:** 1.1
+**Generado:** 29/05/2026 | **Commit base:** `bf1d136` | **Versión:** 1.2
 
 ---
 
@@ -13,8 +13,8 @@
 | **DB**           | MySQL · `sportbar` @ 127.0.0.1:3306                      |
 | **Repo**         | https://github.com/syntidev/sportbar                    |
 | **Local**        | C:\laragon\www\sportbar                                  |
-| **Commit actual**| `33d2f87` — sprint cierre 29/05/2026                     |
-| **Versión**      | 1.1 (SYSTEM_MAP — package.json sigue 0.1.0)              |
+| **Commit actual**| `bf1d136` — sesión cierre 29/05/2026                     |
+| **Versión**      | 1.2 (SYSTEM_MAP — package.json sigue 0.1.0)              |
 | **Nombre pkg**   | `SportBar`                                               |
 
 ### Stack
@@ -93,6 +93,7 @@
 | `/api/currency/manual`                 | POST              | `api/currency/manual/route.ts`                       | ✅     | Registrar tasa manual                                         |
 | `/api/config`                          | GET, PATCH        | `api/config/route.ts`                                | ✅     | Config genérica key/value                                     |
 | `/api/config/business`                 | GET, PATCH        | `api/config/business/route.ts`                       | ✅     | 23 keys de perfil del negocio y ticket                        |
+| `/api/config/business/logo`            | POST              | `api/config/business/logo/route.ts`                  | ✅     | ▲ Upload logo negocio → guarda en `public/logos/` + actualiza `business_logo_url` |
 | `/api/config/payment-data`             | GET               | `api/config/payment-data/route.ts`                   | ✅     | Datos de cobro consolidados (métodos + terminales)            |
 | `/api/payment-methods`                 | GET, POST         | `api/payment-methods/route.ts`                       | ✅     | Listar/crear métodos de pago dinámicos                        |
 | `/api/payment-methods/[id]`            | PUT, DELETE       | `api/payment-methods/[id]/route.ts`                  | ✅     | Editar/eliminar método                                        |
@@ -464,13 +465,13 @@ Matcher: solo rutas protegidas (Edge Runtime)
 | Mission Control      | `/admin`             | `/api/orders`, `/api/currency`, `/api/turno`           | —    | ✅     | —             |
 | Turno                | `/admin/turno`       | `/api/turno`                                           | R·C  | ✅     | —             |
 | Caja                 | `/admin/caja`        | `/api/caja`                                            | R    | ✅     | —             |
-| ▲ Menú / Productos   | `/admin/menu`        | `/api/products`, `/api/products/[id]`, `/api/products/[id]/upload`, `/api/products/import`, `/api/categories` | CRUD+foto+xlsx+categorías | ✅ | c585aa6 |
+| ▲ Menú / Productos   | `/admin/menu`        | `/api/products`, `/api/products/[id]`, `/api/products/[id]/upload`, `/api/products/import`, `/api/categories` | CRUD+foto+xlsx+categorías | ✅ | 52f1afb |
 | Equipo               | `/admin/equipo`      | `/api/users`, `/api/users/[id]`                        | CRUD | ✅     | —             |
-| Estructura / Venues  | `/admin/estructura`  | `/api/venues`, `/api/venues/[id]`                      | CRUD | ✅     | —             |
+| ▲ Estructura / Venues| `/admin/estructura`  | `/api/venues`, `/api/venues/[id]`                      | CRUD | ✅     | bf1d136       |
 | Config cobros        | `/admin/config`      | `/api/payment-methods/**`, `/api/terminals/**`, `/api/config/payment-data` | CRUD | ✅ | — |
 | ▲ Partidos / analytics | `/admin/partido`   | `/api/partido`, `/api/partido/[id]`                    | CRUD | ✅     | 082b385       |
 | ▲ Partidos detalle   | `/admin/partido/[id]`| `/api/partido/[id]`, `/api/orders/[id]/cancel`         | R·cancelar | ✅ | 50b1ffc |
-| Perfil negocio       | `/admin/perfil`      | `/api/config/business`                                 | R·U  | ✅     | —             |
+| ▲ Perfil negocio     | `/admin/perfil`      | `/api/config/business`, `/api/config/business/logo`    | R·U+logo | ✅ | dbe8080       |
 | ▲ Admin layout shell | `src/app/admin/layout.tsx` | /api/config/business + /api/auth/me + /api/currency | — | ✅ | ac092e3 |
 | ▲ KDS Cocina         | `/kds/cocina`        | `/api/kds` (venue.capabilities), `/api/kds/bump`       | —    | ✅     | c585aa6       |
 | ▲ KDS Bar            | `/kds/bar`           | `/api/kds` (venue.capabilities), `/api/kds/bump`       | —    | ✅     | c585aa6       |
@@ -564,13 +565,18 @@ GET /api/orders/[id]/ticket
 
 ### ✅ Resueltos este sprint (29/05/2026)
 
-| # | Ítem resuelto                                                           | Commit   |
-|---|-------------------------------------------------------------------------|----------|
-| — | Admin layout shell unificado (sidebar desktop + bottom nav mobile)      | ac092e3  |
-| — | Menú admin CRUD completo: crear/editar/toggle/imagen/xlsx + categorías  | c585aa6  |
-| — | KDS cocina y bar filtrados por `venue.capabilities` via `/api/kds`      | c585aa6  |
+| # | Ítem resuelto                                                                                         | Commit   |
+|---|-------------------------------------------------------------------------------------------------------|----------|
+| — | Admin layout shell unificado (sidebar desktop + bottom nav mobile)                                    | ac092e3  |
+| — | Menú admin CRUD completo: crear/editar/toggle/imagen/xlsx + categorías                                | c585aa6  |
+| — | KDS cocina y bar filtrados por `venue.capabilities` via `/api/kds`                                   | c585aa6  |
 | — | Sistema de anulación: `CancellationLog` + `/api/orders/[id]/cancel` + UI modal en `/admin/partido/[id]` | 50b1ffc |
-| 7 | ImportButton funcional en `/admin/menu` — admin puede importar xlsx     | c585aa6  |
+| 7 | Importar xlsx en dev: 4 productos nuevos (La Clásica, Adicional Carne, Tequeños, 5 Nuggets), 11 ya existían | esta sesión |
+| — | Menú público `/menu` rediseño PackDesign: Bebas Neue, DM Sans, prod-rows, pill-tabs, glow-effects    | 52f1afb  |
+| — | Unsplash remotePatterns habilitados en `next.config` (permitir dominios images.unsplash.com)         | 54d21ad  |
+| — | Placeholders por categoría en `/menu` (removidos imgs Unsplash rotos → fallback local)               | b72ae79  |
+| 4 | Venues reales IDs 1-4 configurados con capabilities dinámicas editables desde `/admin/estructura`    | bf1d136  |
+| 6 | Upload logo desde UI en `/admin/perfil` → endpoint `/api/config/business/logo`                       | dbe8080  |
 
 ### Crítico (bloquea funcionalidad)
 
@@ -582,12 +588,12 @@ GET /api/orders/[id]/ticket
 
 ### Alta prioridad
 
-| # | Ítem                                                      | Módulo        |
-|---|-----------------------------------------------------------|---------------|
-| 4 | Venues reales de Daniel no creados en producción          | Estructura    |
-| 5 | Probar comandas personales en producción (último deploy)  | POS Comandas  |
-| 6 | Logos nuevos no subidos al VPS `public/`                  | Branding      |
-| 7 | ~~Importar productos xlsx~~ — ImportButton entregado; pendiente ejecutar import en prod con xlsx real | Menú |
+| # | Ítem                                                                                    | Módulo        |
+|---|-----------------------------------------------------------------------------------------|---------------|
+| 5 | Probar comandas personales en producción (último deploy)                                | POS Comandas  |
+| 6 | Logo subido desde UI dev — pendiente copiar archivo al VPS `public/logos/`              | Branding      |
+| 7 | Importar xlsx en **producción** con `productosSportBarDaniel.xlsx` (dev: 4 insertados)  | Menú          |
+| 20| `<img>` nativo usado en `/menu` ProductCard y catálogo — migrar a `<Image>` next/image para optimización automática | Menú público |
 
 ### Media prioridad
 
@@ -674,5 +680,5 @@ Orden mixta → ambos KDS, despacho espera los dos bumps
 
 ---
 
-*SYSTEM_MAP.md — SportBar v1.1 — Actualizado 29/05/2026 — commit 33d2f87*
+*SYSTEM_MAP.md — SportBar v1.2 — Actualizado 29/05/2026 — commit bf1d136*
 *▲ Actualizar en cada sesión que modifique rutas, modelos, migraciones o reglas críticas*
