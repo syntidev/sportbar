@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -13,7 +13,6 @@ import { getSupabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/dollar-rate";
 import styles from "./page.module.css";
 
-type Category  = "hamburguesas" | "raciones" | "bebidas";
 type Zone      = "Norte" | "Sur" | "VIP" | "Externa";
 type AppScreen = "menu" | "cart" | "confirm" | "success";
 
@@ -22,7 +21,7 @@ interface Product {
   name:        string;
   description: string | null;
   price_usd:   string;
-  category:    Category;
+  category:    string;
   image_url:   string | null;
 }
 
@@ -36,29 +35,25 @@ interface CartEntry { product: Product; qty: number }
 interface FeatCardProps { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
 interface ProdRowProps  { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
 
-const CAT_ICONS: Record<Category, LucideIcon> = {
+const CAT_ICONS: Record<string, LucideIcon> = {
   hamburguesas: Beef,
   raciones:     UtensilsCrossed,
   bebidas:      Wine,
+  cerveza:      Wine,
 };
 
-function CatPlaceholder({ category, size, opacity = 0.4 }: { category: Category; size: number; opacity?: number }) {
-  const Icon = CAT_ICONS[category];
-  return <Icon size={size} color={`rgba(240,245,240,${opacity})`} />;
+function getCatIcon(cat: string): LucideIcon {
+  return CAT_ICONS[cat] ?? UtensilsCrossed;
 }
 
-const CATS: { key: Category; label: string; Icon: LucideIcon }[] = [
-  { key: "hamburguesas", label: "Hamburguesas", Icon: Beef            },
-  { key: "raciones",     label: "Raciones",     Icon: UtensilsCrossed },
-  { key: "bebidas",      label: "Bebidas",       Icon: Wine            },
-];
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
-const ALL_TABS: { key: string; label: string; Icon: LucideIcon }[] = [
-  { key: "destacados",   label: "Destacados",   Icon: Star            },
-  { key: "hamburguesas", label: "Hamburguesas", Icon: Beef            },
-  { key: "raciones",     label: "Raciones",     Icon: UtensilsCrossed },
-  { key: "bebidas",      label: "Bebidas",       Icon: Wine            },
-];
+function CatPlaceholder({ category, size, opacity = 0.4 }: { category: string; size: number; opacity?: number }) {
+  const Icon = getCatIcon(category);
+  return <Icon size={size} color={`rgba(240,245,240,${opacity})`} />;
+}
 
 const ZONES: Zone[] = ["Norte", "Sur", "VIP", "Externa"];
 
@@ -160,7 +155,7 @@ export default function MenuPublicoPage() {
   const [products,   setProducts]   = useState<Product[]>([]);
   const [rate,       setRate]       = useState(50.0);
   const [loading,    setLoading]    = useState(true);
-  const [activeTab,  setActiveTab]  = useState<string>("destacados");
+  const [activeTab,  setActiveTab]  = useState<string>("todos");
   const [appScreen,  setAppScreen]  = useState<AppScreen>("menu");
   const [cart,       setCart]       = useState<Map<number, CartEntry>>(new Map());
   const [orderCode,  setOrderCode]  = useState<string | null>(null);
@@ -177,6 +172,9 @@ export default function MenuPublicoPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const secRefs   = useRef<Partial<Record<string, HTMLElement>>>({});
+
+  // Categorías únicas derivadas de los productos (orden de aparición en DB)
+  const cats = useMemo(() => Array.from(new Set(products.map(p => p.category))), [products]);
 
   // Bootstrap
   useEffect(() => {
@@ -227,14 +225,14 @@ export default function MenuPublicoPage() {
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const top  = scrollRef.current.scrollTop + 80;
-    const keys = ["destacados", ...CATS.map(c => c.key)];
-    let cur = "destacados";
+    const keys = ["todos", ...cats];
+    let cur = "todos";
     for (const k of keys) {
       const el = secRefs.current[k];
       if (el && el.offsetTop <= top) cur = k;
     }
     setActiveTab(cur);
-  }, []);
+  }, [cats]);
 
   const goTo = (key: string) => {
     setActiveTab(key);
@@ -324,20 +322,23 @@ export default function MenuPublicoPage() {
     }
   }
 
-  // Derived data
-  const grouped = CATS.reduce<Record<Category, Product[]>>(
-    (acc, { key }) => {
-      acc[key] = products.filter(p => p.category === key);
-      return acc;
-    },
-    { hamburguesas: [], raciones: [], bebidas: [] },
-  );
+  // Derived data — dinámico desde productos
+  const grouped = useMemo(() => {
+    const g: Record<string, Product[]> = {};
+    for (const cat of cats) g[cat] = products.filter(p => p.category === cat);
+    return g;
+  }, [cats, products]);
 
-  const hero = grouped.hamburguesas[0] ?? grouped.raciones[0] ?? null;
+  const allTabs = useMemo(() => [
+    { key: "todos", label: "Todos" },
+    ...cats.map(cat => ({ key: cat, label: capitalize(cat) })),
+  ], [cats]);
+
+  const hero = products[0] ?? null;
   const featured = [
-    ...grouped.hamburguesas.slice(1, 3),
-    ...grouped.raciones.slice(0, 2),
-    ...grouped.bebidas.slice(0, 1),
+    ...(grouped[cats[0]] ?? []).slice(1, 3),
+    ...(grouped[cats[1]] ?? []).slice(0, 2),
+    ...(grouped[cats[2]] ?? []).slice(0, 1),
   ].slice(0, 5);
 
   const seatLabel = form.zone
@@ -401,18 +402,19 @@ export default function MenuPublicoPage() {
 
         {/* Tabs */}
         <nav className={styles.custTabs}>
-          {ALL_TABS.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              className={
-                styles.custTab + (activeTab === key ? " " + styles.custTabActive : "")
-              }
-              onClick={() => goTo(key)}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
+          {allTabs.map(({ key, label }) => {
+            const Icon = key === "todos" ? Star : getCatIcon(key);
+            return (
+              <button
+                key={key}
+                className={styles.custTab + (activeTab === key ? " " + styles.custTabActive : "")}
+                onClick={() => goTo(key)}
+              >
+                <Icon size={14} />
+                {label}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Scroll area */}
@@ -424,7 +426,7 @@ export default function MenuPublicoPage() {
         >
 
           {/* Hero */}
-          <div ref={el => { if (el) secRefs.current.destacados = el; }}>
+          <div ref={el => { if (el) secRefs.current.todos = el; }}>
             {hero && (
               <div className={styles.hero}>
                 <div className={styles.heroHalo} />
@@ -487,14 +489,15 @@ export default function MenuPublicoPage() {
           )}
 
           {/* Category sections */}
-          {CATS.map(({ key, label, Icon }) => {
-            const items = grouped[key];
+          {cats.map(cat => {
+            const items = grouped[cat] ?? [];
             if (items.length === 0) return null;
+            const Icon = getCatIcon(cat);
             return (
-              <div key={key} ref={el => { if (el) secRefs.current[key] = el; }}>
+              <div key={cat} ref={el => { if (el) secRefs.current[cat] = el; }}>
                 <div className={styles.secHead}>
                   <Icon size={20} />
-                  <span className={styles.secHeadT}>{label}</span>
+                  <span className={styles.secHeadT}>{capitalize(cat)}</span>
                   <span className={styles.secHeadN}>{items.length} opciones</span>
                 </div>
                 <div className={styles.prodList}>
