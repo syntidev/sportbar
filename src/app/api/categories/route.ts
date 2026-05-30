@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// Category es String libre — se infiere de los productos existentes.
+// Category 酿 String libre — se infiere de los productos existentes.
 // Retorna lista única de categorías con conteos.
 
-// ── GET /api/categories ───────────────────────────────────────────────────────
+// ── GET /api/categories ─────────────────────────────────────────────
 
 export async function GET() {
   try {
