@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
   const zona  = req.nextUrl.searchParams.get('zona')  ?? 'general'
   const raw   = req.nextUrl.searchParams.get('color') ?? '#F5A623'
   const dark  = HEX_RE.test(raw) ? raw : '#F5A623'
-  // Canvas background is #f8fafc — use it as QR light so modules blend cleanly
-  const light = '#f8fafc'
+  // White swatch → invert: white modules on SportBar green. Otherwise blend with canvas bg.
+  const light = dark === '#FFFFFF' ? '#2E7D32' : '#f8fafc'
 
   const url = `https://tusport.bar/menu?ref=qr&zona=${encodeURIComponent(zona)}`
 

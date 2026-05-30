@@ -120,13 +120,16 @@ export default function MarketingPage() {
     const topLabel    = topText.trim()    || "Usa tu cámara"
     const bottomLabel = bottomText.trim() || "tusport.bar"
 
+    // White swatch → invert: white QR modules on SportBar green. Green drives all design elements.
+    const effectiveColor = qrColor === "#FFFFFF" ? "#2E7D32" : qrColor
+
     // ─ Background (off-white premium) ─────────────────────────────────
     ctx.fillStyle = "#f8fafc"
     roundRect(ctx, 0, 0, W, H, [24, 24, 24, 24])
     ctx.fill()
 
     // ─ Top color bar ──────────────────────────────────────────────────
-    ctx.fillStyle = qrColor
+    ctx.fillStyle = effectiveColor
     roundRect(ctx, 0, 0, W, 74, [24, 24, 0, 0])
     ctx.fill()
 
@@ -144,7 +147,7 @@ export default function MarketingPage() {
     ctx.fillText(bizName.slice(0, 32), W / 2, 114)
 
     // ─ Scan corners (before QR) ───────────────────────────────────────
-    drawCorners(ctx, 48, 124, 304, 30, 5, qrColor)
+    drawCorners(ctx, 48, 124, 304, 30, 5, effectiveColor)
 
     // ─ Fetch QR SVG & draw ────────────────────────────────────────────
     try {
@@ -163,10 +166,10 @@ export default function MarketingPage() {
     } catch { /* skip — canvas shows without QR */ }
 
     // ─ Corners redrawn on top for crisp look ──────────────────────────
-    drawCorners(ctx, 48, 124, 304, 30, 5, qrColor)
+    drawCorners(ctx, 48, 124, 304, 30, 5, effectiveColor)
 
     // ─ Bottom text ────────────────────────────────────────────────────
-    ctx.fillStyle    = qrColor
+    ctx.fillStyle    = effectiveColor
     ctx.font         = "bold 17px system-ui, -apple-system, sans-serif"
     ctx.textAlign    = "center"
     ctx.textBaseline = "alphabetic"
