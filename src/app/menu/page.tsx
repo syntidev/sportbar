@@ -282,20 +282,21 @@ function MenuContent() {
     if (first) setActiveGroup(first);
   }, [products]);
 
-  // Supabase Realtime — detectar apertura de turno
+  // Supabase Realtime — canal broadcast 'turno' (no postgres_changes — DB es MySQL)
   useEffect(() => {
     const client = getSupabase();
     if (!client) return;
     const ch = client
       .channel("turno")
       .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "config", filter: "key=eq.turno_activo" },
-        (payload: { new: Record<string, string> }) => {
-          try {
-            const val = JSON.parse(payload.new.value) as TurnoData;
-            if (val.is_active) window.location.reload();
-          } catch { /* skip */ }
+        "broadcast",
+        { event: "turno_update" },
+        ({ payload }: { payload: { is_active: boolean; partido_nombre: string } }) => {
+          if (payload.is_active) {
+            window.location.reload();
+          } else {
+            setTurno(prev => prev ? { ...prev, ...payload } : payload as TurnoData);
+          }
         },
       )
       .subscribe();

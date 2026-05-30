@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { broadcastTurno } from '@/lib/supabase'
 
 const TURNO_KEY = 'turno_activo'
 
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
+    void broadcastTurno({ is_active: true, partido_nombre: turno.partido_nombre })
     return NextResponse.json({ success: true, turno })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al abrir turno' }, { status: 500 })
@@ -108,6 +110,7 @@ export async function DELETE() {
       create: { key: TURNO_KEY, value: JSON.stringify(closed) },
     })
 
+    void broadcastTurno({ is_active: false, partido_nombre: closed.partido_nombre })
     return NextResponse.json({ success: true, turno: closed })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al cerrar turno' }, { status: 500 })
