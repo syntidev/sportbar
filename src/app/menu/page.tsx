@@ -70,7 +70,7 @@ export default function MenuPublicoPage() {
 
   const sectionRefs = useRef<Partial<Record<Category, HTMLElement>>>({});
 
-  // -- Bootstrap --
+  // ── Bootstrap ──
   useEffect(() => {
     async function init() {
       try {
@@ -98,7 +98,7 @@ export default function MenuPublicoPage() {
     init();
   }, []);
 
-  // -- Supabase Realtime: detectar apertura de turno --
+  // ── Supabase Realtime: detectar apertura de turno ──
   useEffect(() => {
     const client = getSupabase();
     if (!client) return;
@@ -119,7 +119,7 @@ export default function MenuPublicoPage() {
     return () => { void client.removeChannel(channel); };
   }, []);
 
-  // -- Scroll to category section --
+  // ── Scroll to category section ──
   function scrollToSection(cat: Category) {
     setActiveTab(cat);
     const el = sectionRefs.current[cat];
@@ -129,7 +129,7 @@ export default function MenuPublicoPage() {
     }
   }
 
-  // -- Open modal --
+  // ── Open modal ──
   function openModal(product: Product) {
     setModal(product);
     setSubmitted(false);
@@ -138,7 +138,7 @@ export default function MenuPublicoPage() {
     setForm({ qty: 1, zone: "", seat: "", name: "", lastname: "", cedula: "" });
   }
 
-  // -- Submit order --
+  // ── Submit order ──
   async function handleSubmit() {
     if (!modal) return;
     if (!form.zone || !form.name.trim() || !form.lastname.trim()) {
@@ -146,7 +146,7 @@ export default function MenuPublicoPage() {
       return;
     }
     if (form.zone === "VIP" && !form.cedula.trim()) {
-      setFormError("Cedula obligatoria para zona VIP");
+      setFormError("Cédula obligatoria para zona VIP");
       return;
     }
     setSubmitting(true);
@@ -192,7 +192,7 @@ export default function MenuPublicoPage() {
     { hamburguesas: [], raciones: [], bebidas: [] },
   );
 
-  // -- Loading --
+  // ── Loading ──
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -203,7 +203,7 @@ export default function MenuPublicoPage() {
     );
   }
 
-  // -- Curtain --
+  // ── Curtain ──
   if (!turno?.is_active) {
     return (
       <div className={styles.curtain}>
@@ -217,18 +217,18 @@ export default function MenuPublicoPage() {
         />
         <div className={styles.curtainBody}>
           <span className={styles.curtainMatch}>
-            {turno?.partido_nombre || "Proximo partido"}
+            {turno?.partido_nombre || "Próximo partido"}
           </span>
           <div className={styles.curtainDivider} />
           <span className={styles.curtainSub}>
-            El menu abre cuando inicie el partido
+            El menú abre cuando inicie el partido
           </span>
         </div>
       </div>
     );
   }
 
-  // -- Menu --
+  // ── Menu ──
   return (
     <>
       <div className={styles.page}>
@@ -238,7 +238,7 @@ export default function MenuPublicoPage() {
           <div className={styles.headerText}>
             <span className={styles.headerTitle}>Sport Bar</span>
             <span className={styles.headerSub}>
-              Guaiqueries · {turno.partido_nombre}
+              Guaiquerías · {turno.partido_nombre}
             </span>
           </div>
         </header>
@@ -269,7 +269,7 @@ export default function MenuPublicoPage() {
                 ref={(el) => { if (el) sectionRefs.current[key] = el; }}
               >
                 <div className={styles.catHeader}>
-                  <Icon size={20} />
+                  <Icon size={14} />
                   {label}
                   <span className={styles.catCount}>{items.length}</span>
                 </div>
@@ -316,9 +316,8 @@ export default function MenuPublicoPage() {
                           <button
                             className={styles.btnPedir}
                             onClick={() => openModal(p)}
-                            aria-label={`Pedir ${p.name}`}
                           >
-                            +
+                            Pedir
                           </button>
                         </div>
                       </div>
@@ -354,7 +353,7 @@ export default function MenuPublicoPage() {
               <div className={styles.sheetHandle} />
 
               {submitted ? (
-                /* -- Success -- */
+                /* ── Success ── */
                 <div className={styles.successState}>
                   <motion.div
                     className={styles.successIcon}
@@ -364,15 +363,15 @@ export default function MenuPublicoPage() {
                   >
                     <Check size={28} />
                   </motion.div>
-                  <span className={styles.successTitle}>Pedido enviado!</span>
+                  <span className={styles.successTitle}>¡Pedido enviado!</span>
                   <span className={styles.successCode}>{orderCode}</span>
-                  <span className={styles.successSub}>El mesero llegara con tu orden</span>
+                  <span className={styles.successSub}>El mesero llegará con tu orden</span>
                   <button className={styles.btnDone} onClick={() => setModal(null)}>
                     Listo
                   </button>
                 </div>
               ) : (
-                /* -- Form -- */
+                /* ── Form ── */
                 <>
                   <div className={styles.sheetHeader}>
                     <div className={styles.sheetHeaderText}>
@@ -398,7 +397,7 @@ export default function MenuPublicoPage() {
                       className={styles.qtyBtn}
                       onClick={() => setForm((f) => ({ ...f, qty: Math.max(1, f.qty - 1) }))}
                     >
-                      -
+                      −
                     </button>
                     <span className={styles.qtyNum}>{form.qty}</span>
                     <button
@@ -457,7 +456,7 @@ export default function MenuPublicoPage() {
                       </label>
                       <input
                         className={styles.input}
-                        placeholder="Perez"
+                        placeholder="Pérez"
                         value={form.lastname}
                         onChange={(e) => setForm((f) => ({ ...f, lastname: e.target.value }))}
                       />
@@ -467,7 +466,7 @@ export default function MenuPublicoPage() {
                   {/* Cedula */}
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>
-                      Cedula
+                      Cédula
                       {form.zone === "VIP" && <span className={styles.required}> *</span>}
                     </label>
                     <input
@@ -493,7 +492,7 @@ export default function MenuPublicoPage() {
                     <ShoppingBag size={16} />
                     {submitting
                       ? "Enviando..."
-                      : `Pedir REF ${(Number(modal.price_usd) * form.qty).toFixed(2)}`}
+                      : `Pedir · REF ${(Number(modal.price_usd) * form.qty).toFixed(2)}`}
                   </button>
                 </>
               )}
