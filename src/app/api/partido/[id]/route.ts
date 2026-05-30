@@ -90,6 +90,8 @@ export interface OrdenItem {
   zone:           string
   origin:         string
   created_at:     string
+  payment_method: string | null
+  items_summary:  string           // "2x Hamburguesa, 1x Malta"
 }
 
 export interface PartidoData {
@@ -348,6 +350,8 @@ export async function GET(
         zone:           o.zone,
         origin:         o.origin,
         created_at:     o.created_at.toISOString(),
+        payment_method: o.payment_method,
+        items_summary:  o.items.map((i) => `${i.qty}x ${i.product.name}`).join(', '),
       }))
 
     // ── 10. Assemble ─────────────────────────────────────────────────────────

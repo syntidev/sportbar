@@ -6,7 +6,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { animate, motion } from 'framer-motion'
 import {
   AlertCircle, AlertTriangle, ArrowLeft, Ban, BarChart2,
-  Banknote, Clock, CreditCard, Hash, List, MapPin,
+  Banknote, Clock, CreditCard, Download, Hash, List, MapPin,
   ShoppingBag, Target, TrendingUp, Users, X, Zap,
 } from 'lucide-react'
 import type {
@@ -77,10 +77,12 @@ export default function PartidoDetailPage({ params }: { params: { id: string } }
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState<string | null>(null)
   const [userRole,     setUserRole]     = useState<string | null>(null)
-  const [cancelTarget, setCancelTarget] = useState<OrdenItem | null>(null)
-  const [reason,       setReason]       = useState('')
-  const [cancelling,   setCancelling]   = useState(false)
-  const [cancelError,  setCancelError]  = useState<string | null>(null)
+  const [cancelTarget,   setCancelTarget]   = useState<OrdenItem | null>(null)
+  const [reason,         setReason]         = useState('')
+  const [cancelling,     setCancelling]     = useState(false)
+  const [cancelError,    setCancelError]    = useState<string | null>(null)
+  const [exportingPDF,   setExportingPDF]   = useState(false)
+  const [exportingXLSX,  setExportingXLSX]  = useState(false)
 
   function loadData(signal?: AbortSignal) {
     setLoading(true)
@@ -140,6 +142,149 @@ export default function PartidoDetailPage({ params }: { params: { id: string } }
 
   const canCancel = userRole === 'admin'
 
+  // ── Exportar PDF ──────────────────────────────────────────────────────────────
+  async function handleExportPDF() {
+    if (!data) return
+    setExportingPDF(true)
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ])
+
+      const doc  = new jsPDF()
+      const now  = new Date().toLocaleString('es-VE')
+      const name = data.meta.partido_nombre
+
+      doc.setFontSize(18)
+      doc.setFont('helvetica', 'bold')
+      doc.text(name, 14, 20)
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Generado: ${now}`, 14, 27)
+
+      // Resumen
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Resumen ejecutivo', 14, 36)
+      autoTable(doc, {
+        startY: 39,
+        head: [['Métrica', 'Valor']],
+        body: [
+          ['Total órdenes', String(data.resumen.total_ordenes)],
+          ['Revenue', `REF ${data.resumen.revenue_usd.toFixed(2)}`],
+          ['Revenue Bs.', `Bs. ${data.resumen.revenue_bs.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`],
+          ['Ticket promedio', `REF ${data.resumen.ticket_avg_usd.toFixed(2)}`],
+          ...(data.resumen.avg_service_min !== null
+            ? [['Tiempo servicio prom.', `${data.resumen.avg_service_min} min`]]
+            : []),
+        ],
+        theme:      'striped',
+        headStyles: { fillColor: [46, 125, 50] },
+        margin:     { left: 14, right: 14 },
+      })
+
+      // Por venue/zona
+      const lastRes = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+      let y = lastRes.finalY + 10
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Órdenes por punto de venta', 14, y)
+      autoTable(doc, {
+        startY: y + 3,
+        head:   [['Punto', 'Órdenes', 'Revenue REF', 'Tiempo prom.']],
+        body:   data.por_venue.map((v) => [
+          v.label,
+          String(v.order_count),
+          `REF ${v.revenue_usd.toFixed(2)}`,
+          v.avg_service_min !== null ? `${v.avg_service_min.toFixed(1)} min` : '—',
+        ]),
+        theme:      'striped',
+        headStyles: { fillColor: [46, 125, 50] },
+        margin:     { left: 14, right: 14 },
+      })
+
+      // Top 5 productos
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Top 5 productos (por cantidad)', 14, y)
+      autoTable(doc, {
+        startY: y + 3,
+        head:   [['#', 'Producto', 'Categoría', 'Unidades', 'Revenue REF']],
+        body:   data.top_productos.por_cantidad.map((p, i) => [
+          String(i + 1),
+          p.name,
+          p.category,
+          String(p.qty),
+          `REF ${p.revenue_usd.toFixed(2)}`,
+        ]),
+        theme:      'striped',
+        headStyles: { fillColor: [46, 125, 50] },
+        margin:     { left: 14, right: 14 },
+      })
+
+      // Métodos de pago
+      const methodMap = new Map<string, { count: number; total: number }>()
+      for (const o of data.ordenes) {
+        if (o.payment_status === 'CANCELLED') continue
+        const m = o.payment_method ?? 'No especificado'
+        const e = methodMap.get(m) ?? { count: 0, total: 0 }
+        methodMap.set(m, { count: e.count + 1, total: e.total + o.total_usd })
+      }
+      if (methodMap.size > 0) {
+        y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+        doc.setFontSize(11)
+        doc.setFont('helvetica', 'bold')
+        doc.text('Métodos de pago', 14, y)
+        autoTable(doc, {
+          startY: y + 3,
+          head:   [['Método', 'Órdenes', 'Total REF']],
+          body:   Array.from(methodMap.entries()).map(([m, v]) => [
+            m,
+            String(v.count),
+            `REF ${v.total.toFixed(2)}`,
+          ]),
+          theme:      'striped',
+          headStyles: { fillColor: [46, 125, 50] },
+          margin:     { left: 14, right: 14 },
+        })
+      }
+
+      doc.save(`reporte-${name.replace(/\s+/g, '-').toLowerCase()}.pdf`)
+    } finally {
+      setExportingPDF(false)
+    }
+  }
+
+  // ── Exportar XLSX ─────────────────────────────────────────────────────────────
+  async function handleExportXLSX() {
+    if (!data) return
+    setExportingXLSX(true)
+    try {
+      const XLSX = await import('xlsx')
+
+      const rows = data.ordenes.map((o) => ({
+        'Código':        o.code,
+        'Cliente':       o.customer_name,
+        'Zona':          o.zone,
+        'Items':         o.items_summary,
+        'Total REF':     o.total_usd,
+        'Método pago':   o.payment_method ?? '',
+        'Estado pago':   o.payment_status,
+        'Origen':        o.origin,
+        'Hora':          new Date(o.created_at).toLocaleString('es-VE'),
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Órdenes')
+      XLSX.writeFile(wb, `ordenes-${data.meta.partido_nombre.replace(/\s+/g, '-').toLowerCase()}.xlsx`)
+    } finally {
+      setExportingXLSX(false)
+    }
+  }
+
   return (
     <div className={styles.page}>
 
@@ -191,6 +336,40 @@ export default function PartidoDetailPage({ params }: { params: { id: string } }
 
       {data && (
         <>
+          {/* ── Export toolbar ─────────────────────────────────────────────── */}
+          <div style={{ display: 'flex', gap: 8, padding: '0 0 4px' }}>
+            <button
+              onClick={handleExportPDF}
+              disabled={exportingPDF}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'rgba(198,40,40,0.12)', border: '1px solid rgba(198,40,40,0.35)',
+                color: '#ef9a9a', fontSize: '0.78rem', fontWeight: 700,
+                cursor: exportingPDF ? 'not-allowed' : 'pointer', opacity: exportingPDF ? 0.55 : 1,
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              <Download size={13} aria-hidden />
+              {exportingPDF ? 'Generando…' : 'Exportar PDF'}
+            </button>
+            <button
+              onClick={handleExportXLSX}
+              disabled={exportingXLSX}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 8,
+                background: 'rgba(46,125,50,0.12)', border: '1px solid rgba(46,125,50,0.35)',
+                color: 'var(--color-primary-light)', fontSize: '0.78rem', fontWeight: 700,
+                cursor: exportingXLSX ? 'not-allowed' : 'pointer', opacity: exportingXLSX ? 0.55 : 1,
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              <Download size={13} aria-hidden />
+              {exportingXLSX ? 'Generando…' : 'Exportar XLSX'}
+            </button>
+          </div>
+
           {/* ─────────────────────────────────────────────────────────────── */}
           {/* SECCIÓN 1 — RESUMEN EJECUTIVO                                   */}
           {/* ─────────────────────────────────────────────────────────────── */}
