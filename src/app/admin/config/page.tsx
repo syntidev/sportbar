@@ -34,6 +34,9 @@ interface PosTerminal {
   is_active:         boolean;
 }
 
+type RouteDestination = "cocina" | "bar" | "matriz";
+interface RoutingRule { category: string; destination: RouteDestination }
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MODES: { key: CurrencyMode; label: string }[] = [
@@ -116,6 +119,11 @@ export default function AdminConfigPage() {
   const [tForm,        setTForm]        = useState(T_INIT);
   const [tSaving,      setTSaving]      = useState(false);
 
+  // KDS Routing
+  const [routing,  setRouting]  = useState<RoutingRule[]>([]);
+  const [rForm,    setRForm]    = useState({ category: "", destination: "cocina" as RouteDestination });
+  const [rSaving,  setRSaving]  = useState(false);
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
@@ -134,19 +142,21 @@ export default function AdminConfigPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [cfgRes, rateRes, mRes, tRes] = await Promise.all([
+        const [cfgRes, rateRes, mRes, tRes, routeRes] = await Promise.all([
           fetch("/api/config"),
           fetch("/api/currency"),
           fetch("/api/payment-methods"),
           fetch("/api/terminals"),
+          fetch("/api/kds/routing"),
         ]);
-        const [cfgData, rateData, mData, tData] = await Promise.all([
-          cfgRes.json(), rateRes.json(), mRes.json(), tRes.json(),
+        const [cfgData, rateData, mData, tData, routeData] = await Promise.all([
+          cfgRes.json(), rateRes.json(), mRes.json(), tRes.json(), routeRes.json(),
         ]) as [
           { success: boolean; config: Record<string, string> },
           { rate?: number; updated_at?: string },
           { methods?: PaymentMethod[] },
           { terminals?: PosTerminal[] },
+          { rules?: RoutingRule[] },
         ];
 
         if (cfgData.success) {
@@ -159,6 +169,7 @@ export default function AdminConfigPage() {
         if (rateData.updated_at) setRateUpdatedAt(rateData.updated_at);
         if (mData.methods)       setMethods(mData.methods);
         if (tData.terminals)     setTerminals(tData.terminals);
+        if (routeData.rules)     setRouting(routeData.rules);
       } finally {
         setLoading(false);
       }
@@ -322,6 +333,34 @@ export default function AdminConfigPage() {
     const res  = await fetch(`/api/terminals/${t.id}`, { method: "DELETE" });
     const data = await res.json() as { success: boolean; terminals?: PosTerminal[] };
     if (data.success && data.terminals) { setTerminals(data.terminals); showToast("Dispositivo eliminado"); }
+  }
+
+  // ── KDS Routing ───────────────────────────────────────────────────────────────
+
+  async function handleAddRoute() {
+    if (!rForm.category.trim()) return;
+    setRSaving(true);
+    try {
+      const res  = await fetch("/api/kds/routing", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(rForm),
+      });
+      const data = await res.json() as { success: boolean; rules?: RoutingRule[] };
+      if (data.success && data.rules) {
+        setRouting(data.rules);
+        setRForm({ category: "", destination: "cocina" });
+        showToast("Regla guardada");
+      }
+    } finally {
+      setRSaving(false);
+    }
+  }
+
+  async function handleDeleteRoute(category: string) {
+    const res  = await fetch(`/api/kds/routing?category=${encodeURIComponent(category)}`, { method: "DELETE" });
+    const data = await res.json() as { success: boolean; rules?: RoutingRule[] };
+    if (data.success && data.rules) { setRouting(data.rules); showToast("Regla eliminada"); }
   }
 
   function fmtDate(iso: string | null) {
@@ -514,6 +553,68 @@ export default function AdminConfigPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── Routing KDS ── */}
+      <div className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div>
+            <span className={styles.sectionTitle}>Routing KDS</span>
+            <p className={styles.sectionHint}>Qué estación recibe cada categoría de producto</p>
+          </div>
+        </div>
+        <div className={styles.sectionCard}>
+          {routing.map((r) => (
+            <div key={r.category} className={styles.methodRow}>
+              <span className={styles.methodName} style={{ flex: 1 }}>{r.category}</span>
+              <span className={styles.badge} style={{
+                background: r.destination === "bar"
+                  ? "rgba(245,166,35,0.12)" : r.destination === "matriz"
+                  ? "rgba(59,130,246,0.12)" : "rgba(46,125,50,0.12)",
+                color: r.destination === "bar"
+                  ? "var(--color-brand)" : r.destination === "matriz"
+                  ? "#60a5fa" : "var(--color-primary-light)",
+              }}>
+                → {r.destination}
+              </span>
+              <div className={styles.rowActions}>
+                <button
+                  className={`${styles.btnAct} ${styles.btnActDanger}`}
+                  onClick={() => handleDeleteRoute(r.category)}
+                  title="Eliminar"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className={styles.routeForm}>
+            <input
+              className={styles.input}
+              placeholder="Categoría (ej. hamburguesas)"
+              value={rForm.category}
+              onChange={(e) => setRForm((p) => ({ ...p, category: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === "Enter") void handleAddRoute(); }}
+            />
+            <select
+              className={styles.input}
+              value={rForm.destination}
+              onChange={(e) => setRForm((p) => ({ ...p, destination: e.target.value as RouteDestination }))}
+            >
+              <option value="cocina">Cocina</option>
+              <option value="bar">Bar</option>
+              <option value="matriz">Matriz</option>
+            </select>
+            <button
+              className={styles.btnBrand}
+              onClick={handleAddRoute}
+              disabled={rSaving || !rForm.category.trim()}
+            >
+              <Plus size={14} />
+              Agregar
+            </button>
+          </div>
         </div>
       </div>
 

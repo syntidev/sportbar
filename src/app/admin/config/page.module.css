@@ -629,6 +629,19 @@
   box-shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
 
+/* ── KDS Routing form ────────────────────────────────────────────────────────── */
+
+.routeForm {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.routeForm .input { flex: 1; min-width: 120px; }
+.routeForm .btnBrand { flex-shrink: 0; height: 42px; }
+
 /* ── Skeletons ───────────────────────────────────────────────────────────────── */
 
 .skeleton {
