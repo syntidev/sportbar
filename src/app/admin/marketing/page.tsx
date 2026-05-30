@@ -145,6 +145,13 @@ export default function MarketingPage() {
     ctx.textBaseline = "alphabetic"
     ctx.fillText(bizName.slice(0, 32), W / 2, 108)
 
+    // ─ White backing for monochrome (black) QR ───────────────────────
+    if (qrColor === '#0a0a0a') {
+      ctx.fillStyle = '#FFFFFF'
+      roundRect(ctx, 46, 116, 308, 308, [6, 6, 6, 6])
+      ctx.fill()
+    }
+
     // ─ Scan corners (before QR) ───────────────────────────────────────
     drawCorners(ctx, 48, 118, 304, 28, 5, qrColor)
 
