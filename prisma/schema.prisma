@@ -1,4 +1,4 @@
-// CafeBall — Schema DB v1.1
+// CafeBall — Schema DB v1.2
 // POS Sport Bar Guaiqueries de Margarita
 
 generator client {
@@ -15,13 +15,17 @@ model Venue {
   id              Int       @id @default(autoincrement())
   name            String
   type            VenueType
-  capabilities    Json      // string[]
+  capabilities    Json      // string[] — legacy, ver VenueZone
   zona_geografica Json?
   is_active       Boolean   @default(true)
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
 
-  users           User[]
+  users               User[]
+  venueZones          VenueZone[]
+  venueUsers          VenueUser[]
+  venuePaymentMethods VenuePaymentMethod[]
+  orders_destino      Order[]              @relation("OrderVenueDestino")
 
   @@map("venues")
 }
@@ -30,6 +34,21 @@ enum VenueType {
   matriz
   quiosco
   cocina
+}
+
+// ── ZONAS DEL ESTADIO (dinámicas) ────────────────────
+model Zone {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  color      String      @default("#22c55e")
+  capacity   Int         @default(0)
+  is_active  Boolean     @default(true)
+  created_at DateTime    @default(now())
+
+  venueZones VenueZone[]
+  orders     Order[]
+
+  @@map("zones")
 }
 
 // ── USUARIOS DEL SISTEMA ──────────────────────────────
@@ -53,6 +72,7 @@ model User {
 
   orders            Order[]           @relation("CreatedBy")
   cancellation_logs CancellationLog[]
+  venueUsers        VenueUser[]
 
   @@index([venue_id], map: "users_venue_id_fkey")
   @@map("users")
@@ -117,17 +137,21 @@ model Order {
   customer_lastname String
   customer_id       String?      // cedula
 
-  // Ubicacion
-  zone   Zone
-  seat   String?                 // Fila G Asiento 12 o Palco 5
+  // Ubicacion (legacy enum + nuevo FK relacional)
+  zone         ZoneCode         // legacy — Norte|Sur|VIP|Externa
+  seat         String?          // Fila G Asiento 12 o Palco 5
+  zone_id      Int?             // FK a zones.id (nuevo modelo relacional)
+  zoneLookup   Zone?  @relation(fields: [zone_id], references: [id])
 
   // Totales
   total_usd   Decimal  @db.Decimal(10, 2)
   rate_used   Decimal  @db.Decimal(10, 4)  // tasa BCV al momento
   total_bs    Decimal  @db.Decimal(12, 2)  // total_usd x rate_used
 
-  // Venue asignado
-  venue_assigned  Int?
+  // Routing
+  venue_assigned   Int?   // legacy
+  venue_destino_id Int?   // FK a venues.id — venue al que fue derivada
+  venueDestino     Venue? @relation("OrderVenueDestino", fields: [venue_destino_id], references: [id])
 
   // Trazabilidad
   created_by  Int
@@ -142,7 +166,9 @@ model Order {
   validation        PaymentValidation?
   cancellation_logs CancellationLog[]
 
-  @@index([created_by], map: "orders_created_by_fkey")
+  @@index([created_by],       map: "orders_created_by_fkey")
+  @@index([zone_id])
+  @@index([venue_destino_id])
   @@map("orders")
 }
 
@@ -170,7 +196,8 @@ enum PaymentStatus {
   CANCELLED
 }
 
-enum Zone {
+// Renombrado de Zone → ZoneCode para liberar nombre al model Zone
+enum ZoneCode {
   Norte
   Sur
   VIP
@@ -189,8 +216,8 @@ model OrderItem {
   order       Order   @relation(fields: [order_id], references: [id])
   product     Product @relation(fields: [product_id], references: [id])
 
-  @@index([order_id], map: "order_items_order_id_fkey")
-  @@index([product_id], map: "order_items_product_id_fkey")
+  @@index([order_id],    map: "order_items_order_id_fkey")
+  @@index([product_id],  map: "order_items_product_id_fkey")
   @@map("order_items")
 }
 
@@ -302,8 +329,7 @@ enum TerminalMethod {
   biopago
 }
 
-
-// ── ANALYTICS ─────────────────────────────────────────────────────
+// ── ANALYTICS ─────────────────────────────────────────
 model AnalyticsEvent {
   id          Int      @id @default(autoincrement())
   event_type  String   @db.VarChar(30)  // page_view | qr_scan | order_placed
@@ -315,6 +341,7 @@ model AnalyticsEvent {
   @@index([created_at])
   @@map("analytics_events")
 }
+
 // ── LOG DE ANULACIONES (INMUTABLE) ───────────────────
 model CancellationLog {
   id              Int      @id @default(autoincrement())
@@ -328,7 +355,47 @@ model CancellationLog {
   order           Order    @relation(fields: [order_id], references: [id])
   user            User     @relation(fields: [cancelled_by], references: [id])
 
-  @@index([order_id], map: "cancellation_logs_order_id_fkey")
+  @@index([order_id],    map: "cancellation_logs_order_id_fkey")
   @@index([cancelled_by], map: "cancellation_logs_cancelled_by_fkey")
   @@map("cancellation_logs")
+}
+
+// ── RELACIONES VENUE ──────────────────────────────────
+
+model VenueZone {
+  id       Int   @id @default(autoincrement())
+  venue_id Int
+  zone_id  Int
+  venue    Venue @relation(fields: [venue_id], references: [id])
+  zone     Zone  @relation(fields: [zone_id], references: [id])
+
+  @@unique([venue_id, zone_id])
+  @@index([venue_id])
+  @@index([zone_id])
+  @@map("venue_zones")
+}
+
+model VenueUser {
+  id       Int   @id @default(autoincrement())
+  venue_id Int
+  user_id  Int
+  venue    Venue @relation(fields: [venue_id], references: [id])
+  user     User  @relation(fields: [user_id], references: [id])
+
+  @@unique([venue_id, user_id])
+  @@index([venue_id])
+  @@index([user_id])
+  @@map("venue_users")
+}
+
+model VenuePaymentMethod {
+  id        Int     @id @default(autoincrement())
+  venue_id  Int
+  method    String
+  is_active Boolean @default(true)
+  venue     Venue   @relation(fields: [venue_id], references: [id])
+
+  @@unique([venue_id, method])
+  @@index([venue_id])
+  @@map("venue_payment_methods")
 }
