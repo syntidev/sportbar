@@ -3,16 +3,6 @@ import { jwtVerify } from 'jose'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
-const CONFIG_KEY = 'zones'
-
-interface ZoneEntry {
-  id:          number
-  name:        string
-  description: string
-  color:       string
-  is_active:   boolean
-}
-
 function getSecret() {
   return new TextEncoder().encode(process.env.JWT_SECRET ?? '')
 }
@@ -31,25 +21,11 @@ async function requireAdmin(req: NextRequest): Promise<{ id: number } | NextResp
   }
 }
 
-async function readZones(): Promise<ZoneEntry[]> {
-  const row = await prisma.config.findUnique({ where: { key: CONFIG_KEY } })
-  if (!row) return []
-  try { return JSON.parse(row.value) as ZoneEntry[] } catch { return [] }
-}
-
-async function writeZones(zones: ZoneEntry[]): Promise<void> {
-  await prisma.config.upsert({
-    where:  { key: CONFIG_KEY },
-    create: { key: CONFIG_KEY, value: JSON.stringify(zones) },
-    update: { value: JSON.stringify(zones) },
-  })
-}
-
 const UpdateZoneSchema = z.object({
-  name:        z.string().trim().min(1).max(80).optional(),
-  description: z.string().trim().max(200).optional(),
-  color:       z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  is_active:   z.boolean().optional(),
+  name:      z.string().trim().min(1).max(80).optional(),
+  color:     z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  capacity:  z.number().int().min(0).optional(),
+  is_active: z.boolean().optional(),
 })
 
 export async function GET(
@@ -61,8 +37,10 @@ export async function GET(
   const id = parseInt(params.id, 10)
   if (isNaN(id)) return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 })
   try {
-    const zones = await readZones()
-    const zone = zones.find((z) => z.id === id)
+    const zone = await prisma.zone.findUnique({
+      where:   { id },
+      include: { _count: { select: { venueZones: true, orders: true } } },
+    })
     if (!zone) return NextResponse.json({ success: false, error: 'Zona no encontrada' }, { status: 404 })
     return NextResponse.json({ success: true, zone })
   } catch {
@@ -87,13 +65,12 @@ export async function PUT(
         { status: 400 },
       )
     }
-    const zones = await readZones()
-    const idx = zones.findIndex((z) => z.id === id)
-    if (idx === -1) return NextResponse.json({ success: false, error: 'Zona no encontrada' }, { status: 404 })
-    zones[idx] = { ...zones[idx], ...result.data }
-    await writeZones(zones)
-    return NextResponse.json({ success: true, zone: zones[idx] })
-  } catch {
+    const zone = await prisma.zone.update({ where: { id }, data: result.data })
+    return NextResponse.json({ success: true, zone })
+  } catch (err) {
+    const code = (err as { code?: string }).code
+    if (code === 'P2025') return NextResponse.json({ success: false, error: 'Zona no encontrada' }, { status: 404 })
+    if (code === 'P2002') return NextResponse.json({ success: false, error: 'Ya existe una zona con ese nombre' }, { status: 409 })
     return NextResponse.json({ success: false, error: 'Error al actualizar zona' }, { status: 500 })
   }
 }
@@ -107,12 +84,12 @@ export async function DELETE(
   const id = parseInt(params.id, 10)
   if (isNaN(id)) return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 })
   try {
-    const zones = await readZones()
-    const idx = zones.findIndex((z) => z.id === id)
-    if (idx === -1) return NextResponse.json({ success: false, error: 'Zona no encontrada' }, { status: 404 })
-    await writeZones(zones.filter((z) => z.id !== id))
+    await prisma.zone.delete({ where: { id } })
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (err) {
+    const code = (err as { code?: string }).code
+    if (code === 'P2025') return NextResponse.json({ success: false, error: 'Zona no encontrada' }, { status: 404 })
+    if (code === 'P2003') return NextResponse.json({ success: false, error: 'Zona tiene órdenes asociadas' }, { status: 409 })
     return NextResponse.json({ success: false, error: 'Error al eliminar zona' }, { status: 500 })
   }
 }

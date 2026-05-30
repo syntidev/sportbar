@@ -34,12 +34,16 @@ export async function GET(
   try {
     const venue = await prisma.venue.findUnique({ where: { id: venueId } })
     if (!venue) return NextResponse.json({ success: false, error: 'Venue no encontrado' }, { status: 404 })
-    const users = await prisma.user.findMany({
+    const venueUsers = await prisma.venueUser.findMany({
       where:   { venue_id: venueId },
-      select:  { id: true, code: true, name: true, lastname: true, role: true, is_active: true, cedula: true },
-      orderBy: [{ role: 'asc' }, { name: 'asc' }],
+      include: {
+        user: {
+          select: { id: true, code: true, name: true, lastname: true, role: true, is_active: true, cedula: true },
+        },
+      },
+      orderBy: { user: { name: 'asc' } },
     })
-    return NextResponse.json({ success: true, users })
+    return NextResponse.json({ success: true, users: venueUsers.map((vu) => vu.user) })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al obtener usuarios del venue' }, { status: 500 })
   }
@@ -68,12 +72,15 @@ export async function POST(
     ])
     if (!venue) return NextResponse.json({ success: false, error: 'Venue no encontrado' }, { status: 404 })
     if (!user)  return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
-    const updated = await prisma.user.update({
-      where:  { id: result.data.user_id },
-      data:   { venue_id: venueId },
-      select: { id: true, code: true, name: true, lastname: true, role: true, is_active: true },
+    await prisma.venueUser.upsert({
+      where:  { venue_id_user_id: { venue_id: venueId, user_id: result.data.user_id } },
+      create: { venue_id: venueId, user_id: result.data.user_id },
+      update: {},
     })
-    return NextResponse.json({ success: true, user: updated })
+    return NextResponse.json({
+      success: true,
+      user: { id: user.id, code: user.code, name: user.name, lastname: user.lastname, role: user.role, is_active: user.is_active },
+    })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al asignar usuario' }, { status: 500 })
   }
@@ -90,9 +97,12 @@ export async function DELETE(
   const userId = parseInt(req.nextUrl.searchParams.get('user_id') ?? '', 10)
   if (isNaN(userId)) return NextResponse.json({ success: false, error: 'user_id requerido en query' }, { status: 400 })
   try {
-    const user = await prisma.user.findUnique({ where: { id: userId, venue_id: venueId } })
-    if (!user) return NextResponse.json({ success: false, error: 'Usuario no pertenece a este venue' }, { status: 404 })
-    await prisma.user.update({ where: { id: userId }, data: { venue_id: null } })
+    const deleted = await prisma.venueUser.deleteMany({
+      where: { venue_id: venueId, user_id: userId },
+    })
+    if (deleted.count === 0) {
+      return NextResponse.json({ success: false, error: 'Asignación no encontrada' }, { status: 404 })
+    }
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al desasignar usuario' }, { status: 500 })

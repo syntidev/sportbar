@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-
-// Zone assignments stored in Venue.zona_geografica as { assigned_zone_ids: number[] }
-// Zone definitions live in config table key = "zones"
 
 function getSecret() {
   return new TextEncoder().encode(process.env.JWT_SECRET ?? '')
@@ -25,33 +21,6 @@ async function requireAdmin(req: NextRequest): Promise<{ id: number } | NextResp
   }
 }
 
-interface ZoneGeo { assigned_zone_ids: number[] }
-
-function parseGeo(raw: Prisma.JsonValue | null): ZoneGeo {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { assigned_zone_ids: [] }
-  const obj = raw as Record<string, unknown>
-  if (!Array.isArray(obj['assigned_zone_ids'])) return { assigned_zone_ids: [] }
-  return {
-    assigned_zone_ids: (obj['assigned_zone_ids'] as unknown[]).filter(
-      (x): x is number => typeof x === 'number',
-    ),
-  }
-}
-
-interface ZoneEntry {
-  id:          number
-  name:        string
-  description: string
-  color:       string
-  is_active:   boolean
-}
-
-async function readAllZones(): Promise<ZoneEntry[]> {
-  const row = await prisma.config.findUnique({ where: { key: 'zones' } })
-  if (!row) return []
-  try { return JSON.parse(row.value) as ZoneEntry[] } catch { return [] }
-}
-
 const AssignSchema = z.object({ zone_id: z.number().int().positive() })
 
 export async function GET(
@@ -65,10 +34,12 @@ export async function GET(
   try {
     const venue = await prisma.venue.findUnique({ where: { id: venueId } })
     if (!venue) return NextResponse.json({ success: false, error: 'Venue no encontrado' }, { status: 404 })
-    const geo = parseGeo(venue.zona_geografica)
-    const allZones = await readAllZones()
-    const zones = allZones.filter((z) => geo.assigned_zone_ids.includes(z.id))
-    return NextResponse.json({ success: true, zone_ids: geo.assigned_zone_ids, zones })
+    const venueZones = await prisma.venueZone.findMany({
+      where:   { venue_id: venueId },
+      include: { zone: true },
+      orderBy: { zone: { name: 'asc' } },
+    })
+    return NextResponse.json({ success: true, zones: venueZones.map((vz) => vz.zone) })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al obtener zonas del venue' }, { status: 500 })
   }
@@ -91,17 +62,18 @@ export async function POST(
         { status: 400 },
       )
     }
-    const venue = await prisma.venue.findUnique({ where: { id: venueId } })
+    const [venue, zone] = await Promise.all([
+      prisma.venue.findUnique({ where: { id: venueId } }),
+      prisma.zone.findUnique({ where: { id: result.data.zone_id } }),
+    ])
     if (!venue) return NextResponse.json({ success: false, error: 'Venue no encontrado' }, { status: 404 })
-    const geo = parseGeo(venue.zona_geografica)
-    if (!geo.assigned_zone_ids.includes(result.data.zone_id)) {
-      geo.assigned_zone_ids.push(result.data.zone_id)
-      await prisma.venue.update({
-        where: { id: venueId },
-        data:  { zona_geografica: geo as Prisma.InputJsonValue },
-      })
-    }
-    return NextResponse.json({ success: true, zone_ids: geo.assigned_zone_ids })
+    if (!zone)  return NextResponse.json({ success: false, error: 'Zona no encontrada' }, { status: 404 })
+    await prisma.venueZone.upsert({
+      where:  { venue_id_zone_id: { venue_id: venueId, zone_id: result.data.zone_id } },
+      create: { venue_id: venueId, zone_id: result.data.zone_id },
+      update: {},
+    })
+    return NextResponse.json({ success: true, zone })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al asignar zona' }, { status: 500 })
   }
@@ -118,15 +90,13 @@ export async function DELETE(
   const zoneId = parseInt(req.nextUrl.searchParams.get('zone_id') ?? '', 10)
   if (isNaN(zoneId)) return NextResponse.json({ success: false, error: 'zone_id requerido en query' }, { status: 400 })
   try {
-    const venue = await prisma.venue.findUnique({ where: { id: venueId } })
-    if (!venue) return NextResponse.json({ success: false, error: 'Venue no encontrado' }, { status: 404 })
-    const geo = parseGeo(venue.zona_geografica)
-    geo.assigned_zone_ids = geo.assigned_zone_ids.filter((id) => id !== zoneId)
-    await prisma.venue.update({
-      where: { id: venueId },
-      data:  { zona_geografica: geo as Prisma.InputJsonValue },
+    const deleted = await prisma.venueZone.deleteMany({
+      where: { venue_id: venueId, zone_id: zoneId },
     })
-    return NextResponse.json({ success: true, zone_ids: geo.assigned_zone_ids })
+    if (deleted.count === 0) {
+      return NextResponse.json({ success: false, error: 'Asignación no encontrada' }, { status: 404 })
+    }
+    return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al desasignar zona' }, { status: 500 })
   }

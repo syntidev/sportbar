@@ -3,18 +3,6 @@ import { jwtVerify } from 'jose'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
-// Zones stored in config table, key = "zones", value = ZoneEntry[]
-
-const CONFIG_KEY = 'zones'
-
-interface ZoneEntry {
-  id:          number
-  name:        string
-  description: string
-  color:       string
-  is_active:   boolean
-}
-
 function getSecret() {
   return new TextEncoder().encode(process.env.JWT_SECRET ?? '')
 }
@@ -33,32 +21,21 @@ async function requireAdmin(req: NextRequest): Promise<{ id: number } | NextResp
   }
 }
 
-async function readZones(): Promise<ZoneEntry[]> {
-  const row = await prisma.config.findUnique({ where: { key: CONFIG_KEY } })
-  if (!row) return []
-  try { return JSON.parse(row.value) as ZoneEntry[] } catch { return [] }
-}
-
-async function writeZones(zones: ZoneEntry[]): Promise<void> {
-  await prisma.config.upsert({
-    where:  { key: CONFIG_KEY },
-    create: { key: CONFIG_KEY, value: JSON.stringify(zones) },
-    update: { value: JSON.stringify(zones) },
-  })
-}
-
 const CreateZoneSchema = z.object({
-  name:        z.string().trim().min(1).max(80),
-  description: z.string().trim().max(200).default(''),
-  color:       z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#2E7D32'),
-  is_active:   z.boolean().default(true),
+  name:      z.string().trim().min(1).max(80),
+  color:     z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#22c55e'),
+  capacity:  z.number().int().min(0).default(0),
+  is_active: z.boolean().default(true),
 })
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req)
   if (auth instanceof NextResponse) return auth
   try {
-    const zones = await readZones()
+    const zones = await prisma.zone.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { venueZones: true, orders: true } } },
+    })
     return NextResponse.json({ success: true, zones })
   } catch {
     return NextResponse.json({ success: false, error: 'Error al obtener zonas' }, { status: 500 })
@@ -77,12 +54,13 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
-    const zones = await readZones()
-    const nextId = zones.length > 0 ? Math.max(...zones.map((z) => z.id)) + 1 : 1
-    const newZone: ZoneEntry = { id: nextId, ...result.data }
-    await writeZones([...zones, newZone])
-    return NextResponse.json({ success: true, zone: newZone }, { status: 201 })
-  } catch {
-    return NextResponse.json({ success: false, error: 'Error al crear zona' }, { status: 500 })
+    const zone = await prisma.zone.create({ data: result.data })
+    return NextResponse.json({ success: true, zone }, { status: 201 })
+  } catch (err) {
+    const isUnique = (err as { code?: string }).code === 'P2002'
+    return NextResponse.json(
+      { success: false, error: isUnique ? 'Ya existe una zona con ese nombre' : 'Error al crear zona' },
+      { status: isUnique ? 409 : 500 },
+    )
   }
 }
