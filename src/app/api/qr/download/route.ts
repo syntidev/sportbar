@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       color:                { dark: '#2E7D32', light: '#FFFFFF' },
       errorCorrectionLevel: 'M',
     })
-    return new NextResponse(buf, {
+    return new NextResponse(buf as unknown as BodyInit, {
       headers: {
         'Content-Type':        'image/png',
         'Content-Disposition': `attachment; filename="qr-sportbar-${zona}.png"`,

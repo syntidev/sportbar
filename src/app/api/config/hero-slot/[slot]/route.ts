@@ -34,7 +34,7 @@ export async function POST(
     }
 
     await ensureDir()
-    let buf = Buffer.from(await file.arrayBuffer())
+    let buf: Buffer = Buffer.from(await file.arrayBuffer()) as Buffer
 
     if (buf.byteLength > MAX_BYTES) {
       buf = await sharp(buf)
