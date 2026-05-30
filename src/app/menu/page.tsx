@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -15,6 +16,8 @@ import styles from "./page.module.css";
 
 type Zone      = "Norte" | "Sur" | "VIP" | "Externa";
 type AppScreen = "menu" | "cart" | "confirm" | "success";
+
+interface HeroSlot { slot: number; url: string | null }
 
 interface Product {
   id:          number;
@@ -197,7 +200,16 @@ export default function MenuPublicoPage() {
     cedula:   "",
   });
 
+  // Hero slider state
+  const [heroSlots,  setHeroSlots]  = useState<HeroSlot[]>([]);
+  const [sliderIdx,  setSliderIdx]  = useState(0);
+  const sliderTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // URL params for analytics
+  const searchParams = useSearchParams();
+  const zoneParam = searchParams.get("zona") ?? searchParams.get("zone") ?? null;
 
   // Set of all categorias that belong to a known group
   const allGroupCats = useMemo(
@@ -209,11 +221,12 @@ export default function MenuPublicoPage() {
   useEffect(() => {
     async function init() {
       try {
-        const [tRes, rRes] = await Promise.all([
+        const [tRes, rRes, hsRes] = await Promise.all([
           fetch("/api/turno"),
           fetch("/api/currency"),
+          fetch("/api/config/hero-slots"),
         ]);
-        const [tData, rData] = await Promise.all([tRes.json(), rRes.json()]);
+        const [tData, rData, hsData] = await Promise.all([tRes.json(), rRes.json(), hsRes.json()]);
         if (tData.success) {
           setTurno(tData.turno as TurnoData);
           if ((tData.turno as TurnoData).is_active) {
@@ -223,12 +236,34 @@ export default function MenuPublicoPage() {
           }
         }
         if (rData.rate) setRate(rData.rate as number);
+        const slots = (hsData as HeroSlot[]).filter((s: HeroSlot) => s.url !== null);
+        setHeroSlots(slots);
       } finally {
         setLoading(false);
       }
     }
     init();
   }, []);
+
+  // Analytics — track page_view on mount
+  useEffect(() => {
+    const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop";
+    void fetch("/api/analytics/track", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_type: "page_view", zone: zoneParam, device_type: deviceType }),
+    });
+  }, []); // intentionally fire once — eslint-disable-line react-hooks/exhaustive-deps
+
+  // Hero slider autoplay (4 s)
+  const activeSlots = useMemo(() => heroSlots.filter(s => s.url !== null), [heroSlots]);
+  useEffect(() => {
+    if (activeSlots.length <= 1) return;
+    sliderTimer.current = setInterval(() => {
+      setSliderIdx(i => (i + 1) % activeSlots.length);
+    }, 4000);
+    return () => { if (sliderTimer.current) clearInterval(sliderTimer.current); };
+  }, [activeSlots.length]);
 
   // After products load, set activeGroup to first group that has products
   useEffect(() => {
@@ -454,6 +489,37 @@ export default function MenuPublicoPage() {
             {seatLabel}
           </div>
         </div>
+
+        {/* Ad banner slider */}
+        {activeSlots.length > 0 && (
+          <div className={styles.adSlider}>
+            <div
+              className={styles.adTrack}
+              style={{ transform: `translateX(-${sliderIdx * 100}%)` }}
+            >
+              {activeSlots.map((s, i) => (
+                <div key={s.slot} className={styles.adSlide}>
+                  <img src={s.url!} alt={`Banner ${i + 1}`} className={styles.adSlideImg} />
+                </div>
+              ))}
+            </div>
+            {activeSlots.length > 1 && (
+              <div className={styles.adDots}>
+                {activeSlots.map((_, i) => (
+                  <button
+                    key={i}
+                    className={styles.adDot + (i === sliderIdx ? " " + styles.adDotActive : "")}
+                    onClick={() => {
+                      setSliderIdx(i);
+                      if (sliderTimer.current) clearInterval(sliderTimer.current);
+                    }}
+                    aria-label={`Slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Group tabs */}
         <nav className={styles.custTabs}>

@@ -116,6 +116,11 @@ export async function POST(req: NextRequest) {
       include: { items: { include: { product: true } } },
     })
 
+    // Analytics — fire-and-forget
+    void prisma.analyticsEvent.create({
+      data: { event_type: 'order_placed', zone, device_type: null },
+    }).catch(() => undefined)
+
     return NextResponse.json({ success: true, order }, { status: 201 })
   } catch (error) {
     console.error(error)

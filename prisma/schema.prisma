@@ -287,6 +287,19 @@ enum TerminalMethod {
   biopago
 }
 
+
+// ── ANALYTICS ─────────────────────────────────────────────────────
+model AnalyticsEvent {
+  id          Int      @id @default(autoincrement())
+  event_type  String   @db.VarChar(30)  // page_view | qr_scan | order_placed
+  zone        String?  @db.VarChar(20)
+  device_type String?  @db.VarChar(20)
+  created_at  DateTime @default(now())
+
+  @@index([event_type, created_at])
+  @@index([created_at])
+  @@map("analytics_events")
+}
 // ── LOG DE ANULACIONES (INMUTABLE) ───────────────────
 model CancellationLog {
   id              Int      @id @default(autoincrement())
@@ -297,10 +310,4 @@ model CancellationLog {
   previous_status String
   created_at      DateTime @default(now())
 
-  order           Order    @relation(fields: [order_id], references: [id])
-  user            User     @relation(fields: [cancelled_by], references: [id])
-
-  @@index([order_id], map: "cancellation_logs_order_id_fkey")
-  @@index([cancelled_by], map: "cancellation_logs_cancelled_by_fkey")
-  @@map("cancellation_logs")
-}
+  order           Order    @relation(fields: [order_id], references: [id

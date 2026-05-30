@@ -360,3 +360,53 @@
   /* Featured: grid 4 columnas */
   .featRail { grid-template-columns:repeat(4, 1fr); }
 }
+
+/* ─── Ad Banner Slider ────────────────────────────────────── */
+.adSlider {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+.adTrack {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.adSlide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+}
+.adSlideImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.adDots {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.adDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.adDotActive {
+  background: var(--color-brand);
+  transform: scale(1.25);
+}

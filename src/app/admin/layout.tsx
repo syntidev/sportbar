@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Clock, Banknote, UtensilsCrossed,
   Users, Building2, Settings, CalendarDays, UserSquare2,
-  TrendingUp,
+  TrendingUp, Megaphone, BarChart2,
 } from 'lucide-react'
 import styles from './layout.module.css'
 
@@ -22,6 +22,8 @@ const NAV = [
   { href: '/admin/config',      label: 'Config',          short: 'Config',  Icon: Settings        },
   { href: '/admin/partido',     label: 'Partidos',        short: 'Partido', Icon: CalendarDays    },
   { href: '/admin/perfil',      label: 'Perfil',          short: 'Perfil',  Icon: UserSquare2     },
+  { href: '/admin/marketing',   label: 'Marketing',       short: 'Marketing', Icon: Megaphone     },
+  { href: '/admin/analytics',   label: 'Pulso',           short: 'Pulso',   Icon: BarChart2       },
 ] as const
 
 // ── Types ─────────────────────────────────────────────────────────────────────

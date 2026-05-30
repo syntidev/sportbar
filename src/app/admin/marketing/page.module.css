@@ -1,0 +1,143 @@
+/* =====================================================
+   Admin — Marketing: Hero Slider + QR Generator
+   CSS Modules — tokens de styles/tokens.css
+   ===================================================== */
+
+.page { padding: 24px; max-width: 900px; }
+
+.pageHead { margin-bottom: 28px; }
+.pageTitle { font-family: var(--font-display); font-size: 28px; letter-spacing: .02em; line-height: 1; }
+.pageSub { font-size: 13px; color: var(--color-text-muted); margin-top: 4px; }
+
+/* Section */
+.section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.sectionHead { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border); }
+.sectionIcon { color: var(--color-brand); flex: none; margin-top: 2px; }
+.sectionTitle { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; line-height: 1; }
+.sectionSub { font-size: 12px; color: var(--color-text-muted); margin-top: 3px; }
+
+/* Slots grid */
+.slotsGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 12px; }
+@media (max-width: 700px) { .slotsGrid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 480px) { .slotsGrid { grid-template-columns: repeat(2, 1fr); } }
+
+.slot {
+  position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden;
+  background: var(--color-surface-2); border: 2px dashed var(--color-border);
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.slot:hover { border-color: var(--color-brand); }
+.slotOver { border-color: var(--color-brand) !important; background: rgba(245,166,35,.08) !important; }
+.slotLoading { pointer-events: none; opacity: .7; }
+
+.slotN {
+  position: absolute; top: 5px; left: 6px; z-index: 5;
+  background: rgba(0,0,0,.5); color: #fff; border-radius: 4px;
+  font-size: 10px; font-weight: 700; padding: 1px 5px; line-height: 1.6;
+}
+.slotImg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slotSpinner { display: flex; align-items: center; justify-content: center; height: 100%; }
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.slotOverlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0); display: flex;
+  align-items: center; justify-content: center; gap: 6px;
+  transition: background .15s; opacity: 0;
+}
+.slot:hover .slotOverlay { background: rgba(0,0,0,.52); opacity: 1; }
+
+.slotAction {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.slotAction:hover { background: rgba(255,255,255,.28); }
+.slotDelete:hover { background: rgba(198,40,40,.7) !important; }
+
+.slotEmpty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 4px; padding: 8px;
+}
+.slotEmptyIcon { color: var(--color-text-muted); }
+.slotEmptyLabel { font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+.slotEmptyHint { font-size: 9px; color: var(--color-text-muted); opacity: .7; }
+
+.fileInput { display: none; }
+.slotHint { font-size: 11.5px; color: var(--color-text-muted); line-height: 1.5; }
+
+/* QR section */
+.qrLayout { display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: start; }
+@media (max-width: 600px) { .qrLayout { grid-template-columns: 1fr; } }
+
+.qrControls {}
+.qrLabel { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); display: block; margin-bottom: 10px; }
+
+.zonaGrid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.zonaBtn {
+  height: 36px; padding: 0 14px; border-radius: 999px;
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  color: var(--color-text-muted); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: .15s;
+}
+.zonaBtnActive { background: var(--color-brand) !important; color: #1a1308 !important; border-color: transparent !important; }
+
+.qrUrlPreview {
+  font-size: 11px; color: var(--color-text-muted);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); padding: 8px 12px; font-family: monospace;
+  word-break: break-all;
+}
+
+.qrPreview { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.qrFrame {
+  width: 180px; height: 180px; padding: 14px;
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: 16px; display: flex; align-items: center; justify-content: center;
+}
+.qrImg { width: 100%; height: 100%; }
+
+.qrActions { display: flex; gap: 8px; }
+.btnDownload {
+  display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 18px;
+  background: var(--color-primary); color: #fff; border-radius: 999px;
+  font-size: 13px; font-weight: 600; text-decoration: none; border: none; cursor: pointer;
+  transition: filter .15s;
+}
+.btnDownload:hover { filter: brightness(1.1); }
+.btnRefresh {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  color: var(--color-text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.btnRefresh:hover { background: var(--color-surface-3); }
+
+/* Toast */
+.toast {
+  position: fixed; top: 20px; right: 20px; z-index: 9999;
+  padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4); animation: toastIn .2s ease;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } }
+.toastOk { background: var(--color-primary); color: #fff; }
+.toastErr { background: var(--color-accent); color: #fff; }
+
+/* Lightbox */
+.lightbox {
+  position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.85);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.lightboxClose {
+  position: absolute; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255,255,255,.15); border: none; color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.lightboxImg { max-width: 100%; max-height: 90dvh; border-radius: 12px; object-fit: contain; }
