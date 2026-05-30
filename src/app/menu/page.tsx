@@ -946,5 +946,5 @@ export default function MenuPublicoPage() {
     <Suspense>
       <MenuContent />
     </Suspense>
-  );
+  )
 }
