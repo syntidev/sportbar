@@ -15,6 +15,7 @@ import {
   Printer,
   Save,
   Trophy,
+  Upload,
   User,
 } from 'lucide-react'
 import styles from './page.module.css'
@@ -105,6 +106,10 @@ export default function PerfilPage() {
 
   const logoInputRef = useRef<HTMLInputElement>(null)
 
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [pendingFile,   setPendingFile]   = useState<File | null>(null)
+  const [localPreview,  setLocalPreview]  = useState('')
+
   // ── Load ───────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -161,14 +166,36 @@ export default function PerfilPage() {
     [profile],
   )
 
-  // ── Logo upload (simulado — guarda URL) ──────────────────────────────────
+  // ── Logo upload ────────────────────────────────────────────────────────────
 
-  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const url = URL.createObjectURL(file)
-    set('business_logo_url', url)
-    showToast('Logo cargado localmente — guarda para confirmar')
+    if (localPreview.startsWith('blob:')) URL.revokeObjectURL(localPreview)
+    setPendingFile(file)
+    setLocalPreview(URL.createObjectURL(file))
+  }
+
+  async function handleLogoUpload() {
+    if (!pendingFile) return
+    setUploadingLogo(true)
+    try {
+      const form = new FormData()
+      form.append('file', pendingFile)
+      const res  = await fetch('/api/config/logo', { method: 'POST', body: form })
+      const data: { success: boolean; url?: string; error?: string } = await res.json()
+      if (!data.success || !data.url) throw new Error(data.error ?? 'Error al subir logo')
+      URL.revokeObjectURL(localPreview)
+      set('business_logo_url', data.url)
+      setLocalPreview('')
+      setPendingFile(null)
+      if (logoInputRef.current) logoInputRef.current.value = ''
+      showToast('Logo actualizado correctamente')
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Error al subir logo')
+    } finally {
+      setUploadingLogo(false)
+    }
   }
 
   // ── Derived preview values ─────────────────────────────────────────────────
@@ -327,10 +354,10 @@ export default function PerfilPage() {
         <div className={styles.card}>
           <div className={styles.logoArea}>
             <div className={styles.logoPreview}>
-              {profile.business_logo_url ? (
+              {(localPreview || profile.business_logo_url) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={profile.business_logo_url}
+                  src={localPreview || profile.business_logo_url}
                   alt="Logo del negocio"
                   className={styles.logoImg}
                 />
@@ -344,41 +371,31 @@ export default function PerfilPage() {
               <input
                 ref={logoInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                accept="image/png,image/jpeg,image/webp"
                 style={{ display: 'none' }}
                 onChange={handleLogoChange}
               />
               <button
                 className={styles.btnSecondary}
                 onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
               >
                 <Image size={14} aria-hidden />
-                Seleccionar imagen
+                {pendingFile ? pendingFile.name : 'Seleccionar imagen'}
               </button>
               <p className={styles.logoHint}>
-                PNG, JPG o SVG recomendado. Se muestra en ticket y cabecera.
+                PNG, JPG o WebP · máx 2 MB. Se muestra en ticket y cabecera.
               </p>
-              {profile.business_logo_url && (
-                <div className={styles.fieldGroup} style={{ marginTop: 8 }}>
-                  <label className={styles.label}>URL del logo</label>
-                  <input
-                    className={styles.input}
-                    value={profile.business_logo_url}
-                    onChange={(e) => set('business_logo_url', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-              )}
             </div>
           </div>
         </div>
         <button
           className={styles.btnSave}
-          onClick={() => saveSection(['business_logo_url'])}
-          disabled={saving}
+          onClick={handleLogoUpload}
+          disabled={!pendingFile || uploadingLogo}
         >
-          <Save size={14} aria-hidden />
-          {saving ? 'Guardando…' : 'Guardar logo'}
+          <Upload size={14} aria-hidden />
+          {uploadingLogo ? 'Subiendo…' : 'Subir logo'}
         </button>
       </section>
 
