@@ -349,3 +349,25 @@
 .bottomNavItemActive svg {
   filter: drop-shadow(0 0 4px rgba(76, 175, 80, 0.6));
 }
+
+/* ─── Sidebar nav groups ──────────────────────────────────────── */
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.navDivider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 10px 12px 6px;
+  opacity: 0.6;
+}
+.navGroupLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--color-text-muted);
+  padding: 4px 14px 3px;
+  opacity: 0.55;
+  text-transform: uppercase;
+}

@@ -81,9 +81,24 @@ model Product {
   created_at  DateTime    @default(now())
   updated_at  DateTime    @updatedAt
 
-  order_items OrderItem[]
+  order_items    OrderItem[]
+  inventory_item InventoryItem?
 
   @@map("products")
+}
+
+// ── INVENTARIO ────────────────────────────────────────
+model InventoryItem {
+  id         Int      @id @default(autoincrement())
+  product_id Int      @unique
+  quantity   Decimal  @default(0) @db.Decimal(10, 3)
+  unit       String   @default("unid") @db.VarChar(20)
+  min_stock  Decimal  @default(0) @db.Decimal(10, 3)
+  updated_at DateTime @updatedAt
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("inventory_items")
 }
 
 // ── ORDENES ───────────────────────────────────────────

@@ -6,25 +6,86 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Clock, Banknote, UtensilsCrossed,
   Users, Building2, Settings, CalendarDays, UserSquare2,
-  TrendingUp, Megaphone, BarChart2,
+  TrendingUp, Megaphone, BarChart2, Package, ChefHat, GlassWater,
 } from 'lucide-react'
 import styles from './layout.module.css'
 
-// ── Nav items ─────────────────────────────────────────────────────────────────
+// ── Nav structure with groups ──────────────────────────────────────────────────
 
-const NAV = [
-  { href: '/admin',             label: 'Mission Control', short: 'Control', Icon: LayoutDashboard },
-  { href: '/admin/turno',       label: 'Turno',           short: 'Turno',   Icon: Clock           },
-  { href: '/admin/caja',        label: 'Caja',            short: 'Caja',    Icon: Banknote        },
-  { href: '/admin/menu',        label: 'Menú',            short: 'Menú',    Icon: UtensilsCrossed },
-  { href: '/admin/equipo',      label: 'Equipo',          short: 'Equipo',  Icon: Users           },
-  { href: '/admin/estructura',  label: 'Estructura',      short: 'Estruc.', Icon: Building2       },
-  { href: '/admin/config',      label: 'Config',          short: 'Config',  Icon: Settings        },
-  { href: '/admin/partido',     label: 'Partidos',        short: 'Partido', Icon: CalendarDays    },
-  { href: '/admin/perfil',      label: 'Perfil',          short: 'Perfil',  Icon: UserSquare2     },
-  { href: '/admin/marketing',   label: 'Marketing',       short: 'Marketing', Icon: Megaphone     },
-  { href: '/admin/analytics',   label: 'Pulso',           short: 'Pulso',   Icon: BarChart2       },
-] as const
+interface NavItem {
+  href:  string
+  label: string
+  short: string
+  Icon:  React.ComponentType<{ size?: number; strokeWidth?: number; 'aria-hidden'?: boolean }>
+}
+
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'OPERACIÓN',
+    items: [
+      { href: '/admin',        label: 'Mission Control', short: 'Control', Icon: LayoutDashboard },
+      { href: '/admin/turno',  label: 'Turno',           short: 'Turno',   Icon: Clock           },
+      { href: '/kds/cocina',   label: 'KDS Cocina',      short: 'Cocina',  Icon: ChefHat         },
+      { href: '/kds/bar',      label: 'KDS Bar',         short: 'Bar',     Icon: GlassWater      },
+    ],
+  },
+  {
+    label: 'VENTAS',
+    items: [
+      { href: '/admin/caja',    label: 'Caja',     short: 'Caja',    Icon: Banknote     },
+      { href: '/admin/partido', label: 'Partidos', short: 'Partido', Icon: CalendarDays },
+    ],
+  },
+  {
+    label: 'CATÁLOGO',
+    items: [
+      { href: '/admin/menu',       label: 'Menú',       short: 'Menú',   Icon: UtensilsCrossed },
+      { href: '/admin/inventario', label: 'Inventario', short: 'Invent', Icon: Package         },
+    ],
+  },
+  {
+    label: 'RECURSOS',
+    items: [
+      { href: '/admin/estructura', label: 'Estructura', short: 'Estruc.', Icon: Building2 },
+      { href: '/admin/equipo',     label: 'Equipo',     short: 'Equipo',  Icon: Users     },
+    ],
+  },
+  {
+    label: 'MARKETING',
+    items: [
+      { href: '/admin/marketing', label: 'Marketing', short: 'Market', Icon: Megaphone },
+    ],
+  },
+  {
+    label: 'CONFIGURACIÓN',
+    items: [
+      { href: '/admin/config', label: 'Config', short: 'Config', Icon: Settings    },
+      { href: '/admin/perfil', label: 'Perfil', short: 'Perfil', Icon: UserSquare2 },
+    ],
+  },
+  {
+    label: 'KPIs',
+    items: [
+      { href: '/admin/analytics', label: 'Pulso del Negocio', short: 'Pulso', Icon: BarChart2 },
+    ],
+  },
+]
+
+// Flat list for the mobile bottom nav (first 7 most-used items)
+const BOTTOM_NAV: NavItem[] = [
+  { href: '/admin',            label: 'Control',  short: 'Control', Icon: LayoutDashboard },
+  { href: '/admin/turno',      label: 'Turno',    short: 'Turno',   Icon: Clock           },
+  { href: '/admin/caja',       label: 'Caja',     short: 'Caja',    Icon: Banknote        },
+  { href: '/admin/menu',       label: 'Menú',     short: 'Menú',    Icon: UtensilsCrossed },
+  { href: '/admin/partido',    label: 'Partidos', short: 'Partido', Icon: CalendarDays    },
+  { href: '/admin/marketing',  label: 'Market',   short: 'Market',  Icon: Megaphone       },
+  { href: '/admin/analytics',  label: 'Pulso',    short: 'Pulso',   Icon: BarChart2       },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -47,14 +108,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     bcvRate:      null,
   })
 
-  // Scroll active bottom-nav item into view on route change
   const activeBottomRef = useRef<HTMLAnchorElement | null>(null)
 
   useEffect(() => {
     activeBottomRef.current?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
   }, [pathname])
 
-  // Load header data
   useEffect(() => {
     Promise.allSettled([
       fetch('/api/config/business').then((r) => r.json()),
@@ -82,13 +141,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })
   }, [])
 
-  // Active link: exact match for /admin, startsWith for the rest
   function isActive(href: string) {
     if (href === '/admin') return pathname === '/admin'
     return pathname.startsWith(href)
   }
-
-  // ── Shared sub-components ─────────────────────────────────────────────────
 
   function LogoDesktop() {
     return data.logoUrl ? (
@@ -110,8 +166,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <div className={styles.shell}>
 
@@ -124,25 +178,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className={styles.brandName}>{data.businessName}</span>
         </div>
 
-        {/* Nav links */}
+        {/* Grouped nav */}
         <nav className={styles.sidebarNav} aria-label="Navegación principal">
-          {NAV.map(({ href, label, Icon }) => {
-            const active = isActive(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`${styles.sidebarLink} ${active ? styles.sidebarLinkActive : ''}`}
-                aria-current={active ? 'page' : undefined}
-              >
-                <Icon size={16} strokeWidth={active ? 2.5 : 2} aria-hidden />
-                <span>{label}</span>
-              </Link>
-            )
-          })}
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.label} className={styles.navGroup}>
+              {gi > 0 && <div className={styles.navDivider} aria-hidden />}
+              <span className={styles.navGroupLabel}>{group.label}</span>
+              {group.items.map(({ href, label, Icon }) => {
+                const active = isActive(href)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`${styles.sidebarLink} ${active ? styles.sidebarLinkActive : ''}`}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    <Icon size={16} strokeWidth={active ? 2.5 : 2} aria-hidden />
+                    <span>{label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
         </nav>
 
-        {/* Footer: usuario + tasa BCV */}
+        {/* Footer */}
         <div className={styles.sidebarFooter}>
           <div className={styles.footerUser}>
             <UserSquare2 size={12} aria-hidden />
@@ -160,15 +220,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* ── Body: header + main ───────────────────────────────────────────── */}
       <div className={styles.body}>
 
-        {/* Header */}
         <header className={styles.header}>
-          {/* Logo + nombre (visible solo mobile, sidebar lo muestra en desktop) */}
           <div className={styles.headerBrand}>
             <LogoMobile />
             <span className={styles.headerName}>{data.businessName}</span>
           </div>
-
-          {/* Derecha: tasa BCV + usuario */}
           <div className={styles.headerRight}>
             {data.bcvRate !== null && (
               <div className={styles.ratePill} title="Tasa BCV activa">
@@ -183,7 +239,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        {/* Page content */}
         <main className={styles.main} id="admin-main">
           {children}
         </main>
@@ -191,7 +246,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* ── Bottom nav — mobile ───────────────────────────────────────────── */}
       <nav className={styles.bottomNav} aria-label="Navegación mobile">
-        {NAV.map(({ href, short, Icon }) => {
+        {BOTTOM_NAV.map(({ href, short, Icon }) => {
           const active = isActive(href)
           return (
             <Link
