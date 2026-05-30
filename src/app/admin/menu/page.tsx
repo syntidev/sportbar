@@ -237,13 +237,16 @@ export default function AdminMenuPage() {
       }
 
       // upload image if selected
+      let imgError: string | null = null
       if (form.imageFile) {
         const fd = new FormData()
         fd.append('file', form.imageFile)
         const upRes  = await fetch(`/api/products/${savedProduct.id}/upload`, { method: 'POST', body: fd })
-        const upData = await upRes.json() as { success: boolean; image_url?: string }
+        const upData = await upRes.json() as { success: boolean; image_url?: string; error?: string }
         if (upData.success && upData.image_url) {
           savedProduct = { ...savedProduct, image_url: upData.image_url }
+        } else {
+          imgError = upData.error ?? 'Error al subir la foto'
         }
       }
 
@@ -260,7 +263,11 @@ export default function AdminMenuPage() {
       if (cData.success) setCategories(cData.categories ?? [])
 
       closeModal()
-      showToast(modal.mode === 'create' ? 'Producto creado' : 'Producto actualizado')
+      if (imgError) {
+        showToast(`Producto guardado · ${imgError}`, false)
+      } else {
+        showToast(modal.mode === 'create' ? 'Producto creado' : 'Producto actualizado')
+      }
     } catch (e: unknown) {
       setFormErr(e instanceof Error ? e.message : 'Error al guardar')
     } finally {

@@ -34,6 +34,9 @@ export interface Product {
   description: string | null;
   price_usd: number;
   category: Category;
+  badge: string | null;
+  is_featured: boolean;
+  image_url: string | null;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
