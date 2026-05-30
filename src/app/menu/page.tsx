@@ -2,6 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
+import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
@@ -35,6 +36,17 @@ interface CartEntry { product: Product; qty: number }
 
 interface FeatCardProps { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
 interface ProdRowProps  { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
+
+const CAT_ICONS: Record<Category, LucideIcon> = {
+  hamburguesas: Beef,
+  raciones:     UtensilsCrossed,
+  bebidas:      Wine,
+};
+
+function CatPlaceholder({ category, size, opacity = 0.4 }: { category: Category; size: number; opacity?: number }) {
+  const Icon = CAT_ICONS[category];
+  return <Icon size={size} color={`rgba(240,245,240,${opacity})`} />;
+}
 
 const CATS: { key: Category; label: string; Icon: LucideIcon }[] = [
   { key: "hamburguesas", label: "Hamburguesas", Icon: Beef            },
@@ -75,10 +87,10 @@ function FeatCard({ p, rate, qty, onAdd }: FeatCardProps) {
   return (
     <div className={styles.featCard}>
       <div className={styles.featHalo} />
-      <div className={styles.featPhotoOuter}>
+      <div className={styles.featPhotoOuter} style={{ position: "relative" }}>
         {p.image_url
-          ? <img src={p.image_url} alt={p.name} className={styles.featPhotoImg} />
-          : <div className={styles.featPhotoEmpty}><Beef size={52} color="rgba(240,245,240,0.3)" /></div>
+          ? <Image src={p.image_url} alt={p.name} fill style={{ objectFit: "cover" }} sizes="200px" />
+          : <div className={styles.featPhotoEmpty}><CatPlaceholder category={p.category} size={52} opacity={0.3} /></div>
         }
       </div>
       <div className={styles.featName}>{p.name}</div>
@@ -115,10 +127,10 @@ function ProdRow({ p, rate, qty, onAdd }: ProdRowProps) {
     >
       <div className={styles.prodPlate}>
         <div className={styles.prodPlateGlow} />
-        <div className={styles.prodPlateInner}>
+        <div className={styles.prodPlateInner} style={{ position: "relative" }}>
           {p.image_url
-            ? <img src={p.image_url} alt={p.name} className={styles.prodImg} />
-            : <Beef size={30} color="rgba(240,245,240,0.4)" />
+            ? <Image src={p.image_url} alt={p.name} fill style={{ objectFit: "cover" }} sizes="80px" />
+            : <CatPlaceholder category={p.category} size={30} />
           }
         </div>
       </div>
@@ -349,13 +361,14 @@ export default function MenuPublicoPage() {
     return (
       <div className={styles.curtain}>
         <div className={styles.curtainGlow} />
-        <motion.img
-          src="/logo-color.png"
-          alt="Sport Bar"
+        <motion.div
           className={styles.curtainLogo}
+          style={{ position: "relative" }}
           animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
           transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
-        />
+        >
+          <Image src="/logo-color.png" alt="Sport Bar" fill style={{ objectFit: "contain" }} />
+        </motion.div>
         <div className={styles.curtainBody}>
           <span className={styles.curtainMatch}>
             {turno?.partido_nombre || "Proximo partido"}
@@ -376,7 +389,9 @@ export default function MenuPublicoPage() {
 
         {/* Header */}
         <div className={styles.custHead}>
-          <img src="/logo-color.png" alt="Sport Bar" className={styles.custHeadLogo} />
+          <div className={styles.custHeadLogo} style={{ position: "relative" }}>
+            <Image src="/logo-color.png" alt="Sport Bar" fill style={{ objectFit: "contain" }} />
+          </div>
           <div className={styles.custHeadWm}>SPORT BAR</div>
           <button className={styles.custTicketsBtn} aria-label="Mis pedidos">
             <Receipt size={19} />
@@ -434,9 +449,9 @@ export default function MenuPublicoPage() {
                     {turno.partido_nombre}
                   </span>
                 </div>
-                <div className={styles.heroPhoto}>
+                <div className={styles.heroPhoto} style={{ position: "relative" }}>
                   {hero.image_url
-                    ? <img src={hero.image_url} alt={hero.name} className={styles.heroImg} />
+                    ? <Image src={hero.image_url} alt={hero.name} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 480px" />
                     : <div className={styles.heroImgEmpty}><Beef size={90} color="rgba(240,245,240,0.25)" /></div>
                   }
                 </div>
@@ -552,10 +567,10 @@ export default function MenuPublicoPage() {
               <div className={styles.cartItems}>
                 {cartItems.map(({ product: p, qty }) => (
                   <div key={p.id} className={styles.cartItem}>
-                    <div className={styles.cartItemThumb}>
+                    <div className={styles.cartItemThumb} style={{ position: "relative" }}>
                       {p.image_url
-                        ? <img src={p.image_url} alt={p.name} className={styles.cartItemImg} />
-                        : <Beef size={24} color="rgba(240,245,240,0.4)" />
+                        ? <Image src={p.image_url} alt={p.name} fill style={{ objectFit: "cover" }} sizes="52px" />
+                        : <CatPlaceholder category={p.category} size={24} />
                       }
                     </div>
                     <div className={styles.cartItemInfo}>
