@@ -46,7 +46,8 @@
       "Bash(New-Item -ItemType Directory -Force \"C:\\\\laragon\\\\www\\\\sportbar\\\\src\\\\app\\\\api\\\\cron\\\\bcv\")",
       "Bash(Out-Null)",
       "PowerShell(New-Item *)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }
