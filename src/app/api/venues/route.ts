@@ -15,7 +15,8 @@ export async function GET() {
   try {
     const venues = await prisma.venue.findMany({
       include: {
-        _count: { select: { users: true } },
+        _count:     { select: { users: true, venueZones: true } },
+        venueZones: { select: { zone_id: true } },
       },
       orderBy: [{ type: 'asc' }, { name: 'asc' }],
     })

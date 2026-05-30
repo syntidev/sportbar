@@ -1,59 +1,72 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import * as Dialog from '@radix-ui/react-dialog'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  AlertCircle, Eye, EyeOff, Pencil, Plus, Users, X,
-  Store, ChefHat, ShoppingBag,
+  AlertCircle, Check, ChefHat, ChevronDown, ChevronUp, CreditCard,
+  MapPin, Pencil, Plus, RefreshCw, ShoppingBag, Store,
+  Trash2, UserCheck, Users, X,
 } from 'lucide-react'
 import styles from './page.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type VenueType   = 'matriz' | 'quiosco' | 'cocina'
-type Capability  = 'comida' | 'cerveza' | 'licor_fuerte' | 'despacho'
+type Tab       = 'zonas' | 'quioscos' | 'asignaciones'
+type VenueType = 'matriz' | 'quiosco' | 'cocina'
+
+interface Zone {
+  id:        number
+  name:      string
+  color:     string
+  capacity:  number
+  is_active: boolean
+  _count:    { venueZones: number }
+}
+
+interface VenueZoneRef { zone_id: number }
 
 interface Venue {
   id:           number
   name:         string
   type:         VenueType
-  capabilities: Capability[]
+  capabilities: string[]
   is_active:    boolean
-  staff_count:  number
-  created_at:   string
+  _count:       { users: number; venueZones: number }
+  venueZones:   VenueZoneRef[]
 }
 
-interface StaffMember {
+interface StaffUser {
   id:        number
   code:      string
   name:      string
   lastname:  string
   role:      string
   is_active: boolean
-  venue:     { id: number; name: string } | null
 }
 
-interface FormState {
-  name:         string
-  type:         VenueType
-  capabilities: Record<Capability, boolean>
-  is_active:    boolean
+interface VenuePayMethod { method: string; is_active: boolean }
+
+interface GlobalPayMethod { id: number; name: string; type: string }
+
+interface VenueExpanded {
+  zones:   Zone[]
+  users:   StaffUser[]
+  methods: VenuePayMethod[]
+  loading: boolean
 }
 
-// ── Static metadata ───────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const TYPE_META: Record<VenueType, { label: string; cls: string; Icon: React.ElementType }> = {
-  matriz:  { label: 'Matriz',  cls: styles.badgeMatriz,  Icon: Store      },
-  quiosco: { label: 'Quiosco', cls: styles.badgeQuiosco, Icon: ShoppingBag },
-  cocina:  { label: 'Cocina',  cls: styles.badgeCocina,  Icon: ChefHat    },
-}
+const ZONE_PRESETS = ['#22c55e', '#F5A623', '#C62828', '#1565C0', '#7C3AED', '#0891B2']
 
-const CAP_META: Record<Capability, { label: string; cls: string }> = {
-  comida:       { label: 'Comida',       cls: styles.capComida   },
-  cerveza:      { label: 'Cerveza',      cls: styles.capCerveza  },
-  licor_fuerte: { label: 'Licor fuerte', cls: styles.capLicor    },
-  despacho:     { label: 'Despacho',     cls: styles.capDespacho },
+const FALLBACK_METHODS = [
+  'Efectivo', 'Pago Móvil', 'Zelle', 'Punto de Venta Débito',
+  'Punto de Venta Crédito', 'Transferencia', 'Biopago',
+]
+
+const TYPE_META: Record<VenueType, { label: string; Icon: React.ElementType }> = {
+  matriz:  { label: 'Matriz',  Icon: Store      },
+  quiosco: { label: 'Quiosco', Icon: ShoppingBag },
+  cocina:  { label: 'Cocina',  Icon: ChefHat    },
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -61,535 +74,668 @@ const ROLE_LABEL: Record<string, string> = {
   despacho: 'Despacho', validador: 'Validador', admin: 'Admin',
 }
 
-const ROLE_CLS: Record<string, string> = {
-  mesero:    styles.roleMesero,
-  cocina:    styles.roleCocina,
-  bar:       styles.roleBar,
-  despacho:  styles.roleDespacho,
-  validador: styles.roleValidador,
-  admin:     styles.roleAdmin,
-}
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'zonas',        label: 'Zonas'        },
+  { key: 'quioscos',     label: 'Quioscos'     },
+  { key: 'asignaciones', label: 'Asignaciones' },
+]
 
-const CAPABILITIES: Capability[] = ['comida', 'cerveza', 'licor_fuerte', 'despacho']
-
-const FORM_DEFAULT: FormState = {
-  name:         '',
-  type:         'quiosco',
-  capabilities: { comida: false, cerveza: false, licor_fuerte: false, despacho: false },
-  is_active:    true,
-}
-
-function venueToForm(v: Venue): FormState {
-  return {
-    name:  v.name,
-    type:  v.type,
-    capabilities: {
-      comida:       v.capabilities.includes('comida'),
-      cerveza:      v.capabilities.includes('cerveza'),
-      licor_fuerte: v.capabilities.includes('licor_fuerte'),
-      despacho:     v.capabilities.includes('despacho'),
-    },
-    is_active: v.is_active,
-  }
-}
+const ZONE_FORM_DEFAULT = { name: '', color: ZONE_PRESETS[0], capacity: 0 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EstructuraPage() {
-  const [venues,   setVenues]   = useState<Venue[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState<string | null>(null)
-  const [toggling, setToggling] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>('zonas')
 
-  // create / edit modal
-  const [modalOpen,    setModalOpen]    = useState(false)
-  const [editingVenue, setEditingVenue] = useState<Venue | null>(null)
-  const [form,         setForm]         = useState<FormState>(FORM_DEFAULT)
-  const [saving,       setSaving]       = useState(false)
-  const [formError,    setFormError]    = useState<string | null>(null)
+  // Shared data
+  const [zones,          setZones]          = useState<Zone[]>([])
+  const [venues,         setVenues]         = useState<Venue[]>([])
+  const [allUsers,       setAllUsers]       = useState<StaffUser[]>([])
+  const [globalMethods,  setGlobalMethods]  = useState<string[]>(FALLBACK_METHODS)
+  const [dataLoading,    setDataLoading]    = useState(true)
+  const [dataError,      setDataError]      = useState<string | null>(null)
 
-  // detail panel
-  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
-  const [panelStaff,    setPanelStaff]    = useState<StaffMember[]>([])
-  const [panelLoading,  setPanelLoading]  = useState(false)
+  // Tab 1 — Zonas
+  const [zoneModalOpen, setZoneModalOpen] = useState(false)
+  const [editingZone,   setEditingZone]   = useState<Zone | null>(null)
+  const [zoneForm,      setZoneForm]      = useState(ZONE_FORM_DEFAULT)
+  const [zoneSaving,    setZoneSaving]    = useState(false)
+  const [zoneFormErr,   setZoneFormErr]   = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [zoneToggling,  setZoneToggling]  = useState<number | null>(null)
+  const customColorRef = useRef<HTMLInputElement>(null)
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // Tab 2 — Quioscos
+  const [expandedId,    setExpandedId]    = useState<number | null>(null)
+  const [venueExpanded, setVenueExpanded] = useState<Record<number, VenueExpanded>>({})
+  const [venueToggling, setVenueToggling] = useState<number | null>(null)
 
-  const fetchVenues = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  // Tab 3 — Matrix
+  const [matrixBusy, setMatrixBusy] = useState<string | null>(null)
+
+  // ── Load all ───────────────────────────────────────────────────────────────
+
+  const loadAll = useCallback(async () => {
+    setDataLoading(true)
+    setDataError(null)
     try {
-      const res  = await fetch('/api/venues')
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
-      setVenues(data.venues)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al cargar puntos de venta')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetchVenues() }, [fetchVenues])
-
-  // ── Toggle active ──────────────────────────────────────────────────────────
-
-  async function handleToggle(e: React.MouseEvent, id: number, current: boolean) {
-    e.stopPropagation()
-    setToggling(id)
-    try {
-      const res  = await fetch(`/api/venues/${id}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ is_active: !current }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
-      setVenues((prev) => prev.map((v) => v.id === id ? { ...v, is_active: !current } : v))
-      setSelectedVenue((prev) => prev?.id === id ? { ...prev, is_active: !current } : prev)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Error al actualizar')
-    } finally {
-      setToggling(null)
-    }
-  }
-
-  // ── Open detail panel ──────────────────────────────────────────────────────
-
-  const openDetail = useCallback(async (venue: Venue) => {
-    setSelectedVenue(venue)
-    setPanelStaff([])
-    setPanelLoading(true)
-    try {
-      const res  = await fetch('/api/users')
-      const data = await res.json()
-      if (data.success) {
-        setPanelStaff(
-          (data.users as StaffMember[]).filter((u) => u.venue?.id === venue.id),
-        )
+      const [zRes, vRes, uRes, pmRes] = await Promise.all([
+        fetch('/api/zones').then(r => r.json()),
+        fetch('/api/venues').then(r => r.json()),
+        fetch('/api/users').then(r => r.json()),
+        fetch('/api/payment-methods').then(r => r.json()),
+      ])
+      if ((zRes as { success: boolean; zones?: Zone[] }).success)
+        setZones((zRes as { zones: Zone[] }).zones)
+      if ((vRes as { success: boolean; venues?: Venue[] }).success)
+        setVenues((vRes as { venues: Venue[] }).venues)
+      if ((uRes as { success: boolean; users?: StaffUser[] }).success)
+        setAllUsers((uRes as { users: StaffUser[] }).users)
+      if ((pmRes as { success: boolean; methods?: GlobalPayMethod[] }).success) {
+        const ms = (pmRes as { methods: GlobalPayMethod[] }).methods
+        if (ms.length) setGlobalMethods(ms.map(m => m.name))
       }
-    } catch { /* non-blocking */ }
-    finally { setPanelLoading(false) }
+    } catch (e: unknown) {
+      setDataError(e instanceof Error ? e.message : 'Error al cargar datos')
+    } finally {
+      setDataLoading(false)
+    }
   }, [])
 
-  // ── Modal helpers ──────────────────────────────────────────────────────────
+  useEffect(() => { void loadAll() }, [loadAll])
 
-  function openCreateModal() {
-    setEditingVenue(null)
-    setForm(FORM_DEFAULT)
-    setFormError(null)
-    setModalOpen(true)
-  }
+  // ── Expand venue ───────────────────────────────────────────────────────────
 
-  function openEditModal(venue: Venue) {
-    setEditingVenue(venue)
-    setForm(venueToForm(venue))
-    setFormError(null)
-    setModalOpen(true)
-  }
-
-  // ── Submit (create or edit) ────────────────────────────────────────────────
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.name.trim()) { setFormError('El nombre es requerido'); return }
-
-    setSaving(true)
-    setFormError(null)
-
-    const caps = CAPABILITIES.filter((c) => form.capabilities[c])
-    const body = {
-      name:         form.name.trim(),
-      type:         form.type,
-      capabilities: caps,
-      is_active:    form.is_active,
-    }
-
+  const expandVenue = useCallback(async (id: number) => {
+    if (expandedId === id) { setExpandedId(null); return }
+    setExpandedId(id)
+    if (venueExpanded[id]) return
+    setVenueExpanded(prev => ({ ...prev, [id]: { zones: [], users: [], methods: [], loading: true } }))
     try {
-      const url    = editingVenue ? `/api/venues/${editingVenue.id}` : '/api/venues'
-      const method = editingVenue ? 'PATCH' : 'POST'
+      const [zRes, uRes, mRes] = await Promise.all([
+        fetch(`/api/venues/${id}/zones`).then(r => r.json()),
+        fetch(`/api/venues/${id}/users`).then(r => r.json()),
+        fetch(`/api/venues/${id}/payment-methods`).then(r => r.json()),
+      ])
+      setVenueExpanded(prev => ({
+        ...prev,
+        [id]: {
+          zones:   (zRes as { success: boolean; zones?: Zone[] }).success      ? (zRes as { zones: Zone[] }).zones         : [],
+          users:   (uRes as { success: boolean; users?: StaffUser[] }).success  ? (uRes as { users: StaffUser[] }).users     : [],
+          methods: (mRes as { success: boolean; methods?: VenuePayMethod[] }).success ? (mRes as { methods: VenuePayMethod[] }).methods : [],
+          loading: false,
+        },
+      }))
+    } catch {
+      setVenueExpanded(prev => ({ ...prev, [id]: { zones: [], users: [], methods: [], loading: false } }))
+    }
+  }, [expandedId, venueExpanded])
 
-      const res  = await fetch(url, {
+  // ── Tab 1 handlers ────────────────────────────────────────────────────────
+
+  function openZoneCreate() {
+    setEditingZone(null); setZoneForm(ZONE_FORM_DEFAULT); setZoneFormErr(null); setZoneModalOpen(true)
+  }
+  function openZoneEdit(z: Zone) {
+    setEditingZone(z); setZoneForm({ name: z.name, color: z.color, capacity: z.capacity }); setZoneFormErr(null); setZoneModalOpen(true)
+  }
+
+  async function handleZoneSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!zoneForm.name.trim()) { setZoneFormErr('El nombre es requerido'); return }
+    setZoneSaving(true); setZoneFormErr(null)
+    try {
+      const url    = editingZone ? `/api/zones/${editingZone.id}` : '/api/zones'
+      const method = editingZone ? 'PUT' : 'POST'
+      const res    = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
+        body:    JSON.stringify({ name: zoneForm.name.trim(), color: zoneForm.color, capacity: zoneForm.capacity }),
       })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
+      const data = await res.json() as { success: boolean; error?: string; errors?: string[] }
+      if (!data.success) throw new Error(data.error ?? data.errors?.join(', ') ?? 'Error')
+      setZoneModalOpen(false)
+      await loadAll()
+    } catch (err: unknown) {
+      setZoneFormErr(err instanceof Error ? err.message : 'Error al guardar')
+    } finally { setZoneSaving(false) }
+  }
 
-      // Sync detail panel if the edited venue is open
-      if (selectedVenue?.id === editingVenue?.id) {
-        setSelectedVenue((prev) =>
-          prev ? { ...prev, ...body, capabilities: caps } : null,
-        )
-      }
+  async function handleToggleZone(id: number, current: boolean) {
+    setZoneToggling(id)
+    try {
+      const res  = await fetch(`/api/zones/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ is_active: !current }),
+      })
+      const data = await res.json() as { success: boolean }
+      if (!data.success) return
+      setZones(prev => prev.map(z => z.id === id ? { ...z, is_active: !current } : z))
+    } catch { /* ignore */ } finally { setZoneToggling(null) }
+  }
 
-      setModalOpen(false)
-      setEditingVenue(null)
-      setForm(FORM_DEFAULT)
-      await fetchVenues()
-    } catch (e: unknown) {
-      setFormError(e instanceof Error ? e.message : 'Error al guardar')
-    } finally {
-      setSaving(false)
+  async function handleDeleteZone(id: number) {
+    try {
+      await fetch(`/api/zones/${id}`, { method: 'DELETE' })
+      setDeleteConfirm(null)
+      await loadAll()
+    } catch { /* ignore */ }
+  }
+
+  // ── Tab 2 handlers ────────────────────────────────────────────────────────
+
+  async function handleToggleVenue(e: React.MouseEvent, id: number, current: boolean) {
+    e.stopPropagation()
+    setVenueToggling(id)
+    try {
+      const res  = await fetch(`/api/venues/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ is_active: !current }),
+      })
+      const data = await res.json() as { success: boolean }
+      if (!data.success) return
+      setVenues(prev => prev.map(v => v.id === id ? { ...v, is_active: !current } : v))
+    } catch { /* ignore */ } finally { setVenueToggling(null) }
+  }
+
+  async function unassignZone(venueId: number, zoneId: number) {
+    await fetch(`/api/venues/${venueId}/zones?zone_id=${zoneId}`, { method: 'DELETE' })
+    setVenueExpanded(prev => {
+      const e = prev[venueId]
+      if (!e) return prev
+      return { ...prev, [venueId]: { ...e, zones: e.zones.filter(z => z.id !== zoneId) } }
+    })
+    setVenues(prev => prev.map(v => v.id === venueId
+      ? { ...v, venueZones: v.venueZones.filter(vz => vz.zone_id !== zoneId), _count: { ...v._count, venueZones: v._count.venueZones - 1 } }
+      : v))
+  }
+
+  async function assignZone(venueId: number, zoneId: number) {
+    const res  = await fetch(`/api/venues/${venueId}/zones`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({ zone_id: zoneId }),
+    })
+    const data = await res.json() as { success: boolean }
+    if (!data.success) return
+    setVenueExpanded(prev => {
+      const e = prev[venueId]; if (!e) return prev
+      const zone = zones.find(z => z.id === zoneId); if (!zone) return prev
+      return { ...prev, [venueId]: { ...e, zones: [...e.zones, zone] } }
+    })
+    setVenues(prev => prev.map(v => v.id === venueId
+      ? { ...v, venueZones: [...v.venueZones, { zone_id: zoneId }], _count: { ...v._count, venueZones: v._count.venueZones + 1 } }
+      : v))
+  }
+
+  async function unassignUser(venueId: number, userId: number) {
+    await fetch(`/api/venues/${venueId}/users?user_id=${userId}`, { method: 'DELETE' })
+    setVenueExpanded(prev => {
+      const e = prev[venueId]; if (!e) return prev
+      return { ...prev, [venueId]: { ...e, users: e.users.filter(u => u.id !== userId) } }
+    })
+    setVenues(prev => prev.map(v => v.id === venueId ? { ...v, _count: { ...v._count, users: v._count.users - 1 } } : v))
+  }
+
+  async function assignUser(venueId: number, userId: number) {
+    const res  = await fetch(`/api/venues/${venueId}/users`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body:   JSON.stringify({ user_id: userId }),
+    })
+    const data = await res.json() as { success: boolean }
+    if (!data.success) return
+    setVenueExpanded(prev => {
+      const e = prev[venueId]; if (!e) return prev
+      const user = allUsers.find(u => u.id === userId); if (!user) return prev
+      return { ...prev, [venueId]: { ...e, users: [...e.users, user] } }
+    })
+    setVenues(prev => prev.map(v => v.id === venueId ? { ...v, _count: { ...v._count, users: v._count.users + 1 } } : v))
+  }
+
+  async function togglePayMethod(venueId: number, method: string, currentActive: boolean | null) {
+    if (currentActive === null) {
+      await fetch(`/api/venues/${venueId}/payment-methods`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ method, is_active: true }),
+      })
+      setVenueExpanded(prev => {
+        const e = prev[venueId]; if (!e) return prev
+        return { ...prev, [venueId]: { ...e, methods: [...e.methods, { method, is_active: true }] } }
+      })
+    } else {
+      await fetch(`/api/venues/${venueId}/payment-methods`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ method, is_active: !currentActive }),
+      })
+      setVenueExpanded(prev => {
+        const e = prev[venueId]; if (!e) return prev
+        return { ...prev, [venueId]: { ...e, methods: e.methods.map(m => m.method === method ? { ...m, is_active: !currentActive } : m) } }
+      })
     }
   }
 
-  function updateCap(cap: Capability, value: boolean) {
-    setForm((f) => ({ ...f, capabilities: { ...f.capabilities, [cap]: value } }))
+  // ── Tab 3 — Matrix ────────────────────────────────────────────────────────
+
+  async function handleMatrixToggle(venueId: number, zoneId: number, assigned: boolean) {
+    const key = `${venueId}-${zoneId}`
+    setMatrixBusy(key)
+    try {
+      if (assigned) {
+        await fetch(`/api/venues/${venueId}/zones?zone_id=${zoneId}`, { method: 'DELETE' })
+        setVenues(prev => prev.map(v => v.id === venueId
+          ? { ...v, venueZones: v.venueZones.filter(vz => vz.zone_id !== zoneId) } : v))
+      } else {
+        await fetch(`/api/venues/${venueId}/zones`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body:   JSON.stringify({ zone_id: zoneId }),
+        })
+        setVenues(prev => prev.map(v => v.id === venueId
+          ? { ...v, venueZones: [...v.venueZones, { zone_id: zoneId }] } : v))
+      }
+    } catch { /* ignore */ } finally { setMatrixBusy(null) }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const isEditing = editingVenue !== null
-
   return (
     <div className={styles.page}>
 
-      {/* Page header */}
-      <header className={styles.header}>
+      {/* Header */}
+      <div className={styles.pageHead}>
         <div>
-          <h1 className={styles.title}>Estructura</h1>
-          <p className={styles.subtitle}>Puntos de venta · Sport Bar</p>
+          <h1 className={styles.pageTitle}>Estructura</h1>
+          <p className={styles.pageSub}>Zonas · Quioscos · Asignaciones</p>
         </div>
+        {activeTab === 'zonas' && (
+          <button className={styles.btnPrimary} onClick={openZoneCreate}>
+            <Plus size={16} aria-hidden />
+            Nueva Zona
+          </button>
+        )}
+      </div>
 
-        <Dialog.Root
-          open={modalOpen}
-          onOpenChange={(open) => {
-            setModalOpen(open)
-            if (!open) { setEditingVenue(null); setForm(FORM_DEFAULT); setFormError(null) }
-          }}
-        >
-          {/* Trigger wired to openCreateModal so state is set before Dialog opens */}
-          <Dialog.Trigger asChild>
-            <button type="button" className={styles.newBtn} onClick={openCreateModal}>
-              <Plus size={16} aria-hidden />
-              Nuevo Punto
-            </button>
-          </Dialog.Trigger>
+      {/* Tabs */}
+      <div className={styles.tabs} role="tablist">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={activeTab === key}
+            className={`${styles.tab} ${activeTab === key ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-          <Dialog.Portal>
-            <Dialog.Overlay className={styles.overlay} />
-            <Dialog.Content className={styles.modal} aria-describedby={undefined}>
-              <div className={styles.modalHeader}>
-                <Dialog.Title className={styles.modalTitle}>
-                  {isEditing ? `Editar: ${editingVenue.name}` : 'Nuevo Punto de Venta'}
-                </Dialog.Title>
-                <Dialog.Close className={styles.modalClose} aria-label="Cerrar">
-                  <X size={16} aria-hidden />
-                </Dialog.Close>
-              </div>
-
-              <form onSubmit={handleSubmit} className={styles.form}>
-
-                {/* Name */}
-                <div className={styles.formField}>
-                  <label htmlFor="venueName" className={styles.formLabel}>Nombre</label>
-                  <input
-                    id="venueName"
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Ej: Quiosco Norte"
-                    maxLength={100}
-                    autoComplete="off"
-                    className={styles.formInput}
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Type */}
-                <div className={styles.formField}>
-                  <label htmlFor="venueType" className={styles.formLabel}>Tipo</label>
-                  <select
-                    id="venueType"
-                    value={form.type}
-                    onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as VenueType }))}
-                    className={styles.formSelect}
-                    disabled={saving}
-                  >
-                    <option value="matriz">Matriz</option>
-                    <option value="quiosco">Quiosco</option>
-                    <option value="cocina">Cocina</option>
-                  </select>
-                </div>
-
-                {/* Capabilities */}
-                <fieldset className={styles.formFieldset}>
-                  <legend className={styles.formLabel}>Capacidades</legend>
-                  <div className={styles.checkGroup}>
-                    {CAPABILITIES.map((cap) => (
-                      <label key={cap} className={styles.checkLabel}>
-                        <input
-                          type="checkbox"
-                          checked={form.capabilities[cap]}
-                          onChange={(e) => updateCap(cap, e.target.checked)}
-                          disabled={saving}
-                          className={styles.checkbox}
-                        />
-                        <span className={`${styles.capChip} ${CAP_META[cap].cls}`}>
-                          {CAP_META[cap].label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-
-                {/* Active toggle */}
-                <div className={styles.formToggleRow}>
-                  <span className={styles.formLabel}>
-                    {isEditing ? 'Activo' : 'Activo al crear'}
-                  </span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={form.is_active}
-                    onClick={() => setForm((f) => ({ ...f, is_active: !f.is_active }))}
-                    disabled={saving}
-                    className={`${styles.switch} ${form.is_active ? styles.switchOn : styles.switchOff}`}
-                  >
-                    <span className={styles.switchThumb} />
-                  </button>
-                </div>
-
-                {formError && (
-                  <p className={styles.formError}>
-                    <AlertCircle size={13} aria-hidden />
-                    {formError}
-                  </p>
-                )}
-
-                <div className={styles.formActions}>
-                  <Dialog.Close asChild>
-                    <button type="button" className={styles.cancelBtn} disabled={saving}>
-                      Cancelar
-                    </button>
-                  </Dialog.Close>
-                  <button type="submit" className={styles.submitBtn} disabled={saving}>
-                    {saving ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear punto'}
-                  </button>
-                </div>
-              </form>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </header>
-
-      {/* States */}
-      {loading && (
+      {/* Global states */}
+      {dataLoading && (
         <div className={styles.state}>
-          <span className={styles.spinner} />
-          <span className={styles.stateText}>Cargando puntos de venta…</span>
+          <RefreshCw size={18} className={styles.spin} aria-hidden />
+          <span>Cargando…</span>
         </div>
       )}
-
-      {error && (
+      {dataError && (
         <div className={`${styles.state} ${styles.stateError}`}>
-          <AlertCircle size={18} aria-hidden />
-          <span className={styles.stateText}>{error}</span>
+          <AlertCircle size={18} aria-hidden /><span>{dataError}</span>
         </div>
       )}
 
-      {/* Venue grid */}
-      {!loading && !error && (
-        <div className={styles.grid}>
-          {venues.length === 0 && (
-            <p className={styles.empty}>No hay puntos de venta registrados.</p>
+      {!dataLoading && !dataError && (
+        <>
+          {/* ── TAB 1: ZONAS ──────────────────────────────────────────────── */}
+          {activeTab === 'zonas' && (
+            <div className={styles.zoneList}>
+              {zones.length === 0 && <p className={styles.empty}>No hay zonas. Crea la primera.</p>}
+              {zones.map(z => (
+                <div key={z.id} className={`${styles.zoneRow} ${!z.is_active ? styles.zoneRowInactive : ''}`}>
+                  <span className={styles.zoneDot} style={{ background: z.color }} />
+                  <div className={styles.zoneInfo}>
+                    <span className={styles.zoneName}>{z.name}</span>
+                    <span className={styles.zoneMeta}>
+                      Cap.&nbsp;{z.capacity} · {z._count.venueZones} quiosco{z._count.venueZones !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <span className={`${styles.activeBadge} ${z.is_active ? styles.activeBadgeOn : styles.activeBadgeOff}`}>
+                    {z.is_active ? 'Activa' : 'Inactiva'}
+                  </span>
+                  {deleteConfirm === z.id ? (
+                    <div className={styles.deleteConfirm}>
+                      <span className={styles.deleteConfirmText}>¿Eliminar?</span>
+                      <button className={styles.btnDanger} onClick={() => void handleDeleteZone(z.id)}>Sí</button>
+                      <button className={styles.btnGhost} onClick={() => setDeleteConfirm(null)}>No</button>
+                    </div>
+                  ) : (
+                    <div className={styles.zoneActions}>
+                      <button
+                        className={`${styles.iconBtn} ${z.is_active ? styles.iconBtnOn : ''}`}
+                        title={z.is_active ? 'Desactivar' : 'Activar'}
+                        disabled={zoneToggling === z.id}
+                        onClick={() => void handleToggleZone(z.id, z.is_active)}
+                      >
+                        <Check size={15} aria-hidden />
+                      </button>
+                      <button className={styles.iconBtn} title="Editar" onClick={() => openZoneEdit(z)}>
+                        <Pencil size={15} aria-hidden />
+                      </button>
+                      <button
+                        className={`${styles.iconBtn} ${styles.iconBtnDel}`}
+                        title="Eliminar"
+                        onClick={() => setDeleteConfirm(z.id)}
+                      >
+                        <Trash2 size={15} aria-hidden />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
 
-          {venues.map((venue) => {
-            const meta = TYPE_META[venue.type]
-            const Icon = meta.Icon
-            const caps = venue.capabilities as Capability[]
-            const isSelected = selectedVenue?.id === venue.id
+          {/* ── TAB 2: QUIOSCOS ───────────────────────────────────────────── */}
+          {activeTab === 'quioscos' && (
+            <div className={styles.venueList}>
+              {venues.length === 0 && <p className={styles.empty}>No hay quioscos.</p>}
+              {venues.map(v => {
+                const { label, Icon } = TYPE_META[v.type]
+                const isExpanded      = expandedId === v.id
+                const expData         = venueExpanded[v.id]
+                return (
+                  <div key={v.id} className={`${styles.venueCard} ${!v.is_active ? styles.venueCardInactive : ''}`}>
+                    <button
+                      className={styles.venueCardHeader}
+                      onClick={() => void expandVenue(v.id)}
+                      aria-expanded={isExpanded}
+                    >
+                      <div className={styles.venueCardLeft}>
+                        <span className={styles.venueTypeIcon}><Icon size={15} aria-hidden /></span>
+                        <div>
+                          <span className={styles.venueName}>{v.name}</span>
+                          <span className={styles.venueMeta}>
+                            {label} · {v._count.users} personas · {v._count.venueZones} zonas
+                          </span>
+                        </div>
+                      </div>
+                      <div className={styles.venueCardRight}>
+                        <button
+                          className={`${styles.toggleBtn} ${v.is_active ? styles.toggleBtnOn : ''}`}
+                          disabled={venueToggling === v.id}
+                          onClick={e => void handleToggleVenue(e, v.id, v.is_active)}
+                          aria-pressed={v.is_active}
+                        >
+                          {v.is_active ? 'Activo' : 'Inactivo'}
+                        </button>
+                        {isExpanded ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
+                      </div>
+                    </button>
 
-            return (
-              <article
-                key={venue.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => openDetail(venue)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(venue) }
-                }}
-                aria-label={`Ver detalle de ${venue.name}`}
-                className={`${styles.card} ${!venue.is_active ? styles.cardInactive : ''} ${isSelected ? styles.cardSelected : ''}`}
-              >
-                {/* Card header: name + type badge */}
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.cardName}>{venue.name}</h2>
-                  <span className={`${styles.badge} ${meta.cls}`}>
-                    <Icon size={11} aria-hidden />
-                    {meta.label}
-                  </span>
-                </div>
+                    {isExpanded && (
+                      <div className={styles.venueCardBody}>
+                        {expData?.loading && (
+                          <div className={styles.state}>
+                            <RefreshCw size={14} className={styles.spin} aria-hidden /><span>Cargando…</span>
+                          </div>
+                        )}
+                        {expData && !expData.loading && (
+                          <>
+                            {/* Zonas */}
+                            <div className={styles.expandSection}>
+                              <div className={styles.expandSectionHead}>
+                                <MapPin size={13} aria-hidden /><span>Zonas que atiende</span>
+                              </div>
+                              <div className={styles.chipRow}>
+                                {expData.zones.map(z => (
+                                  <span key={z.id} className={styles.chip} style={{ '--chip-color': z.color } as React.CSSProperties}>
+                                    <span className={styles.chipDot} />
+                                    {z.name}
+                                    <button className={styles.chipX} onClick={() => void unassignZone(v.id, z.id)} aria-label={`Quitar ${z.name}`}>
+                                      <X size={11} aria-hidden />
+                                    </button>
+                                  </span>
+                                ))}
+                                {zones.filter(z => !expData.zones.some(ez => ez.id === z.id)).length > 0 && (
+                                  <select
+                                    className={styles.addSelect}
+                                    value=""
+                                    onChange={e => { if (e.target.value) void assignZone(v.id, parseInt(e.target.value)) }}
+                                  >
+                                    <option value="">+ Agregar zona</option>
+                                    {zones
+                                      .filter(z => !expData.zones.some(ez => ez.id === z.id))
+                                      .map(z => <option key={z.id} value={z.id}>{z.name}</option>)
+                                    }
+                                  </select>
+                                )}
+                                {expData.zones.length === 0 && zones.length === 0 && (
+                                  <span className={styles.emptyChip}>Sin zonas disponibles</span>
+                                )}
+                              </div>
+                            </div>
 
-                {/* Capability chips */}
-                <div className={styles.capRow}>
-                  {CAPABILITIES.map((cap) =>
-                    caps.includes(cap) ? (
-                      <span key={cap} className={`${styles.capChip} ${CAP_META[cap].cls}`}>
-                        {CAP_META[cap].label}
-                      </span>
-                    ) : null,
-                  )}
-                  {caps.length === 0 && (
-                    <span className={styles.noCaps}>Sin capacidades</span>
-                  )}
-                </div>
+                            {/* Personal */}
+                            <div className={styles.expandSection}>
+                              <div className={styles.expandSectionHead}>
+                                <Users size={13} aria-hidden /><span>Personal asignado</span>
+                              </div>
+                              <div className={styles.chipRow}>
+                                {expData.users.map(u => (
+                                  <span key={u.id} className={`${styles.chip} ${styles.chipUser}`}>
+                                    <UserCheck size={11} aria-hidden />
+                                    {u.name}&nbsp;{u.lastname}
+                                    <span className={styles.chipRole}>{ROLE_LABEL[u.role] ?? u.role}</span>
+                                    <button className={styles.chipX} onClick={() => void unassignUser(v.id, u.id)} aria-label={`Quitar ${u.name}`}>
+                                      <X size={11} aria-hidden />
+                                    </button>
+                                  </span>
+                                ))}
+                                {allUsers.filter(u => !expData.users.some(eu => eu.id === u.id)).length > 0 && (
+                                  <select
+                                    className={styles.addSelect}
+                                    value=""
+                                    onChange={e => { if (e.target.value) void assignUser(v.id, parseInt(e.target.value)) }}
+                                  >
+                                    <option value="">+ Agregar persona</option>
+                                    {allUsers
+                                      .filter(u => !expData.users.some(eu => eu.id === u.id))
+                                      .map(u => (
+                                        <option key={u.id} value={u.id}>
+                                          {u.name} {u.lastname} ({ROLE_LABEL[u.role] ?? u.role})
+                                        </option>
+                                      ))
+                                    }
+                                  </select>
+                                )}
+                              </div>
+                            </div>
 
-                {/* Staff count */}
-                <div className={styles.staffRow}>
-                  <Users size={13} className={styles.staffIcon} aria-hidden />
-                  <span className={styles.staffText}>
-                    {venue.staff_count} colaborador{venue.staff_count !== 1 ? 'es' : ''}
-                  </span>
-                </div>
+                            {/* Métodos de pago */}
+                            <div className={styles.expandSection}>
+                              <div className={styles.expandSectionHead}>
+                                <CreditCard size={13} aria-hidden /><span>Métodos de pago</span>
+                              </div>
+                              <div className={styles.methodGrid}>
+                                {globalMethods.map(method => {
+                                  const existing = expData.methods.find(m => m.method === method)
+                                  const active   = existing?.is_active ?? false
+                                  const present  = existing !== undefined
+                                  return (
+                                    <label key={method} className={`${styles.methodCheck} ${active ? styles.methodCheckOn : ''}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={active}
+                                        onChange={() => void togglePayMethod(v.id, method, present ? active : null)}
+                                        className={styles.methodCheckInput}
+                                      />
+                                      <span>{method}</span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
-                {/* Active toggle */}
-                <div className={styles.cardFooter}>
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggle(e, venue.id, venue.is_active)}
-                    disabled={toggling === venue.id}
-                    aria-label={venue.is_active ? 'Desactivar punto' : 'Activar punto'}
-                    aria-pressed={venue.is_active}
-                    className={`${styles.toggleBtn} ${venue.is_active ? styles.toggleOn : styles.toggleOff}`}
-                  >
-                    {venue.is_active
-                      ? <Eye size={13} aria-hidden />
-                      : <EyeOff size={13} aria-hidden />}
-                    <span>{venue.is_active ? 'Activo' : 'Inactivo'}</span>
-                  </button>
+          {/* ── TAB 3: ASIGNACIONES ───────────────────────────────────────── */}
+          {activeTab === 'asignaciones' && (
+            <div className={styles.matrixWrap}>
+              {zones.length === 0 || venues.length === 0 ? (
+                <p className={styles.empty}>Crea zonas y quioscos para ver la matriz.</p>
+              ) : (
+                <div className={styles.matrixScroll}>
+                  <table className={styles.matrix}>
+                    <thead>
+                      <tr>
+                        <th className={styles.matrixCorner}>Zona / Quiosco</th>
+                        {venues.map(v => (
+                          <th key={v.id} className={styles.matrixHead}>
+                            <span className={styles.matrixHeadName}>{v.name}</span>
+                            <span className={styles.matrixHeadType}>{TYPE_META[v.type].label}</span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {zones.map(z => (
+                        <tr key={z.id}>
+                          <td className={styles.matrixZoneCell}>
+                            <span className={styles.matrixZoneDot} style={{ background: z.color }} />
+                            <span>{z.name}</span>
+                          </td>
+                          {venues.map(v => {
+                            const assigned = v.venueZones.some(vz => vz.zone_id === z.id)
+                            const busy     = matrixBusy === `${v.id}-${z.id}`
+                            return (
+                              <td key={v.id} className={styles.matrixCell}>
+                                <button
+                                  className={`${styles.matrixToggle} ${assigned ? styles.matrixToggleOn : ''}`}
+                                  onClick={() => void handleMatrixToggle(v.id, z.id, assigned)}
+                                  disabled={busy}
+                                  aria-label={`${assigned ? 'Desasignar' : 'Asignar'} ${z.name} a ${v.name}`}
+                                  aria-pressed={assigned}
+                                >
+                                  {busy
+                                    ? <RefreshCw size={12} className={styles.spin} aria-hidden />
+                                    : assigned
+                                    ? <Check size={14} aria-hidden />
+                                    : null
+                                  }
+                                </button>
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </article>
-            )
-          })}
-        </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {/* ── Detail panel ────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {selectedVenue && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className={styles.panelBackdrop}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              onClick={() => setSelectedVenue(null)}
-              aria-hidden
-            />
+      {/* ── Zone Modal ──────────────────────────────────────────────────────── */}
+      {zoneModalOpen && (
+        <div className={styles.modalBackdrop} onClick={() => setZoneModalOpen(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>
+                {editingZone ? `Editar: ${editingZone.name}` : 'Nueva Zona'}
+              </h2>
+              <button className={styles.modalClose} onClick={() => setZoneModalOpen(false)} aria-label="Cerrar">
+                <X size={16} aria-hidden />
+              </button>
+            </div>
 
-            {/* Panel */}
-            <motion.aside
-              className={styles.detailPanel}
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-              aria-label={`Detalle de ${selectedVenue.name}`}
-            >
-              {/* Panel header */}
-              <div className={styles.panelHeader}>
-                <button
-                  type="button"
-                  className={styles.panelClose}
-                  onClick={() => setSelectedVenue(null)}
-                  aria-label="Cerrar panel"
-                >
-                  <X size={16} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  className={styles.panelEditBtn}
-                  onClick={() => openEditModal(selectedVenue)}
-                >
-                  <Pencil size={13} aria-hidden />
-                  Editar
-                </button>
+            <form onSubmit={e => void handleZoneSubmit(e)} className={styles.form}>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Nombre</label>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={zoneForm.name}
+                  onChange={e => setZoneForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Ej: Zona Norte"
+                  maxLength={80}
+                  autoFocus
+                  disabled={zoneSaving}
+                />
               </div>
 
-              {/* Venue identity */}
-              <div className={styles.panelVenueInfo}>
-                {(() => {
-                  const meta = TYPE_META[selectedVenue.type]
-                  const Icon = meta.Icon
-                  return (
-                    <>
-                      <h2 className={styles.panelVenueName}>{selectedVenue.name}</h2>
-                      <span className={`${styles.badge} ${meta.cls}`}>
-                        <Icon size={11} aria-hidden />
-                        {meta.label}
-                      </span>
-                    </>
-                  )
-                })()}
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Capacidad (personas)</label>
+                <input
+                  type="number"
+                  className={styles.formInput}
+                  min={0}
+                  max={9999}
+                  value={zoneForm.capacity}
+                  onChange={e => setZoneForm(f => ({ ...f, capacity: parseInt(e.target.value) || 0 }))}
+                  disabled={zoneSaving}
+                />
               </div>
 
-              {/* Capabilities */}
-              <section className={styles.panelSection}>
-                <h3 className={styles.panelSectionTitle}>Capacidades</h3>
-                <div className={styles.capRow}>
-                  {selectedVenue.capabilities.length === 0
-                    ? <span className={styles.noCaps}>Sin capacidades asignadas</span>
-                    : selectedVenue.capabilities.map((cap) => (
-                        <span key={cap} className={`${styles.capChip} ${CAP_META[cap].cls}`}>
-                          {CAP_META[cap].label}
-                        </span>
-                      ))
-                  }
-                </div>
-              </section>
-
-              {/* Staff list */}
-              <section className={styles.panelSection}>
-                <h3 className={styles.panelSectionTitle}>
-                  Equipo asignado
-                  {!panelLoading && (
-                    <span className={styles.panelCount}>{panelStaff.length}</span>
-                  )}
-                </h3>
-
-                {panelLoading && (
-                  <div className={styles.panelSpinnerRow}>
-                    <span className={styles.spinner} />
-                    <span className={styles.stateText}>Cargando…</span>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Color</label>
+                <div className={styles.colorPickerRow}>
+                  {ZONE_PRESETS.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`${styles.colorSwatch} ${zoneForm.color === c ? styles.colorSwatchSel : ''}`}
+                      style={{ background: c }}
+                      onClick={() => setZoneForm(f => ({ ...f, color: c }))}
+                      aria-label={c}
+                      disabled={zoneSaving}
+                    />
+                  ))}
+                  <div
+                    className={`${styles.colorSwatchCustom} ${!ZONE_PRESETS.includes(zoneForm.color) ? styles.colorSwatchSel : ''}`}
+                    style={{ background: ZONE_PRESETS.includes(zoneForm.color) ? 'var(--color-surface-2)' : zoneForm.color }}
+                    onClick={() => customColorRef.current?.click()}
+                    title="Personalizado"
+                  >
+                    <Pencil size={10} aria-hidden />
+                    <input
+                      ref={customColorRef}
+                      type="color"
+                      className={styles.colorInputHidden}
+                      value={zoneForm.color}
+                      onChange={e => setZoneForm(f => ({ ...f, color: e.target.value }))}
+                    />
                   </div>
-                )}
+                </div>
+                <div className={styles.colorPreview}>
+                  <span className={styles.colorPreviewDot} style={{ background: zoneForm.color }} />
+                  <code className={styles.colorPreviewHex}>{zoneForm.color}</code>
+                </div>
+              </div>
 
-                {!panelLoading && panelStaff.length === 0 && (
-                  <p className={styles.panelEmpty}>Sin colaboradores asignados</p>
-                )}
+              {zoneFormErr && (
+                <p className={styles.formError}>
+                  <AlertCircle size={13} aria-hidden /> {zoneFormErr}
+                </p>
+              )}
 
-                {!panelLoading && panelStaff.length > 0 && (
-                  <ul className={styles.staffList}>
-                    {panelStaff.map((u) => (
-                      <li
-                        key={u.id}
-                        className={`${styles.staffItem} ${!u.is_active ? styles.staffItemInactive : ''}`}
-                      >
-                        <div className={styles.staffAvatar}>
-                          {(u.name[0] ?? '').toUpperCase()}{(u.lastname[0] ?? '').toUpperCase()}
-                        </div>
-                        <div className={styles.staffInfo}>
-                          <span className={styles.staffName}>{u.name} {u.lastname}</span>
-                          <span className={styles.staffCode}>{u.code}</span>
-                        </div>
-                        <span className={`${styles.rolePill} ${ROLE_CLS[u.role] ?? ''}`}>
-                          {ROLE_LABEL[u.role] ?? u.role}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+              <div className={styles.formActions}>
+                <button type="button" className={styles.btnGhost} onClick={() => setZoneModalOpen(false)} disabled={zoneSaving}>
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={zoneSaving}>
+                  {zoneSaving ? 'Guardando…' : editingZone ? 'Guardar cambios' : 'Crear zona'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
