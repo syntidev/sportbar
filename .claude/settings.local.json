@@ -38,7 +38,10 @@
       "PowerShell(Get-Item *)",
       "PowerShell(Copy-Item *)",
       "Bash(ssh *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000\" -TimeoutSec 3 -UseBasicParsing; \"Server running: $\\($r.StatusCode\\)\" } catch { \"Server not running or error: $_\" })",
+      "PowerShell(node -e $script 2>&1)",
+      "Bash(npx tsx *)"
     ]
   }
 }

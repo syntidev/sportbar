@@ -1,16 +1,21 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { UtensilsCrossed, Wine, Beef, X, ShoppingBag, Check } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  UtensilsCrossed, Wine, Beef, X, ShoppingBag, Check,
+  Star, MapPin, Plus, Minus, ArrowLeft, Receipt, Flame,
+} from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { formatBs } from "@/lib/dollar-rate";
 import styles from "./page.module.css";
 
-type Category = "hamburguesas" | "raciones" | "bebidas";
-type Zone     = "Norte" | "Sur" | "VIP" | "Externa";
+type Category  = "hamburguesas" | "raciones" | "bebidas";
+type Zone      = "Norte" | "Sur" | "VIP" | "Externa";
+type AppScreen = "menu" | "cart" | "confirm" | "success";
 
 interface Product {
   id:          number;
@@ -26,7 +31,19 @@ interface TurnoData {
   partido_nombre: string;
 }
 
-const CATS: { key: Category; label: string; Icon: typeof Beef }[] = [
+interface CartEntry { product: Product; qty: number }
+
+interface FeatCardProps { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
+interface ProdRowProps  { p: Product; rate: number; qty: number; onAdd: (p: Product) => void }
+
+const CATS: { key: Category; label: string; Icon: LucideIcon }[] = [
+  { key: "hamburguesas", label: "Hamburguesas", Icon: Beef            },
+  { key: "raciones",     label: "Raciones",     Icon: UtensilsCrossed },
+  { key: "bebidas",      label: "Bebidas",       Icon: Wine            },
+];
+
+const ALL_TABS: { key: string; label: string; Icon: LucideIcon }[] = [
+  { key: "destacados",   label: "Destacados",   Icon: Star            },
   { key: "hamburguesas", label: "Hamburguesas", Icon: Beef            },
   { key: "raciones",     label: "Raciones",     Icon: UtensilsCrossed },
   { key: "bebidas",      label: "Bebidas",       Icon: Wine            },
@@ -34,39 +51,112 @@ const CATS: { key: Category; label: string; Icon: typeof Beef }[] = [
 
 const ZONES: Zone[] = ["Norte", "Sur", "VIP", "Externa"];
 
-const PLACEHOLDER_CLASS: Record<Category, string> = {
-  hamburguesas: styles.placeholderHamburguesas,
-  raciones:     styles.placeholderRaciones,
-  bebidas:      styles.placeholderBebidas,
-};
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 14 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0, 0, 1] } },
-};
-
-const sheetVariants: Variants = {
+const sheetV: Variants = {
   hidden:  { y: "100%" },
-  visible: { y: 0, transition: { type: "spring", damping: 30, stiffness: 300 } },
-  exit:    { y: "100%", transition: { duration: 0.22, ease: [0.25, 0, 0, 1] } },
+  visible: { y: 0, transition: { type: "spring", damping: 28, stiffness: 280 } },
+  exit:    { y: "100%", transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } },
 };
+
+const screenV: Variants = {
+  hidden:  { x: "100%" },
+  visible: { x: 0, transition: { type: "spring", damping: 30, stiffness: 300 } },
+  exit:    { x: "100%", transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } },
+};
+
+// ── Sub-components ───────────────────────────────────────────
+
+function FeatCard({ p, rate, qty, onAdd }: FeatCardProps) {
+  const [pop, setPop] = useState(false);
+  const add = () => {
+    setPop(true);
+    onAdd(p);
+    setTimeout(() => setPop(false), 340);
+  };
+  return (
+    <div className={styles.featCard}>
+      <div className={styles.featHalo} />
+      <div className={styles.featPhotoOuter}>
+        {p.image_url
+          ? <img src={p.image_url} alt={p.name} className={styles.featPhotoImg} />
+          : <div className={styles.featPhotoEmpty}><Beef size={52} color="rgba(240,245,240,0.3)" /></div>
+        }
+      </div>
+      <div className={styles.featName}>{p.name}</div>
+      <div className={styles.featDesc}>{p.description ?? " "}</div>
+      <div className={styles.featFoot}>
+        <div>
+          <div className={styles.featPrice}>REF {Number(p.price_usd).toFixed(2)}</div>
+          <div className={styles.featBs}>{formatBs(Number(p.price_usd) * rate)}</div>
+        </div>
+        <button
+          className={`${styles.featAdd} ${pop ? styles.pop : ""}`}
+          onClick={add}
+          aria-label={"Agregar " + p.name}
+        >
+          <Plus size={18} color="#000" strokeWidth={2.8} />
+        </button>
+      </div>
+      {qty > 0 && <span className={styles.featQty}>{qty}</span>}
+    </div>
+  );
+}
+
+function ProdRow({ p, rate, qty, onAdd }: ProdRowProps) {
+  const [pop, setPop] = useState(false);
+  const add = () => {
+    setPop(true);
+    onAdd(p);
+    setTimeout(() => setPop(false), 340);
+  };
+  return (
+    <div
+      className={styles.prod + (qty > 0 ? " " + styles.prodIn : "")}
+      onClick={add}
+    >
+      <div className={styles.prodPlate}>
+        <div className={styles.prodPlateGlow} />
+        <div className={styles.prodPlateInner}>
+          {p.image_url
+            ? <img src={p.image_url} alt={p.name} className={styles.prodImg} />
+            : <Beef size={30} color="rgba(240,245,240,0.4)" />
+          }
+        </div>
+      </div>
+      <div className={styles.prodBody}>
+        <div className={styles.prodName}>{p.name}</div>
+        {p.description && <div className={styles.prodDesc}>{p.description}</div>}
+        <div className={styles.prodMeta}>
+          <span className={styles.prodPrice}>REF {Number(p.price_usd).toFixed(2)}</span>
+          <span className={styles.prodBs}>{formatBs(Number(p.price_usd) * rate)}</span>
+        </div>
+      </div>
+      {qty > 0 && <span className={styles.prodQty}>x{qty}</span>}
+      <button
+        className={styles.prodAdd + (pop ? " " + styles.pop : "")}
+        onClick={e => { e.stopPropagation(); add(); }}
+        aria-label={"Agregar " + p.name}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+// ── Main page ────────────────────────────────────────────────
 
 export default function MenuPublicoPage() {
-  const [turno,     setTurno]     = useState<TurnoData | null>(null);
-  const [products,  setProducts]  = useState<Product[]>([]);
-  const [rate,      setRate]      = useState(50.0);
-  const [loading,   setLoading]   = useState(true);
-  const [activeTab, setActiveTab] = useState<Category>("hamburguesas");
-
-  // Modal state
-  const [modal,      setModal]      = useState<Product | null>(null);
-  const [submitted,  setSubmitted]  = useState(false);
+  const [turno,      setTurno]      = useState<TurnoData | null>(null);
+  const [products,   setProducts]   = useState<Product[]>([]);
+  const [rate,       setRate]       = useState(50.0);
+  const [loading,    setLoading]    = useState(true);
+  const [activeTab,  setActiveTab]  = useState<string>("destacados");
+  const [appScreen,  setAppScreen]  = useState<AppScreen>("menu");
+  const [cart,       setCart]       = useState<Map<number, CartEntry>>(new Map());
   const [orderCode,  setOrderCode]  = useState<string | null>(null);
+  const [orderCount, setOrderCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [formError,  setFormError]  = useState<string | null>(null);
-
   const [form, setForm] = useState({
-    qty:      1,
     zone:     "" as Zone | "",
     seat:     "",
     name:     "",
@@ -74,29 +164,27 @@ export default function MenuPublicoPage() {
     cedula:   "",
   });
 
-  const sectionRefs = useRef<Partial<Record<Category, HTMLElement>>>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const secRefs   = useRef<Partial<Record<string, HTMLElement>>>({});
 
-  // -- Bootstrap --
+  // Bootstrap
   useEffect(() => {
     async function init() {
       try {
-        const [turnoRes, rateRes] = await Promise.all([
+        const [tRes, rRes] = await Promise.all([
           fetch("/api/turno"),
           fetch("/api/currency"),
         ]);
-        const [turnoData, rateData] = await Promise.all([
-          turnoRes.json(), rateRes.json(),
-        ]);
-
-        if (turnoData.success) {
-          setTurno(turnoData.turno as TurnoData);
-          if ((turnoData.turno as TurnoData).is_active) {
-            const prodRes  = await fetch("/api/products");
-            const prodData = await prodRes.json() as { success: boolean; products: Product[] };
-            if (prodData.success) setProducts(prodData.products);
+        const [tData, rData] = await Promise.all([tRes.json(), rRes.json()]);
+        if (tData.success) {
+          setTurno(tData.turno as TurnoData);
+          if ((tData.turno as TurnoData).is_active) {
+            const pRes  = await fetch("/api/products");
+            const pData = await pRes.json() as { success: boolean; products: Product[] };
+            if (pData.success) setProducts(pData.products);
           }
         }
-        if (rateData.rate) setRate(rateData.rate as number);
+        if (rData.rate) setRate(rData.rate as number);
       } finally {
         setLoading(false);
       }
@@ -104,11 +192,11 @@ export default function MenuPublicoPage() {
     init();
   }, []);
 
-  // -- Supabase Realtime: detectar apertura de turno --
+  // Supabase Realtime — detectar apertura de turno
   useEffect(() => {
     const client = getSupabase();
     if (!client) return;
-    const channel = client
+    const ch = client
       .channel("turno")
       .on(
         "postgres_changes",
@@ -121,32 +209,59 @@ export default function MenuPublicoPage() {
         },
       )
       .subscribe();
-
-    return () => { void client.removeChannel(channel); };
+    return () => { void client.removeChannel(ch); };
   }, []);
 
-  // -- Scroll to category section --
-  function scrollToSection(cat: Category) {
-    setActiveTab(cat);
-    const el = sectionRefs.current[cat];
-    if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 120;
-      window.scrollTo({ top, behavior: "smooth" });
+  // Scroll spy
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const top  = scrollRef.current.scrollTop + 80;
+    const keys = ["destacados", ...CATS.map(c => c.key)];
+    let cur = "destacados";
+    for (const k of keys) {
+      const el = secRefs.current[k];
+      if (el && el.offsetTop <= top) cur = k;
     }
-  }
+    setActiveTab(cur);
+  }, []);
 
-  // -- Open modal --
-  function openModal(product: Product) {
-    setModal(product);
-    setSubmitted(false);
-    setOrderCode(null);
-    setFormError(null);
-    setForm({ qty: 1, zone: "", seat: "", name: "", lastname: "", cedula: "" });
-  }
+  const goTo = (key: string) => {
+    setActiveTab(key);
+    const el = secRefs.current[key];
+    if (el && scrollRef.current) {
+      scrollRef.current.scrollTo({ top: el.offsetTop - 10, behavior: "smooth" });
+    }
+  };
 
-  // -- Submit order --
+  // Cart
+  const addToCart = useCallback((p: Product) => {
+    if (navigator.vibrate) navigator.vibrate([12]);
+    setCart(prev => {
+      const next = new Map(prev);
+      const e = next.get(p.id);
+      next.set(p.id, { product: p, qty: (e?.qty ?? 0) + 1 });
+      return next;
+    });
+  }, []);
+
+  const changeQty = useCallback((id: number, delta: number) => {
+    setCart(prev => {
+      const next = new Map(prev);
+      const e = next.get(id);
+      if (!e) return prev;
+      const nq = e.qty + delta;
+      if (nq <= 0) next.delete(id);
+      else next.set(id, { ...e, qty: nq });
+      return next;
+    });
+  }, []);
+
+  const cartItems = Array.from(cart.values());
+  const cartCount = cartItems.reduce((s, e) => s + e.qty, 0);
+  const cartTotal = cartItems.reduce((s, e) => s + Number(e.product.price_usd) * e.qty, 0);
+
+  // Submit order
   async function handleSubmit() {
-    if (!modal) return;
     if (!form.zone || !form.name.trim() || !form.lastname.trim()) {
       setFormError("Zona, nombre y apellido son obligatorios");
       return;
@@ -168,21 +283,29 @@ export default function MenuPublicoPage() {
           customer_name:     form.name.trim(),
           customer_lastname: form.lastname.trim(),
           customer_id:       form.cedula.trim() || undefined,
-          items: [{ product_id: modal.id, qty: form.qty, price_usd: Number(modal.price_usd) }],
+          items: cartItems.map(({ product, qty }) => ({
+            product_id: product.id,
+            qty,
+            price_usd:  Number(product.price_usd),
+          })),
         }),
       });
       const data = await res.json() as {
         success: boolean;
-        order?: { code: string };
+        order?:  { code: string };
         errors?: string[];
-        error?: string;
+        error?:  string;
       };
       if (data.success && data.order) {
         setOrderCode(data.order.code);
-        setSubmitted(true);
+        setCart(new Map());
+        setOrderCount(c => c + 1);
+        setAppScreen("success");
       } else {
         setFormError(
-          Array.isArray(data.errors) ? data.errors[0] : (data.error ?? "Error al enviar pedido"),
+          Array.isArray(data.errors)
+            ? data.errors[0]
+            : (data.error ?? "Error al enviar pedido"),
         );
       }
     } finally {
@@ -190,15 +313,27 @@ export default function MenuPublicoPage() {
     }
   }
 
+  // Derived data
   const grouped = CATS.reduce<Record<Category, Product[]>>(
     (acc, { key }) => {
-      acc[key] = products.filter((p) => p.category === key);
+      acc[key] = products.filter(p => p.category === key);
       return acc;
     },
     { hamburguesas: [], raciones: [], bebidas: [] },
   );
 
-  // -- Loading --
+  const hero = grouped.hamburguesas[0] ?? grouped.raciones[0] ?? null;
+  const featured = [
+    ...grouped.hamburguesas.slice(1, 3),
+    ...grouped.raciones.slice(0, 2),
+    ...grouped.bebidas.slice(0, 1),
+  ].slice(0, 5);
+
+  const seatLabel = form.zone
+    ? form.seat ? form.zone + " - " + form.seat : form.zone
+    : "Mi zona";
+
+  // ── Loading ──
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -209,7 +344,7 @@ export default function MenuPublicoPage() {
     );
   }
 
-  // -- Curtain --
+  // ── Curtain ──
   if (!turno?.is_active) {
     return (
       <div className={styles.curtain}>
@@ -234,269 +369,405 @@ export default function MenuPublicoPage() {
     );
   }
 
-  // -- Menu --
+  // ── Menu ──
   return (
     <>
       <div className={styles.page}>
-        {/* Sticky header */}
-        <header className={styles.header}>
-          <img src="/logo-color.png" alt="Sport Bar" className={styles.headerLogo} />
-          <div className={styles.headerText}>
-            <span className={styles.headerTitle}>Sport Bar</span>
-            <span className={styles.headerSub}>
-              Guaiqueries · {turno.partido_nombre}
-            </span>
-          </div>
-        </header>
 
-        {/* Sticky tabs */}
-        <nav className={styles.tabs}>
-          {CATS.map(({ key, label, Icon }) => (
+        {/* Header */}
+        <div className={styles.custHead}>
+          <img src="/logo-color.png" alt="Sport Bar" className={styles.custHeadLogo} />
+          <div className={styles.custHeadWm}>SPORT BAR</div>
+          <button className={styles.custTicketsBtn} aria-label="Mis pedidos">
+            <Receipt size={19} />
+            {orderCount > 0 && <span className={styles.nb}>{orderCount}</span>}
+          </button>
+          <div className={styles.custLoc}>
+            <MapPin size={12} color="var(--color-brand)" />
+            {seatLabel}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <nav className={styles.custTabs}>
+          {ALL_TABS.map(({ key, label, Icon }) => (
             <button
               key={key}
-              className={`${styles.tab} ${activeTab === key ? styles.tabActive : ""}`}
-              onClick={() => scrollToSection(key)}
+              className={
+                styles.custTab + (activeTab === key ? " " + styles.custTabActive : "")
+              }
+              onClick={() => goTo(key)}
             >
-              <Icon size={13} />
+              <Icon size={14} />
               {label}
             </button>
           ))}
         </nav>
 
-        {/* Products */}
-        <main className={styles.content}>
+        {/* Scroll area */}
+        <div
+          className={styles.mScroll}
+          ref={scrollRef}
+          onScroll={handleScroll}
+          style={{ paddingBottom: cartCount > 0 ? 110 : 24 }}
+        >
+
+          {/* Hero */}
+          <div ref={el => { if (el) secRefs.current.destacados = el; }}>
+            {hero && (
+              <div className={styles.hero}>
+                <div className={styles.heroHalo} />
+                <div className={styles.heroWm}>
+                  {hero.name.split(" ")[0].toUpperCase()}
+                </div>
+                <div className={styles.heroTop}>
+                  <div>
+                    <div className={styles.heroPrice}>
+                      REF {Number(hero.price_usd).toFixed(2)}
+                    </div>
+                    <div className={styles.heroPriceBs}>
+                      {formatBs(Number(hero.price_usd) * rate)}
+                    </div>
+                  </div>
+                  <span className={styles.socialPill}>
+                    <Flame size={13} color="var(--color-brand)" />
+                    {turno.partido_nombre}
+                  </span>
+                </div>
+                <div className={styles.heroPhoto}>
+                  {hero.image_url
+                    ? <img src={hero.image_url} alt={hero.name} className={styles.heroImg} />
+                    : <div className={styles.heroImgEmpty}><Beef size={90} color="rgba(240,245,240,0.25)" /></div>
+                  }
+                </div>
+                <div className={styles.heroInfo}>
+                  <div className={styles.heroName}>{hero.name}</div>
+                  {hero.description && (
+                    <div className={styles.heroDesc}>{hero.description}</div>
+                  )}
+                  <button className={styles.heroCta} onClick={() => addToCart(hero)}>
+                    <Plus size={22} color="#1a1308" strokeWidth={2.6} />
+                    AGREGAR AL PEDIDO
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Featured rail */}
+          {featured.length > 0 && (
+            <>
+              <div className={styles.secHead}>
+                <Star size={20} color="var(--color-brand)" />
+                <span className={styles.secHeadT}>Destacados</span>
+              </div>
+              <div className={styles.featRail}>
+                {featured.map(p => (
+                  <FeatCard
+                    key={p.id}
+                    p={p}
+                    rate={rate}
+                    qty={cart.get(p.id)?.qty ?? 0}
+                    onAdd={addToCart}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Category sections */}
           {CATS.map(({ key, label, Icon }) => {
             const items = grouped[key];
             if (items.length === 0) return null;
             return (
-              <section
-                key={key}
-                className={styles.catSection}
-                ref={(el) => { if (el) sectionRefs.current[key] = el; }}
-              >
-                <div className={styles.catHeader}>
+              <div key={key} ref={el => { if (el) secRefs.current[key] = el; }}>
+                <div className={styles.secHead}>
                   <Icon size={20} />
-                  {label}
-                  <span className={styles.catCount}>{items.length}</span>
+                  <span className={styles.secHeadT}>{label}</span>
+                  <span className={styles.secHeadN}>{items.length} opciones</span>
                 </div>
-
-                <div className={styles.productGrid}>
-                  {items.map((p) => (
-                    <motion.article
+                <div className={styles.prodList}>
+                  {items.map(p => (
+                    <ProdRow
                       key={p.id}
-                      className={styles.productCard}
-                      variants={cardVariants}
-                      initial="hidden"
-                      whileInView="show"
-                      viewport={{ once: true, margin: "-30px" }}
-                    >
-                      <div className={styles.cardPhotoWrap}>
-                        <div className={`${styles.cardPhotoPlaceholder} ${PLACEHOLDER_CLASS[key]}`}>
-                          <Icon size={32} />
-                        </div>
-                      </div>
-
-                      <div className={styles.cardBody}>
-                        <h3 className={styles.cardName}>{p.name}</h3>
-                        {p.description && (
-                          <p className={styles.cardDesc}>{p.description}</p>
-                        )}
-                        <div className={styles.cardFooter}>
-                          <div className={styles.priceBlock}>
-                            <span className={styles.priceRef}>
-                              <span className={styles.priceRefLabel}>REF</span>
-                              {Number(p.price_usd).toFixed(2)}
-                            </span>
-                            <span className={styles.priceBs}>
-                              {formatBs(Number(p.price_usd) * rate)}
-                            </span>
-                          </div>
-                          <button
-                            className={styles.btnPedir}
-                            onClick={() => openModal(p)}
-                            aria-label={`Pedir ${p.name}`}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </motion.article>
+                      p={p}
+                      rate={rate}
+                      qty={cart.get(p.id)?.qty ?? 0}
+                      onAdd={addToCart}
+                    />
                   ))}
                 </div>
-              </section>
+              </div>
             );
           })}
-        </main>
+          <div style={{ height: 8 }} />
+        </div>
+
+        {/* Cart FAB */}
+        <AnimatePresence>
+          {cartCount > 0 && (
+            <motion.button
+              className={styles.cartFab}
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", damping: 22, stiffness: 300 }}
+              onClick={() => setAppScreen("cart")}
+            >
+              <ShoppingBag size={22} color="#1a1308" />
+              <span className={styles.cartFabLbl}>VER PEDIDO</span>
+              <span className={styles.cartFabCt}>{cartCount}</span>
+              <span className={styles.cartFabTot}>REF {cartTotal.toFixed(2)}</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Modal */}
+      {/* Cart sheet */}
       <AnimatePresence>
-        {modal && (
+        {appScreen === "cart" && (
           <>
             <motion.div
-              className={styles.overlay}
+              className={styles.scrim}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => { if (!submitted) setModal(null); }}
+              onClick={() => setAppScreen("menu")}
             />
-
             <motion.div
-              className={styles.sheet}
-              variants={sheetVariants}
+              className={styles.cartSheet}
+              variants={sheetV}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              <div className={styles.sheetHandle} />
+              <div className={styles.handle} />
+              <div className={styles.cartSheetHead}>
+                <span className={styles.cartSheetTitle}>Tu pedido</span>
+                <button className={styles.sheetClose} onClick={() => setAppScreen("menu")}>
+                  <X size={20} />
+                </button>
+              </div>
 
-              {submitted ? (
-                /* -- Success -- */
-                <div className={styles.successState}>
-                  <motion.div
-                    className={styles.successIcon}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 280, damping: 18 }}
-                  >
-                    <Check size={28} />
-                  </motion.div>
-                  <span className={styles.successTitle}>Pedido enviado!</span>
-                  <span className={styles.successCode}>{orderCode}</span>
-                  <span className={styles.successSub}>El mesero llegara con tu orden</span>
-                  <button className={styles.btnDone} onClick={() => setModal(null)}>
-                    Listo
-                  </button>
-                </div>
-              ) : (
-                /* -- Form -- */
-                <>
-                  <div className={styles.sheetHeader}>
-                    <div className={styles.sheetHeaderText}>
-                      <span className={styles.sheetProductName}>{modal.name}</span>
-                      <div className={styles.sheetPriceRow}>
-                        <span className={styles.sheetPriceRef}>
-                          <span className={styles.priceRefLabel}>REF</span>
-                          {(Number(modal.price_usd) * form.qty).toFixed(2)}
-                        </span>
-                        <span className={styles.sheetPriceBs}>
-                          {formatBs(Number(modal.price_usd) * form.qty * rate)}
-                        </span>
+              <div className={styles.cartItems}>
+                {cartItems.map(({ product: p, qty }) => (
+                  <div key={p.id} className={styles.cartItem}>
+                    <div className={styles.cartItemThumb}>
+                      {p.image_url
+                        ? <img src={p.image_url} alt={p.name} className={styles.cartItemImg} />
+                        : <Beef size={24} color="rgba(240,245,240,0.4)" />
+                      }
+                    </div>
+                    <div className={styles.cartItemInfo}>
+                      <div className={styles.cartItemName}>{p.name}</div>
+                      <div className={styles.cartItemPrice}>
+                        REF {(Number(p.price_usd) * qty).toFixed(2)}
                       </div>
                     </div>
-                    <button className={styles.sheetClose} onClick={() => setModal(null)}>
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  {/* Qty */}
-                  <div className={styles.qtyRow}>
-                    <button
-                      className={styles.qtyBtn}
-                      onClick={() => setForm((f) => ({ ...f, qty: Math.max(1, f.qty - 1) }))}
-                    >
-                      -
-                    </button>
-                    <span className={styles.qtyNum}>{form.qty}</span>
-                    <button
-                      className={styles.qtyBtn}
-                      onClick={() => setForm((f) => ({ ...f, qty: f.qty + 1 }))}
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* Zone */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>
-                      Zona <span className={styles.required}>*</span>
-                    </label>
-                    <div className={styles.zoneGrid}>
-                      {ZONES.map((z) => (
-                        <button
-                          key={z}
-                          className={`${styles.zoneBtn} ${form.zone === z ? styles.zoneBtnActive : ""}`}
-                          onClick={() => setForm((f) => ({ ...f, zone: z }))}
-                        >
-                          {z}
-                        </button>
-                      ))}
+                    <div className={styles.stepper}>
+                      <button
+                        className={styles.stepMinus}
+                        onClick={() => changeQty(p.id, -1)}
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className={styles.stepQ}>{qty}</span>
+                      <button
+                        className={styles.stepPlus}
+                        onClick={() => changeQty(p.id, 1)}
+                      >
+                        <Plus size={16} />
+                      </button>
                     </div>
                   </div>
+                ))}
+              </div>
 
-                  {/* Seat */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Asiento / Mesa</label>
-                    <input
-                      className={styles.input}
-                      placeholder="Ej: Palco 3, Silla 12"
-                      value={form.seat}
-                      onChange={(e) => setForm((f) => ({ ...f, seat: e.target.value }))}
-                    />
-                  </div>
-
-                  {/* Name + Lastname */}
-                  <div className={styles.formRow}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>
-                        Nombre <span className={styles.required}>*</span>
-                      </label>
-                      <input
-                        className={styles.input}
-                        placeholder="Carlos"
-                        value={form.name}
-                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>
-                        Apellido <span className={styles.required}>*</span>
-                      </label>
-                      <input
-                        className={styles.input}
-                        placeholder="Perez"
-                        value={form.lastname}
-                        onChange={(e) => setForm((f) => ({ ...f, lastname: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Cedula */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>
-                      Cedula
-                      {form.zone === "VIP" && <span className={styles.required}> *</span>}
-                    </label>
-                    <input
-                      className={styles.input}
-                      placeholder="V-12345678"
-                      value={form.cedula}
-                      onChange={(e) => setForm((f) => ({ ...f, cedula: e.target.value }))}
-                    />
-                  </div>
-
-                  {formError && <div className={styles.errorMsg}>{formError}</div>}
-
-                  <button
-                    className={styles.btnSubmit}
-                    disabled={
-                      submitting ||
-                      !form.zone ||
-                      !form.name.trim() ||
-                      !form.lastname.trim()
-                    }
-                    onClick={handleSubmit}
-                  >
-                    <ShoppingBag size={16} />
-                    {submitting
-                      ? "Enviando..."
-                      : `Pedir REF ${(Number(modal.price_usd) * form.qty).toFixed(2)}`}
-                  </button>
-                </>
-              )}
+              <div className={styles.cartFoot}>
+                <div className={styles.cartTotalRow}>
+                  <span className={styles.cartTotalLabel}>Total</span>
+                  <span className={styles.cartTotalRef}>REF {cartTotal.toFixed(2)}</span>
+                </div>
+                <div className={styles.cartTotalBs}>
+                  {formatBs(cartTotal * rate)}
+                </div>
+                <button
+                  className={styles.btnConfirm}
+                  onClick={() => setAppScreen("confirm")}
+                >
+                  CONFIRMAR PEDIDO
+                </button>
+              </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Confirm screen */}
+      <AnimatePresence>
+        {appScreen === "confirm" && (
+          <motion.div
+            className={styles.overlayScreen}
+            variants={screenV}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <div className={styles.mHead}>
+              <button className={styles.mBack} onClick={() => setAppScreen("cart")}>
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className={styles.mTitle}>Confirmar</h2>
+            </div>
+
+            <div
+              className={styles.mScroll}
+              style={{ padding: "4px 16px 20px", overflowY: "auto" }}
+            >
+              <div className={styles.formGroup}>
+                <label className={styles.flabel}>
+                  Zona <span className={styles.req}>*</span>
+                </label>
+                <div className={styles.zoneGrid}>
+                  {ZONES.map(z => (
+                    <button
+                      key={z}
+                      className={
+                        styles.zoneBtn +
+                        (form.zone === z ? " " + styles.zoneBtnSel : "")
+                      }
+                      onClick={() => setForm(f => ({ ...f, zone: z }))}
+                    >
+                      {z}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.flabel}>Asiento / Mesa</label>
+                <input
+                  className={styles.field}
+                  placeholder="Ej: Fila G, Silla 12"
+                  value={form.seat}
+                  onChange={e => setForm(f => ({ ...f, seat: e.target.value }))}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.flabel}>
+                  Nombre <span className={styles.req}>*</span>
+                </label>
+                <input
+                  className={styles.field}
+                  placeholder="Carlos"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.flabel}>
+                  Apellido <span className={styles.req}>*</span>
+                </label>
+                <input
+                  className={styles.field}
+                  placeholder="Perez"
+                  value={form.lastname}
+                  onChange={e => setForm(f => ({ ...f, lastname: e.target.value }))}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.flabel}>
+                  Cedula
+                  {form.zone === "VIP" && <span className={styles.req}> *</span>}
+                </label>
+                <input
+                  className={styles.field}
+                  placeholder="V-12345678"
+                  inputMode="numeric"
+                  value={form.cedula}
+                  onChange={e => {
+                    const d = e.target.value.replace(/\D/g, "").slice(0, 8);
+                    setForm(f => ({ ...f, cedula: d ? "V-" + d : "" }));
+                  }}
+                />
+              </div>
+
+              {formError && <div className={styles.errorMsg}>{formError}</div>}
+            </div>
+
+            <div className={styles.mFoot}>
+              <button
+                className={styles.btnGenerar}
+                disabled={
+                  submitting ||
+                  !form.zone ||
+                  !form.name.trim() ||
+                  !form.lastname.trim()
+                }
+                onClick={handleSubmit}
+              >
+                {submitting ? "Generando ticket..." : "GENERAR TICKET"}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success screen */}
+      <AnimatePresence>
+        {appScreen === "success" && (
+          <motion.div
+            className={styles.overlayScreen}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div
+              className={styles.mScroll}
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                textAlign: "center", padding: "48px 22px 28px",
+              }}
+            >
+              <motion.div
+                className={styles.successIcon}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 280, damping: 18 }}
+              >
+                <Check size={44} color="var(--color-primary-light)" strokeWidth={3} />
+              </motion.div>
+              <div className={styles.successSub}>Tu codigo de ticket</div>
+              <div className={styles.successCode}>{orderCode}</div>
+              <div className={styles.successMsg}>
+                Tu pedido esta en camino
+              </div>
+              <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 28 }}>
+                <button
+                  className={styles.btnSecondary}
+                  onClick={() => {
+                    setAppScreen("menu");
+                    setOrderCode(null);
+                  }}
+                >
+                  MIS PEDIDOS
+                </button>
+                <button
+                  className={styles.btnPrimary}
+                  onClick={() => {
+                    setAppScreen("menu");
+                    setOrderCode(null);
+                    setForm({ zone: "", seat: "", name: "", lastname: "", cedula: "" });
+                  }}
+                >
+                  SEGUIR PIDIENDO
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

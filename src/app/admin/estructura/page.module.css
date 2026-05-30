@@ -220,6 +220,12 @@
   border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
+.capDespacho {
+  background: color-mix(in srgb, var(--color-credito) 14%, transparent);
+  color: var(--color-credito);
+  border: 1px solid color-mix(in srgb, var(--color-credito) 30%, transparent);
+}
+
 .noCaps {
   font-size: 0.7rem;
   color: var(--color-text-subtle);

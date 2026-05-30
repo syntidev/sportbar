@@ -6,7 +6,7 @@ const PatchSchema = z.object({
   is_active:    z.boolean().optional(),
   name:         z.string().trim().min(1).max(100).optional(),
   type:         z.enum(['matriz', 'quiosco', 'cocina']).optional(),
-  capabilities: z.array(z.enum(['comida', 'cerveza', 'licor_fuerte'])).optional(),
+  capabilities: z.array(z.enum(['comida', 'cerveza', 'licor_fuerte', 'despacho'])).optional(),
 }).refine((d) => Object.keys(d).length > 0, { message: 'Sin campos para actualizar' })
 
 export async function PATCH(

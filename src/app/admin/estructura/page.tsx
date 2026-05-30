@@ -12,7 +12,7 @@ import styles from './page.module.css'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type VenueType   = 'matriz' | 'quiosco' | 'cocina'
-type Capability  = 'comida' | 'cerveza' | 'licor_fuerte'
+type Capability  = 'comida' | 'cerveza' | 'licor_fuerte' | 'despacho'
 
 interface Venue {
   id:           number
@@ -50,9 +50,10 @@ const TYPE_META: Record<VenueType, { label: string; cls: string; Icon: React.Ele
 }
 
 const CAP_META: Record<Capability, { label: string; cls: string }> = {
-  comida:       { label: 'Comida',       cls: styles.capComida  },
-  cerveza:      { label: 'Cerveza',      cls: styles.capCerveza },
-  licor_fuerte: { label: 'Licor fuerte', cls: styles.capLicor   },
+  comida:       { label: 'Comida',       cls: styles.capComida   },
+  cerveza:      { label: 'Cerveza',      cls: styles.capCerveza  },
+  licor_fuerte: { label: 'Licor fuerte', cls: styles.capLicor    },
+  despacho:     { label: 'Despacho',     cls: styles.capDespacho },
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -69,12 +70,12 @@ const ROLE_CLS: Record<string, string> = {
   admin:     styles.roleAdmin,
 }
 
-const CAPABILITIES: Capability[] = ['comida', 'cerveza', 'licor_fuerte']
+const CAPABILITIES: Capability[] = ['comida', 'cerveza', 'licor_fuerte', 'despacho']
 
 const FORM_DEFAULT: FormState = {
   name:         '',
   type:         'quiosco',
-  capabilities: { comida: false, cerveza: false, licor_fuerte: false },
+  capabilities: { comida: false, cerveza: false, licor_fuerte: false, despacho: false },
   is_active:    true,
 }
 
@@ -86,6 +87,7 @@ function venueToForm(v: Venue): FormState {
       comida:       v.capabilities.includes('comida'),
       cerveza:      v.capabilities.includes('cerveza'),
       licor_fuerte: v.capabilities.includes('licor_fuerte'),
+      despacho:     v.capabilities.includes('despacho'),
     },
     is_active: v.is_active,
   }
