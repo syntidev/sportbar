@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, Clock, Banknote, UtensilsCrossed,
   Users, Building2, Settings, CalendarDays, UserSquare2,
@@ -16,7 +17,7 @@ interface NavItem {
   href:  string
   label: string
   short: string
-  Icon:  React.ComponentType<{ size?: number; strokeWidth?: number; 'aria-hidden'?: boolean }>
+  Icon:  LucideIcon
 }
 
 interface NavGroup {
