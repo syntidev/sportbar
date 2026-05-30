@@ -1,15 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import { jwtVerify } from 'jose'
 import { prisma } from '@/lib/prisma'
 
 const ALLOWED_TYPES = new Set(['image/webp', 'image/jpeg', 'image/png'])
 const MAX_BYTES     = 5 * 1024 * 1024 // 5 MB
 
+function getSecret() {
+  return new TextEncoder().encode(process.env.JWT_SECRET ?? '')
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
+  const token = req.cookies.get('cafeball_session')?.value
+  if (!token) {
+    return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+  }
+
+  let actorRole: string
+  try {
+    const { payload } = await jwtVerify(token, getSecret())
+    actorRole = payload['role'] as string
+  } catch {
+    return NextResponse.json({ success: false, error: 'Sesión inválida' }, { status: 401 })
+  }
+
+  if (actorRole !== 'admin') {
+    return NextResponse.json({ success: false, error: 'Solo admin puede subir fotos de productos' }, { status: 403 })
+  }
+
   const id = parseInt(params.id, 10)
   if (isNaN(id)) {
     return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 })
