@@ -151,10 +151,13 @@
 }
 .cardPhotoPlaceholder {
   position: relative; z-index: 1; width: 62px; height: 62px; border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, #38291a, #15110d);
+  background: #1a1a1a;
   display: flex; align-items: center; justify-content: center;
-  color: var(--color-text-muted); box-shadow: var(--shadow-card);
+  color: rgba(240,245,240,0.35); box-shadow: var(--shadow-card);
 }
+.placeholderHamburguesas { background: #2a1a0a; }
+.placeholderRaciones     { background: #1a2a0a; }
+.placeholderBebidas      { background: #0a1a2a; }
 
 /* Card body */
 .cardBody { flex: 1; min-width: 0; display: flex; flex-direction: column; }

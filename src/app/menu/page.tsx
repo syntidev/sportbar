@@ -34,6 +34,12 @@ const CATS: { key: Category; label: string; Icon: typeof Beef }[] = [
 
 const ZONES: Zone[] = ["Norte", "Sur", "VIP", "Externa"];
 
+const PLACEHOLDER_CLASS: Record<Category, string> = {
+  hamburguesas: styles.placeholderHamburguesas,
+  raciones:     styles.placeholderRaciones,
+  bebidas:      styles.placeholderBebidas,
+};
+
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 14 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0, 0, 1] } },
@@ -285,17 +291,9 @@ export default function MenuPublicoPage() {
                       viewport={{ once: true, margin: "-30px" }}
                     >
                       <div className={styles.cardPhotoWrap}>
-                        {p.image_url ? (
-                          <img
-                            src={p.image_url}
-                            alt={p.name}
-                            className={styles.cardPhoto}
-                          />
-                        ) : (
-                          <div className={styles.cardPhotoPlaceholder}>
-                            <Icon size={32} />
-                          </div>
-                        )}
+                        <div className={`${styles.cardPhotoPlaceholder} ${PLACEHOLDER_CLASS[key]}`}>
+                          <Icon size={32} />
+                        </div>
                       </div>
 
                       <div className={styles.cardBody}>
