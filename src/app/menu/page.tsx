@@ -192,6 +192,7 @@ function MenuContent() {
   const [orderCount,  setOrderCount]  = useState(0);
   const [submitting,  setSubmitting]  = useState(false);
   const [formError,   setFormError]   = useState<string | null>(null);
+  const [orderSnapshot, setOrderSnapshot] = useState<{ items: CartEntry[]; total: number } | null>(null);
   const [form, setForm] = useState({
     zone:     "" as Zone | "",
     seat:     "",
@@ -254,6 +255,13 @@ function MenuContent() {
       body: JSON.stringify({ event_type: "page_view", zone: zoneParam, device_type: deviceType }),
     });
   }, []); // intentionally fire once — eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-populate zone from URL ?zona= param
+  useEffect(() => {
+    if (zoneParam && (ZONES as readonly string[]).includes(zoneParam)) {
+      setForm(f => ({ ...f, zone: zoneParam as Zone }));
+    }
+  }, [zoneParam]);
 
   // Hero slider autoplay (4 s)
   const activeSlots = useMemo(() => heroSlots.filter(s => s.url !== null), [heroSlots]);
@@ -419,6 +427,7 @@ function MenuContent() {
         error?:  string;
       };
       if (data.success && data.order) {
+        setOrderSnapshot({ items: [...cartItems], total: cartTotal });
         setOrderCode(data.order.code);
         setCart(new Map());
         setOrderCount(c => c + 1);
@@ -761,20 +770,28 @@ function MenuContent() {
                 <label className={styles.flabel}>
                   Zona <span className={styles.req}>*</span>
                 </label>
-                <div className={styles.zoneGrid}>
-                  {ZONES.map(z => (
-                    <button
-                      key={z}
-                      className={
-                        styles.zoneBtn +
-                        (form.zone === z ? " " + styles.zoneBtnSel : "")
-                      }
-                      onClick={() => setForm(f => ({ ...f, zone: z }))}
-                    >
-                      {z}
-                    </button>
-                  ))}
-                </div>
+                {zoneParam && (ZONES as readonly string[]).includes(zoneParam) ? (
+                  <div className={styles.zoneLocked}>
+                    <MapPin size={13} color="var(--color-brand)" />
+                    <span>{zoneParam}</span>
+                    <span className={styles.zoneLockedHint}>desde QR</span>
+                  </div>
+                ) : (
+                  <div className={styles.zoneGrid}>
+                    {ZONES.map(z => (
+                      <button
+                        key={z}
+                        className={
+                          styles.zoneBtn +
+                          (form.zone === z ? " " + styles.zoneBtnSel : "")
+                        }
+                        onClick={() => setForm(f => ({ ...f, zone: z }))}
+                      >
+                        {z}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className={styles.formGroup}>
@@ -858,45 +875,61 @@ function MenuContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div
-              className={styles.mScroll}
-              style={{
-                display: "flex", flexDirection: "column", alignItems: "center",
-                textAlign: "center", padding: "48px 22px 28px",
-              }}
-            >
-              <motion.div
-                className={styles.successIcon}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 280, damping: 18 }}
-              >
-                <Check size={44} color="var(--color-primary-light)" strokeWidth={3} />
-              </motion.div>
-              <div className={styles.successSub}>Tu codigo de ticket</div>
-              <div className={styles.successCode}>{orderCode}</div>
-              <div className={styles.successMsg}>
-                Tu pedido esta en camino
-              </div>
-              <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 28 }}>
-                <button
-                  className={styles.btnSecondary}
-                  onClick={() => {
-                    setAppScreen("menu");
-                    setOrderCode(null);
-                  }}
+            <div className={styles.mScroll} style={{ overflowY: "auto" }}>
+              <div className={styles.successTop}>
+                <motion.div
+                  className={styles.successIcon}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 18 }}
                 >
-                  MIS PEDIDOS
-                </button>
+                  <Check size={44} color="var(--color-primary-light)" strokeWidth={3} />
+                </motion.div>
+                <div className={styles.successSub}>Tu código de ticket</div>
+                <div className={styles.successCode}>{orderCode}</div>
+                <div className={styles.successMsg2}>
+                  Tu pedido fue recibido. Muestra este código al personal.
+                </div>
+              </div>
+
+              {/* Items snapshot */}
+              {orderSnapshot && (
+                <div className={styles.successItems}>
+                  {orderSnapshot.items.map(({ product: p, qty }) => (
+                    <div key={p.id} className={styles.successItemRow}>
+                      <span className={styles.successItemQty}>{qty}×</span>
+                      <span className={styles.successItemName}>{p.name}</span>
+                      <span className={styles.successItemPrice}>
+                        REF {(Number(p.price_usd) * qty).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className={styles.successTotal}>
+                    <span>Total</span>
+                    <span className={styles.successTotalAmt}>
+                      REF {orderSnapshot.total.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ padding: "0 20px 40px" }}>
                 <button
                   className={styles.btnPrimary}
+                  style={{ width: "100%", marginTop: 20 }}
                   onClick={() => {
                     setAppScreen("menu");
                     setOrderCode(null);
-                    setForm({ zone: "", seat: "", name: "", lastname: "", cedula: "" });
+                    setOrderSnapshot(null);
+                    setForm(f => ({
+                      zone: (zoneParam && (ZONES as readonly string[]).includes(zoneParam))
+                        ? zoneParam as Zone : "",
+                      seat: "", name: "", lastname: "", cedula: "",
+                    }));
+                    scrollRef.current?.scrollTo({ top: 0 });
                   }}
                 >
-                  SEGUIR PIDIENDO
+                  NUEVO PEDIDO
                 </button>
               </div>
             </div>
