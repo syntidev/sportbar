@@ -34,7 +34,7 @@ interface PosTerminal {
   is_active:         boolean;
 }
 
-type RouteDestination = "cocina" | "bar" | "matriz";
+type RouteDestination = "cocina" | "bar" | "matriz" | "todos";
 interface RoutingRule { category: string; destination: RouteDestination }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -571,10 +571,12 @@ export default function AdminConfigPage() {
               <span className={styles.badge} style={{
                 background: r.destination === "bar"
                   ? "rgba(245,166,35,0.12)" : r.destination === "matriz"
-                  ? "rgba(59,130,246,0.12)" : "rgba(46,125,50,0.12)",
+                  ? "rgba(59,130,246,0.12)" : r.destination === "todos"
+                  ? "rgba(124,77,255,0.12)" : "rgba(46,125,50,0.12)",
                 color: r.destination === "bar"
                   ? "var(--color-brand)" : r.destination === "matriz"
-                  ? "#60a5fa" : "var(--color-primary-light)",
+                  ? "#60a5fa" : r.destination === "todos"
+                  ? "#b39dff" : "var(--color-primary-light)",
               }}>
                 → {r.destination}
               </span>
@@ -605,6 +607,7 @@ export default function AdminConfigPage() {
               <option value="cocina">Cocina</option>
               <option value="bar">Bar</option>
               <option value="matriz">Matriz</option>
+              <option value="todos">Todos</option>
             </select>
             <button
               className={styles.btnBrand}

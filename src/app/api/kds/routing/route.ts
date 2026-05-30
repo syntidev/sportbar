@@ -6,13 +6,14 @@ const ROUTING_KEY = 'kds_routing'
 
 export interface RoutingRule {
   category:    string
-  destination: 'cocina' | 'bar' | 'matriz'
+  destination: 'cocina' | 'bar' | 'matriz' | 'todos'
 }
 
 const DEFAULT_RULES: RoutingRule[] = [
   { category: 'hamburguesas', destination: 'cocina' },
   { category: 'raciones',     destination: 'cocina' },
-  { category: 'bebidas',      destination: 'bar'    },
+  { category: 'bebidas',      destination: 'todos'  },
+  { category: 'cerveza',      destination: 'todos'  },
 ]
 
 async function getRules(): Promise<RoutingRule[]> {
@@ -47,7 +48,7 @@ export async function GET() {
 
 const PostSchema = z.object({
   category:    z.string().min(1).max(60).trim(),
-  destination: z.enum(['cocina', 'bar', 'matriz']),
+  destination: z.enum(['cocina', 'bar', 'matriz', 'todos']),
 })
 
 export async function POST(req: NextRequest) {

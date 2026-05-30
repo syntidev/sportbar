@@ -64,6 +64,23 @@ async function main() {
   }).catch(() => {})
   console.log('OK Tasa BCV inicial')
 
+  await prisma.config.upsert({
+    where:  { key: 'kds_routing' },
+    create: { key: 'kds_routing', value: JSON.stringify([
+      { category: 'hamburguesas', destination: 'cocina' },
+      { category: 'raciones',     destination: 'cocina' },
+      { category: 'bebidas',      destination: 'todos'  },
+      { category: 'cerveza',      destination: 'todos'  },
+    ]) },
+    update: { value: JSON.stringify([
+      { category: 'hamburguesas', destination: 'cocina' },
+      { category: 'raciones',     destination: 'cocina' },
+      { category: 'bebidas',      destination: 'todos'  },
+      { category: 'cerveza',      destination: 'todos'  },
+    ]) },
+  })
+  console.log('OK KDS routing: bebidas/cerveza → todos')
+
   console.log('Seed completado!')
 }
 

@@ -110,7 +110,24 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 5. Fetch órdenes
+  // 5. Categorías con destino 'todos' (aparecen en todas las estaciones)
+  let todosCategories: string[] = []
+  if (allowedCategories !== null) {
+    try {
+      const routingRow = await prisma.config.findUnique({
+        where:  { key: 'kds_routing' },
+        select: { value: true },
+      })
+      if (routingRow) {
+        const rules = JSON.parse(routingRow.value) as Array<{ category: string; destination: string }>
+        todosCategories = rules.filter((r) => r.destination === 'todos').map((r) => r.category)
+      } else {
+        todosCategories = ['bebidas', 'cerveza']
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 6. Fetch órdenes
   try {
     const orders = await prisma.order.findMany({
       where:   statusWhere,
@@ -127,15 +144,17 @@ export async function GET(req: NextRequest) {
       take:    limit,
     })
 
-    // 6. Filtrar items por categorías permitidas
+    // 7. Filtrar items por categorías permitidas + categorías 'todos'
     //    Si allowedCategories === null → sin filtro (ve todo)
     const result =
       allowedCategories !== null
         ? orders
             .map((o) => ({
               ...o,
-              items: o.items.filter((i) =>
-                (allowedCategories as string[]).includes(i.product.category),
+              items: o.items.filter(
+                (i) =>
+                  (allowedCategories as string[]).includes(i.product.category) ||
+                  todosCategories.includes(i.product.category),
               ),
             }))
             .filter((o) => o.items.length > 0)
