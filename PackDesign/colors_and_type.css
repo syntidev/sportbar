@@ -1,0 +1,159 @@
+/* ============================================================
+   SPORTBAR — Design Tokens
+   Dark-theme POS for a sport bar inside a basketball stadium.
+   Margarita Island, Venezuela · Guaiqueríes green + Café ConBike orange
+   Fonts: Bebas Neue (display) + DM Sans (body) — loaded from Google Fonts.
+   ============================================================ */
+
+/* ---- Self-hosted brand fonts (uploaded files) ---- */
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('fonts/DMSans-VariableFont_opsz_wght.ttf') format('truetype-variations');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('fonts/DMSans-Italic-VariableFont_opsz_wght.ttf') format('truetype-variations');
+  font-weight: 100 1000;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* ---------- CORE PALETTE ---------- */
+  --bg:            #080a08;            /* stadium black — app background */
+  --surface:       #111411;            /* dark green-black — cards */
+  --surface-2:     #1a1f1a;            /* raised surface — inputs, chips */
+  --surface-3:     #232a23;            /* hover / pressed surface */
+
+  --primary:       #2E7D32;            /* Guaiqueríes green — main action */
+  --primary-light: #4CAF50;            /* confirm / success / LOC code */
+  --primary-dark:  #1f5a23;            /* pressed green */
+
+  --accent:        #F5A623;            /* Café ConBike orange — brand / prices / PUB */
+  --accent-dark:   #c9821a;            /* pressed orange */
+
+  --alert:         #C62828;            /* red flame — cancel / critical */
+  --prep:          #7C4DFF;            /* violet — KDS "in prep" state */
+
+  --text:          #f0f5f0;            /* cool white — primary text */
+  --text-muted:    rgba(240,245,240,0.5);   /* secondary / captions */
+  --text-faint:    rgba(240,245,240,0.3);   /* placeholders / disabled */
+
+  --border:        rgba(46,125,50,0.2);      /* green-tinted hairline */
+  --border-strong: rgba(46,125,50,0.45);     /* focused / selected outline */
+
+  /* ---------- STATE TINTS (KDS + feedback) ---------- */
+  --tint-accent:   rgba(245,166,35,0.06);
+  --tint-prep:     rgba(124,77,255,0.06);
+  --tint-alert:    rgba(198,40,40,0.10);
+  --tint-primary:  rgba(46,125,50,0.10);
+
+  /* ---------- DEMAND / HEAT ---------- */
+  --heat-high:     #C62828;            /* high demand */
+  --heat-med:      #F5A623;            /* medium demand */
+  --heat-low:      #4CAF50;            /* low demand */
+
+  /* ---------- TYPE FAMILIES ---------- */
+  --font-display:  'Bebas Neue', 'Oswald', 'Arial Narrow', sans-serif;
+  --font-body:     'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ---------- TYPE SCALE ----------
+     Display = Bebas Neue (condensed, athletic). Tracking opened slightly
+     so all-caps reads in low stadium light. Body = DM Sans. */
+  --display-hero:   64px;   /* ticket codes, big confirmations */
+  --display-xl:     48px;   /* screen titles "SPORT BAR" */
+  --display-lg:     32px;   /* section heads, totals */
+  --display-md:     24px;   /* card titles, CTA labels */
+  --display-sm:     20px;   /* bump buttons, chips */
+
+  --body-lg:        18px;   /* product names */
+  --body-md:        16px;   /* default UI / inputs (min for inputs) */
+  --body-sm:        14px;   /* labels, descriptions (min body) */
+  --body-xs:        12px;   /* Bs sub-price, meta */
+  --body-2xs:       11px;   /* legal, smallest caption */
+
+  --display-tracking: 0.02em;
+  --display-line:     0.92;
+  --body-line:        1.45;
+
+  /* ---------- RADII ---------- */
+  --r-sm:   8px;    /* chips, small buttons, inputs */
+  --r-md:   12px;   /* buttons, list rows */
+  --r-lg:   18px;   /* action cards, sheets */
+  --r-xl:   28px;   /* featured product cards, hero cards */
+  --r-pill: 999px;  /* tabs, status pills, FAB */
+
+  /* ---------- SPACING (4px base) ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* ---------- TOUCH ---------- */
+  --touch-min: 44px;   /* minimum hit target everywhere */
+  --cta-h:     56px;   /* primary CTA height */
+  --cta-h-lg:  60px;   /* generate-ticket / send-comanda */
+  --bump-h:    72px;   /* KDS bump button */
+
+  /* ---------- SHADOWS / GLOW ---------- */
+  --shadow-card:  0 8px 24px rgba(0,0,0,0.45);
+  --shadow-float: 0 16px 36px rgba(0,0,0,0.6);          /* floating product photos */
+  --shadow-sheet: 0 -12px 40px rgba(0,0,0,0.55);        /* bottom sheets */
+  --glow-primary: 0 0 0 1px rgba(76,175,80,0.4), 0 0 18px rgba(46,125,50,0.45);
+  --glow-accent:  0 0 18px rgba(245,166,35,0.45);
+  --glow-alert:   0 0 18px rgba(198,40,40,0.5);
+
+  /* ---------- MOTION ---------- */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);   /* pop / bounce */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);      /* page slide */
+  --t-fast:   140ms;
+  --t-base:   240ms;
+  --t-slow:   400ms;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT DEFAULTS
+   ============================================================ */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--body-md);
+  line-height: var(--body-line);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.display { font-family: var(--font-display); letter-spacing: var(--display-tracking); line-height: var(--display-line); }
+
+h1, .h1 { font-family: var(--font-display); font-size: var(--display-xl); letter-spacing: var(--display-tracking); line-height: var(--display-line); margin: 0; }
+h2, .h2 { font-family: var(--font-display); font-size: var(--display-lg); letter-spacing: var(--display-tracking); line-height: var(--display-line); margin: 0; }
+h3, .h3 { font-family: var(--font-display); font-size: var(--display-md); letter-spacing: var(--display-tracking); line-height: 1; margin: 0; }
+
+p  { margin: 0; font-size: var(--body-md); }
+.muted  { color: var(--text-muted); }
+.faint  { color: var(--text-faint); }
+
+.price      { font-family: var(--font-display); color: var(--accent); letter-spacing: var(--display-tracking); }
+.ticket-code{ font-family: var(--font-display); color: var(--accent); letter-spacing: 0.04em; }
+
+/* utility focus ring (accessibility) */
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}

@@ -34,7 +34,11 @@
       "Bash(dir prisma\\\\migrations /b)",
       "Bash(git commit *)",
       "PowerShell(git *)",
-      "PowerShell(Get-Process *)"
+      "PowerShell(Get-Process *)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Copy-Item *)",
+      "Bash(ssh *)",
+      "Bash(git *)"
     ]
   }
 }
