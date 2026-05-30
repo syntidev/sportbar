@@ -32,7 +32,7 @@ export async function fetchUSD(): Promise<FetchResult> {
 
   // Fuente 2: brecha-cambiaria
   try {
-    const res  = await safeFetch('https://brecha-cambiaria.com/api/prices', 5000)
+    const res  = await safeFetch('https://www.brecha-cambiaria.com/api/prices', 5000)
     if (res.ok) {
       const data = await res.json() as { bcv_usd?: unknown }
       if (valid(data.bcv_usd)) return { success: true, rate: data.bcv_usd as number, source: 'bcv' }
@@ -57,7 +57,7 @@ export async function fetchEUR(): Promise<FetchResult> {
 
   // Fuente 2: brecha-cambiaria
   try {
-    const res  = await safeFetch('https://brecha-cambiaria.com/api/prices', 5000)
+    const res  = await safeFetch('https://www.brecha-cambiaria.com/api/prices', 5000)
     if (res.ok) {
       const data = await res.json() as { bcv_eur?: unknown }
       if (valid(data.bcv_eur)) return { success: true, rate: data.bcv_eur as number, source: 'bcv' }
