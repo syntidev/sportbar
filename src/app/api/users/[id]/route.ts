@@ -88,38 +88,3 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: 'Error al actualizar usuario' }, { status: 500 })
   }
 }
-
-// ── DELETE /api/users/[id] ────────────────────────────────────────────────────
-
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } },
-) {
-  const id = parseInt(params.id, 10)
-  if (isNaN(id)) {
-    return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 })
-  }
-
-  try {
-    const [orderCount, cancCount] = await Promise.all([
-      prisma.order.count({ where: { created_by: id } }),
-      prisma.cancellationLog.count({ where: { cancelled_by: id } }),
-    ])
-
-    if (orderCount > 0 || cancCount > 0) {
-      const total = orderCount + cancCount
-      return NextResponse.json(
-        {
-          success: false,
-          error:   `No se puede eliminar: el usuario tiene ${total} registro(s) asociado(s)`,
-        },
-        { status: 409 },
-      )
-    }
-
-    await prisma.user.delete({ where: { id } })
-    return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ success: false, error: 'Error al eliminar usuario' }, { status: 500 })
-  }
-}
