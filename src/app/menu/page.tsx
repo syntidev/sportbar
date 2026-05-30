@@ -2,7 +2,6 @@
 
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
@@ -87,9 +86,9 @@ function FeatCard({ p, rate, qty, onAdd }: FeatCardProps) {
   return (
     <div className={styles.featCard}>
       <div className={styles.featHalo} />
-      <div className={styles.featPhotoOuter} style={{ position: "relative" }}>
+      <div className={styles.featPhotoOuter}>
         {p.image_url
-          ? <Image src={p.image_url} alt={p.name} fill style={{ objectFit: "cover" }} sizes="200px" />
+          ? <img src={p.image_url} alt={p.name} className={styles.featPhotoImg} />
           : <div className={styles.featPhotoEmpty}><CatPlaceholder category={p.category} size={52} opacity={0.3} /></div>
         }
       </div>
@@ -127,9 +126,9 @@ function ProdRow({ p, rate, qty, onAdd }: ProdRowProps) {
     >
       <div className={styles.prodPlate}>
         <div className={styles.prodPlateGlow} />
-        <div className={styles.prodPlateInner} style={{ position: "relative" }}>
+        <div className={styles.prodPlateInner}>
           {p.image_url
-            ? <Image src={p.image_url} alt={p.name} fill style={{ objectFit: "cover" }} sizes="80px" />
+            ? <img src={p.image_url} alt={p.name} className={styles.prodImg} />
             : <CatPlaceholder category={p.category} size={30} />
           }
         </div>
@@ -361,14 +360,13 @@ export default function MenuPublicoPage() {
     return (
       <div className={styles.curtain}>
         <div className={styles.curtainGlow} />
-        <motion.div
+        <motion.img
+          src="/logo-color.png"
+          alt="Sport Bar"
           className={styles.curtainLogo}
-          style={{ position: "relative" }}
           animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
           transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
-        >
-          <Image src="/logo-color.png" alt="Sport Bar" fill style={{ objectFit: "contain" }} />
-        </motion.div>
+        />
         <div className={styles.curtainBody}>
           <span className={styles.curtainMatch}>
             {turno?.partido_nombre || "Proximo partido"}
@@ -389,9 +387,7 @@ export default function MenuPublicoPage() {
 
         {/* Header */}
         <div className={styles.custHead}>
-          <div className={styles.custHeadLogo} style={{ position: "relative" }}>
-            <Image src="/logo-color.png" alt="Sport Bar" fill style={{ objectFit: "contain" }} />
-          </div>
+          <img src="/logo-color.png" alt="Sport Bar" className={styles.custHeadLogo} />
           <div className={styles.custHeadWm}>SPORT BAR</div>
           <button className={styles.custTicketsBtn} aria-label="Mis pedidos">
             <Receipt size={19} />
@@ -449,9 +445,9 @@ export default function MenuPublicoPage() {
                     {turno.partido_nombre}
                   </span>
                 </div>
-                <div className={styles.heroPhoto} style={{ position: "relative" }}>
+                <div className={styles.heroPhoto}>
                   {hero.image_url
-                    ? <Image src={hero.image_url} alt={hero.name} fill style={{ objectFit: "cover" }} sizes="(max-width: 768px) 100vw, 480px" />
+                    ? <img src={hero.image_url} alt={hero.name} className={styles.heroImg} />
                     : <div className={styles.heroImgEmpty}><Beef size={90} color="rgba(240,245,240,0.25)" /></div>
                   }
                 </div>
@@ -567,9 +563,9 @@ export default function MenuPublicoPage() {
               <div className={styles.cartItems}>
                 {cartItems.map(({ product: p, qty }) => (
                   <div key={p.id} className={styles.cartItem}>
-                    <div className={styles.cartItemThumb} style={{ position: "relative" }}>
+                    <div className={styles.cartItemThumb}>
                       {p.image_url
-                        ? <Image src={p.image_url} alt={p.name} fill style={{ objectFit: "cover" }} sizes="52px" />
+                        ? <img src={p.image_url} alt={p.name} className={styles.cartItemImg} />
                         : <CatPlaceholder category={p.category} size={24} />
                       }
                     </div>
