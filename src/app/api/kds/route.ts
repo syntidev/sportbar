@@ -3,42 +3,18 @@ import { jwtVerify } from 'jose'
 import { prisma } from '@/lib/prisma'
 import type { KitchenStatus, PaymentStatus } from '@/types'
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-
 const COOKIE_NAME = 'cafeball_session'
 
 function getSecret(): Uint8Array {
   return new TextEncoder().encode(process.env.JWT_SECRET ?? '')
 }
 
-// ── Capability → category mapping ─────────────────────────────────────────────
-// Venue.capabilities es string[] almacenado como Json.
-// Cada capability desbloquea categorías de producto visibles en ese KDS.
-
-const CAP_TO_CATEGORIES: Record<string, string[]> = {
-  comida:       ['hamburguesas', 'raciones'],
-  cerveza:      ['bebidas'],
-  licor_fuerte: ['bebidas'],          // licor_fuerte también es categoría 'bebidas' en DB
-}
-
-// Fallback por rol cuando el usuario no tiene venue asignado
-const ROLE_FALLBACK: Partial<Record<string, string[]>> = {
-  cocina:    ['hamburguesas', 'raciones'],
-  bar:       ['bebidas'],
-  despacho:  null as unknown as string[],  // ve todo
-  mesero:    null as unknown as string[],  // ve todo
-}
-
-// ── GET /api/kds ──────────────────────────────────────────────────────────────
-
 const VALID_STATUSES = new Set<string>(['NUEVO', 'PREP', 'LISTO', 'ENTREGADO'])
 
 export async function GET(req: NextRequest) {
-  // 1. Verificar sesión
+  // 1. Auth
   const token = req.cookies.get(COOKIE_NAME)?.value
-  if (!token) {
-    return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
-  }
+  if (!token) return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
 
   let userId: number
   let userRole: string
@@ -50,7 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Sesión inválida' }, { status: 401 })
   }
 
-  // 2. Parámetros de query
+  // 2. Query params
   const { searchParams } = new URL(req.url)
   const statusParam = searchParams.get('status')
   const limit       = Math.min(parseInt(searchParams.get('limit') ?? '200', 10) || 200, 500)
@@ -59,83 +35,47 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Estado inválido' }, { status: 400 })
   }
 
-  // 3. Construir filtro de kitchen_status
+  // 3. Status filter
   const activeFilter = {
     kitchen_status: { in: ['NUEVO', 'PREP', 'LISTO'] as KitchenStatus[] },
     payment_status: { not: 'CANCELLED' as PaymentStatus },
   }
-  const singleFilter = {
-    kitchen_status: statusParam as KitchenStatus,
-  }
-  const statusWhere = (!statusParam || statusParam === 'active') ? activeFilter : singleFilter
+  const singleFilter = { kitchen_status: statusParam as KitchenStatus }
+  const statusWhere  = !statusParam || statusParam === 'active' ? activeFilter : singleFilter
 
-  // 4. Determinar categorías permitidas según venue del usuario
-  //    Admin ve todo sin filtro (allowedCategories === null)
-  let allowedCategories: string[] | null = null
+  // 4. Zone filter: admin sin restricción, resto via VenueUser → VenueZone → zone_ids
+  let allowedZoneIds: number[] | null = null
   let myVenueId: number | null = null
 
   if (userRole !== 'admin') {
-    const user = await prisma.user.findUnique({
-      where:  { id: userId },
+    const venueUser = await prisma.venueUser.findFirst({
+      where:  { user_id: userId },
       select: { venue_id: true },
     })
+    myVenueId = venueUser?.venue_id ?? null
 
-    myVenueId = user?.venue_id ?? null
-
-    if (user?.venue_id) {
-      // Tiene venue asignado → leer capabilities
-      const venue = await prisma.venue.findUnique({
-        where:  { id: user.venue_id },
-        select: { capabilities: true },
+    if (myVenueId !== null) {
+      const venueZones = await prisma.venueZone.findMany({
+        where:  { venue_id: myVenueId },
+        select: { zone_id: true },
       })
-
-      const caps = Array.isArray(venue?.capabilities)
-        ? (venue.capabilities as string[])
-        : []
-
-      const cats = new Set<string>()
-      for (const cap of caps) {
-        for (const cat of (CAP_TO_CATEGORIES[cap] ?? [])) {
-          cats.add(cat)
-        }
+      // Venue con zonas asignadas → filtrar; sin zonas → ver todo (evitar pantalla vacía)
+      if (venueZones.length > 0) {
+        allowedZoneIds = venueZones.map((vz) => vz.zone_id)
       }
-
-      // Si la venue no tiene ninguna capability conocida → mostrar todo
-      // (evitar que un venue mal configurado quede con lista vacía)
-      allowedCategories = cats.size > 0 ? Array.from(cats) : null
-    } else {
-      // Sin venue → fallback por rol
-      const fallback = ROLE_FALLBACK[userRole]
-      allowedCategories = fallback ?? null
     }
+    // Sin venue asignado → ver todo (allowedZoneIds permanece null)
   }
 
-  // 5. Categorías con destino 'todos' (aparecen en todas las estaciones)
-  let todosCategories: string[] = []
-  if (allowedCategories !== null) {
-    try {
-      const routingRow = await prisma.config.findUnique({
-        where:  { key: 'kds_routing' },
-        select: { value: true },
-      })
-      if (routingRow) {
-        const rules = JSON.parse(routingRow.value) as Array<{ category: string; destination: string }>
-        todosCategories = rules.filter((r) => r.destination === 'todos').map((r) => r.category)
-      } else {
-        todosCategories = ['bebidas', 'cerveza']
-      }
-    } catch { /* ignore */ }
-  }
-
-  // 6. Fetch órdenes
+  // 5. Fetch orders
   try {
+    const zoneWhere = allowedZoneIds !== null ? { zone_id: { in: allowedZoneIds } } : {}
+
     const orders = await prisma.order.findMany({
-      where:   statusWhere,
+      where:   { ...statusWhere, ...zoneWhere },
       include: {
         items: {
-          include: {
-            product: { select: { id: true, name: true, category: true } },
-          },
+          include: { product: { select: { id: true, name: true, category: true } } },
           orderBy: { id: 'asc' },
         },
         user: { select: { code: true, name: true } },
@@ -144,27 +84,8 @@ export async function GET(req: NextRequest) {
       take:    limit,
     })
 
-    // 7. Filtrar items por categorías permitidas + categorías 'todos'
-    //    Si allowedCategories === null → sin filtro (ve todo)
-    const result =
-      allowedCategories !== null
-        ? orders
-            .map((o) => ({
-              ...o,
-              items: o.items.filter(
-                (i) =>
-                  (allowedCategories as string[]).includes(i.product.category) ||
-                  todosCategories.includes(i.product.category),
-              ),
-            }))
-            .filter((o) => o.items.length > 0)
-        : orders
-
-    return NextResponse.json({ success: true, orders: result, myVenueId })
+    return NextResponse.json({ success: true, orders, myVenueId })
   } catch {
-    return NextResponse.json(
-      { success: false, error: 'Error al obtener comandas KDS' },
-      { status: 500 },
-    )
+    return NextResponse.json({ success: false, error: 'Error al obtener comandas KDS' }, { status: 500 })
   }
 }
