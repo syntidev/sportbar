@@ -8,59 +8,62 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// Pexels CDN — sin autenticación, sin bloqueos de VPS
 const P = (id: number) =>
   `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=600`
 
-// Cubre las dos variantes que hay en DB: con y sin tildes / nombres alternativos
-const IMAGE_MAP: Record<string, string> = {
-  // ── Hamburguesas ──────────────────────────────────────────
-  'La Clasica':                 P(1639557), // smash burger clásico
-  'La Clásica':                 P(1639557), // variante con tilde
-  'Pollo Crispy':               P(3753581), // sándwich pollo crujiente
-  'La Mini':                    P(1633578), // slider mini burger
-  'Adicional carne o pollo':    P(769289),  // carne asada a la parrilla
-  'Adicional de Carne o Pollo': P(769289),  // variante nombre completo
+// IDs verificados desde pexels.com/search — mapeado por product.id para evitar
+// problemas con variantes de nombre (tildes, mayúsculas, nombres alternativos)
+const IMAGE_MAP: Record<number, string> = {
+  // ── Hamburguesas ──────────────────────────────────────────────────────────
+  1:  P(27988502),  // La Clasica                — hamburguesa clásica
+  2:  P(12339109),  // Pollo Crispy              — sándwich pollo crujiente
+  3:  P(2128536),   // La Mini                   — mini burger / slider
+  4:  P(3764353),   // Adicional carne o pollo   — carne a la plancha
+  16: P(18354206),  // La Clásica (con acento)   — burger frontal
+  17: P(3764353),   // Adicional de Carne o Pollo
 
-  // ── Raciones ──────────────────────────────────────────────
-  'Papas Fritas':               P(1893555), // papas fritas doradas
-  'Papas con Queso y Tocineta': P(4110014), // papas cargadas queso y bacon
-  'Tequenos':                   P(2664917), // tequeños fritos
-  'Tequeños':                   P(2664917), // variante con tilde
-  '5 Nuggets con Papas':        P(1279330), // nuggets con papas
-  '5 Nuggets con Papas Fritas': P(1279330), // variante nombre completo
-  'Brownie':                    P(291528),  // brownie de chocolate
+  // ── Raciones ──────────────────────────────────────────────────────────────
+  5:  P(5836772),   // Papas Fritas
+  6:  P(37121075),  // Papas con Queso y Tocineta — loaded fries
+  7:  P(9650081),   // Tequenos                   — palitos de queso fritos
+  8:  P(11710531),  // 5 Nuggets con Papas
+  9:  P(4597835),   // Brownie
+  18: P(9650081),   // Tequeños (con ñ)
+  19: P(11710531),  // 5 Nuggets con Papas Fritas
 
-  // ── Bebidas ────────────────────────────────────────────────
-  'Refresco':        P(2109099), // refresco cola con hielo
-  'Agua':            P(416528),  // vaso de agua fría
-  'Agua Gasificada': P(1278740), // agua mineral con burbujas
-  'Lipton':          P(1638280), // té helado con limón
-  'Gatorade':        P(3045282), // bebida deportiva colorida
-  'Malta':           P(1353360), // malta oscura en vaso
+  // ── Bebidas ───────────────────────────────────────────────────────────────
+  10: P(14373170),  // Refresco        — cola con hielo
+  11: P(10482146),  // Agua            — vaso de agua
+  12: P(4612341),   // Agua Gasificada — burbujas agua con gas
+  13: P(31373642),  // Lipton          — té frío con limón
+  14: P(19585370),  // Gatorade        — bebida deportiva
+  15: P(5659492),   // Malta           — bebida oscura
 }
 
 async function main() {
   console.log('Actualizando imágenes → Pexels CDN...\n')
 
-  let ok = 0
+  let ok   = 0
   let miss = 0
 
-  for (const [name, image_url] of Object.entries(IMAGE_MAP)) {
+  for (const [rawId, image_url] of Object.entries(IMAGE_MAP)) {
+    const id = Number(rawId)
     const result = await prisma.product.updateMany({
-      where: { name },
+      where: { id },
       data:  { image_url },
     })
 
     if (result.count > 0) {
-      console.log(`  OK  [${result.count}]  ${name}`)
-      ok += result.count
+      console.log(`  OK  id=${id}`)
+      ok++
     } else {
-      console.log(`  --  ${name} (no encontrado en BD)`)
+      console.log(`  --  id=${id} (no encontrado)`)
       miss++
     }
   }
 
-  console.log(`\n${ok} productos actualizados, ${miss} claves no encontradas en BD.`)
+  console.log(`\n${ok} productos actualizados, ${miss} no encontrados.`)
 }
 
 main()
