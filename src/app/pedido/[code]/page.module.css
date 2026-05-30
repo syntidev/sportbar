@@ -1,0 +1,208 @@
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* ── Loading ───────────────────────────────────────────────────────────────── */
+
+.loading {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ── 404 ──────────────────────────────────────────────────────────────────── */
+
+.notFound {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.notFoundCode {
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--color-border);
+  line-height: 1;
+}
+.notFoundMsg {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+.notFoundSub {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+/* ── Ticket card ───────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.cardTop {
+  background: var(--color-surface);
+  border-bottom: 1px dashed var(--color-border);
+  padding: 1.5rem 1.5rem 1.25rem;
+  text-align: center;
+}
+.bizName {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+.orderCode {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+  font-family: ui-monospace, monospace;
+}
+.orderMeta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.4rem;
+}
+
+/* ── Status badges ─────────────────────────────────────────────────────────── */
+
+.badges {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+.badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.badge.PEND       { background: rgba(245,166,35,0.15);  color: var(--color-pendiente); }
+.badge.PAID       { background: rgba(76,175,80,0.15);   color: var(--color-pagado); }
+.badge.CREDIT     { background: rgba(124,77,255,0.15);  color: var(--color-credito); }
+.badge.CANCELLED  { background: rgba(198,40,40,0.15);   color: var(--color-cancelado); }
+.badge.NUEVO      { background: rgba(245,166,35,0.15);  color: var(--color-nuevo); }
+.badge.PREP       { background: rgba(46,125,50,0.15);   color: var(--color-prep); }
+.badge.LISTO      { background: rgba(76,175,80,0.15);   color: var(--color-listo); }
+.badge.ENTREGADO  { background: rgba(76,175,80,0.08);   color: var(--color-text-muted); }
+
+/* ── Body ──────────────────────────────────────────────────────────────────── */
+
+.cardBody {
+  padding: 1.25rem 1.5rem;
+}
+
+.customer {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+.customerLabel {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+.zone {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1rem;
+}
+
+.divider {
+  border: none;
+  border-top: 1px dashed var(--color-border);
+  margin: 0.75rem 0;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  padding: 0.2rem 0;
+}
+.itemName {
+  flex: 1;
+}
+.itemQty {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  margin: 0 0.5rem;
+}
+.itemPrice {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.totals {
+  margin-top: 0.75rem;
+}
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding: 0.15rem 0;
+}
+.totalRow.main {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.totalLabel { color: var(--color-text-muted); }
+.totalValue { font-variant-numeric: tabular-nums; }
+
+.rate {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin-top: 0.25rem;
+}
+
+/* ── Actions ───────────────────────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+.actionBtn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: opacity 0.15s;
+}
+.actionBtn:active { opacity: 0.75; }
+.actionBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btnSave  { background: var(--color-primary); color: #fff; }
+.btnShare { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); }
+
+.toast {
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--color-listo);
+  padding: 0 1.5rem 1rem;
+}

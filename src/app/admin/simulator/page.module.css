@@ -1,0 +1,243 @@
+.page {
+  padding: 1.5rem;
+  max-width: 1100px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.statusDot.running {
+  background: var(--color-primary);
+  box-shadow: 0 0 6px var(--color-primary);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.statusDot.paused {
+  background: var(--color-brand);
+}
+.statusDotLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Controls ──────────────────────────────────────────────────────────────── */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.selectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.selectLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.select {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  min-width: 130px;
+}
+.select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnGroup {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.btn {
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+.btnStart  { background: var(--color-primary); color: #fff; }
+.btnPause  { background: var(--color-brand);   color: #000; }
+.btnStop   { background: var(--color-accent);  color: #fff; }
+.btnReset  { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); }
+
+/* ── Metrics ───────────────────────────────────────────────────────────────── */
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) {
+  .metricsGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.metricCard {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+.metricLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+}
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+.metricValue.green  { color: var(--color-primary); }
+.metricValue.orange { color: var(--color-brand); }
+.metricValue.red    { color: var(--color-accent); }
+
+/* ── Bottom two-column layout ──────────────────────────────────────────────── */
+
+.bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 768px) {
+  .bottom { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+.panelTitle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.85rem;
+}
+
+/* ── Venue bars ────────────────────────────────────────────────────────────── */
+
+.venueRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+.venueName {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  width: 90px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barTrack {
+  flex: 1;
+  height: 8px;
+  background: var(--color-surface);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.venueCount {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  min-width: 28px;
+  text-align: right;
+}
+.emptyVenues {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* ── Event log ─────────────────────────────────────────────────────────────── */
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.logEntry {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  font-family: ui-monospace, monospace;
+}
+.logTs {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.logMsg       { color: var(--color-text); }
+.logMsg.ok    { color: var(--color-listo); }
+.logMsg.error { color: var(--color-accent); }
+.logMsg.info  { color: var(--color-text-muted); }
+.logEmpty {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 1rem 0;
+}

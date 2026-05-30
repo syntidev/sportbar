@@ -4,6 +4,12 @@ import { prisma } from '@/lib/prisma'
 
 export type Intensity = 'tranquilo' | 'normal' | 'lleno' | 'sold_out'
 
+export interface SimEvent {
+  ts:   string
+  msg:  string
+  type: 'info' | 'ok' | 'error'
+}
+
 interface Scenario {
   users:       number
   interval_ms: number
@@ -16,7 +22,6 @@ const SCENARIOS: Record<Intensity, Scenario> = {
   sold_out:  { users: 700, interval_ms: 20 * 1000      },
 }
 
-// Valores válidos del legacy ZoneCode enum — el API de órdenes los exige
 const ZONE_CODES = ['Norte', 'Sur', 'VIP', 'Externa'] as const
 type ZoneCode = (typeof ZONE_CODES)[number]
 
@@ -25,6 +30,7 @@ interface SimVenue   { id: number; name: string }
 
 export interface SimStatus {
   running:          boolean
+  paused:           boolean
   intensity:        Intensity | null
   started_at:       string | null
   ends_at:          string | null
@@ -32,15 +38,18 @@ export interface SimStatus {
   orders_paid:      number
   orders_cancelled: number
   errors:           number
+  req_s:            number
   avg_response_ms:  number
   p95_response_ms:  number
   orders_per_venue: Record<string, number>
+  log:              SimEvent[]
 }
 
 // ── Singleton — válido en PM2 single-process ───────────────────────────────────
 
 const state = {
   running:          false,
+  paused:           false,
   intensity:        null as Intensity | null,
   started_at:       null as string | null,
   ends_at:          null as string | null,
@@ -48,8 +57,9 @@ const state = {
   orders_paid:      0,
   orders_cancelled: 0,
   errors:           0,
-  response_ms:      [] as number[],      // últimas 2000 muestras
+  response_ms:      [] as number[],
   orders_per_venue: {} as Record<string, number>,
+  log:              [] as SimEvent[],
   _timer:    null as ReturnType<typeof setInterval>  | null,
   _stopper:  null as ReturnType<typeof setTimeout>   | null,
   _zones:    [] as ZoneCode[],
@@ -78,6 +88,12 @@ function computeP95(arr: number[]): number {
   return sorted[Math.ceil(0.95 * sorted.length) - 1] ?? 0
 }
 
+function addLog(msg: string, type: SimEvent['type'] = 'info') {
+  const ts = new Date().toLocaleTimeString('es-VE', { hour12: false })
+  state.log.unshift({ ts, msg, type })
+  if (state.log.length > 20) state.log.length = 20
+}
+
 const NAMES     = ['Carlos', 'María', 'Luis', 'Ana', 'Pedro', 'Luisa', 'José', 'Laura', 'Miguel', 'Sofía']
 const LASTNAMES = ['García', 'López', 'Martínez', 'Pérez', 'Rodríguez', 'Gómez', 'Díaz', 'Torres']
 
@@ -87,7 +103,6 @@ function fakePerson(): { customer_name: string; customer_lastname: string } {
 
 // ── Order operations ───────────────────────────────────────────────────────────
 
-// Configurable: permite apuntar al puerto correcto en VPS (puerto 3002)
 const BASE = process.env.SIMULATOR_BASE_URL ?? 'http://127.0.0.1:3002'
 
 interface CreatedOrder {
@@ -106,11 +121,7 @@ async function createOrder(zone: ZoneCode, products: SimProduct[]): Promise<Crea
         origin: 'PUB',
         zone,
         ...fakePerson(),
-        items: products.map(p => ({
-          product_id: p.id,
-          qty:        1,
-          price_usd:  p.price_usd,
-        })),
+        items: products.map(p => ({ product_id: p.id, qty: 1, price_usd: p.price_usd })),
       }),
       signal: AbortSignal.timeout(10_000),
     })
@@ -119,7 +130,7 @@ async function createOrder(zone: ZoneCode, products: SimProduct[]): Promise<Crea
     state.response_ms.push(ms)
     if (state.response_ms.length > 2_000) state.response_ms.shift()
 
-    if (!res.ok) { state.errors++; return null }
+    if (!res.ok) { state.errors++; addLog(`HTTP ${res.status} al crear orden`, 'error'); return null }
 
     const data = await res.json() as {
       success: boolean
@@ -129,15 +140,19 @@ async function createOrder(zone: ZoneCode, products: SimProduct[]): Promise<Crea
 
     state.orders_created++
 
-    const vid   = data.order.venue_destino_id
-    const key   = vid !== null
+    const vid = data.order.venue_destino_id
+    const key = vid !== null
       ? (state._venues.find(v => v.id === vid)?.name ?? `venue_${vid}`)
       : 'sin_asignar'
     state.orders_per_venue[key] = (state.orders_per_venue[key] ?? 0) + 1
 
+    const summary = products.map(p => p.name).join(', ')
+    addLog(`${data.order.code} — ${zone} — ${summary} — ${ms}ms`, 'ok')
+
     return data.order
   } catch {
     state.errors++
+    addLog('Error de red al crear orden', 'error')
     return null
   }
 }
@@ -146,10 +161,7 @@ async function bumpOrder(orderId: number): Promise<void> {
   for (const status of ['PREP', 'LISTO'] as const) {
     await new Promise<void>(r => setTimeout(r, 300))
     try {
-      await prisma.order.update({
-        where: { id: orderId },
-        data:  { kitchen_status: status },
-      })
+      await prisma.order.update({ where: { id: orderId }, data: { kitchen_status: status } })
     } catch { /* non-fatal */ }
   }
 }
@@ -166,10 +178,7 @@ async function payOrder(orderId: number): Promise<void> {
 
 async function cancelOrder(orderId: number): Promise<void> {
   try {
-    await prisma.order.update({
-      where: { id: orderId },
-      data:  { payment_status: 'CANCELLED' },
-    })
+    await prisma.order.update({ where: { id: orderId }, data: { payment_status: 'CANCELLED' } })
     state.orders_cancelled++
   } catch { /* non-fatal */ }
 }
@@ -177,31 +186,23 @@ async function cancelOrder(orderId: number): Promise<void> {
 // ── Tick ───────────────────────────────────────────────────────────────────────
 
 async function tick(): Promise<void> {
-  if (!state.running) return
+  if (!state.running || state.paused) return
   if (state._zones.length === 0 || state._products.length === 0) return
 
   const zone     = rnd(state._zones)
-  const qty      = Math.floor(Math.random() * 4) + 1  // 1-4 productos
+  const qty      = Math.floor(Math.random() * 4) + 1
   const products = sample(state._products, qty)
-
-  const order = await createOrder(zone, products)
+  const order    = await createOrder(zone, products)
   if (!order) return
 
   const roll = Math.random()
-
-  // 5% → cancelar
   if (roll < 0.05) {
     void cancelOrder(order.id)
     return
   }
-
-  // 70% → bump KDS (NUEVO → PREP → LISTO)
   if (roll < 0.75) {
     void bumpOrder(order.id).then(() => {
-      // 60% de los bumpeados → PAID
-      if (Math.random() < 0.60) {
-        void payOrder(order.id)
-      }
+      if (Math.random() < 0.60) void payOrder(order.id)
     })
   }
 }
@@ -212,7 +213,7 @@ export async function startSimulation(
   intensity:        Intensity,
   duration_minutes: number,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (state.running) return { ok: false, error: 'Ya hay una simulación en curso. Usa /api/simulate/stop primero.' }
+  if (state.running) return { ok: false, error: 'Simulación en curso. Usa /stop primero.' }
 
   const [zones, products, venues] = await Promise.all([
     prisma.zone.findMany({    where: { is_active: true }, select: { name: true } }),
@@ -220,7 +221,6 @@ export async function startSimulation(
     prisma.venue.findMany({   where: { is_active: true }, select: { id: true, name: true } }),
   ])
 
-  // Filtrar zonas de DB a ZoneCode válidos — el API de órdenes lo exige
   const validZones = zones
     .map(z => z.name)
     .filter((n): n is ZoneCode => (ZONE_CODES as readonly string[]).includes(n))
@@ -229,11 +229,8 @@ export async function startSimulation(
   state._products = products.map(p => ({ id: p.id, name: p.name, price_usd: Number(p.price_usd) }))
   state._venues   = venues
 
-  if (state._products.length === 0) {
-    return { ok: false, error: 'No hay productos activos en DB' }
-  }
+  if (state._products.length === 0) return { ok: false, error: 'No hay productos activos en DB' }
 
-  // Reset métricas
   state.orders_created   = 0
   state.orders_paid      = 0
   state.orders_cancelled = 0
@@ -241,17 +238,36 @@ export async function startSimulation(
   state.response_ms      = []
   state.orders_per_venue = {}
   state.running          = true
+  state.paused           = false
   state.intensity        = intensity
   state.started_at       = new Date().toISOString()
   state.ends_at          = new Date(Date.now() + duration_minutes * 60_000).toISOString()
 
-  const { interval_ms } = SCENARIOS[intensity]
+  addLog(`Iniciada — ${intensity} — ${duration_minutes}min — ${state._products.length} productos`, 'info')
 
-  void tick()  // primera iteración inmediata
+  const { interval_ms } = SCENARIOS[intensity]
+  void tick()
   state._timer   = setInterval(() => { void tick() }, interval_ms)
   state._stopper = setTimeout(() => stopSimulation(), duration_minutes * 60_000)
 
   return { ok: true }
+}
+
+export function pauseSimulation(): void {
+  if (!state.running || state.paused) return
+  if (state._timer) { clearInterval(state._timer); state._timer = null }
+  state.paused = true
+  addLog('Simulación pausada', 'info')
+}
+
+export function resumeSimulation(): void {
+  if (!state.running || !state.paused) return
+  state.paused = false
+  if (!state.intensity) return
+  const { interval_ms } = SCENARIOS[state.intensity]
+  void tick()
+  state._timer = setInterval(() => { void tick() }, interval_ms)
+  addLog('Simulación reanudada', 'info')
 }
 
 export function stopSimulation(): void {
@@ -260,11 +276,31 @@ export function stopSimulation(): void {
   state._timer   = null
   state._stopper = null
   state.running  = false
+  state.paused   = false
+  addLog('Simulación detenida', 'info')
+}
+
+export function resetSimulation(): void {
+  stopSimulation()
+  state.orders_created   = 0
+  state.orders_paid      = 0
+  state.orders_cancelled = 0
+  state.errors           = 0
+  state.response_ms      = []
+  state.orders_per_venue = {}
+  state.started_at       = null
+  state.ends_at          = null
+  state.log              = [{ ts: new Date().toLocaleTimeString('es-VE', { hour12: false }), msg: 'Reset — datos limpiados', type: 'info' }]
 }
 
 export function getStatus(): SimStatus {
+  const elapsed = state.started_at
+    ? (Date.now() - new Date(state.started_at).getTime()) / 1_000
+    : 0
+  const req_s = elapsed > 1 ? Math.round((state.orders_created / elapsed) * 100) / 100 : 0
   return {
     running:          state.running,
+    paused:           state.paused,
     intensity:        state.intensity,
     started_at:       state.started_at,
     ends_at:          state.ends_at,
@@ -272,8 +308,10 @@ export function getStatus(): SimStatus {
     orders_paid:      state.orders_paid,
     orders_cancelled: state.orders_cancelled,
     errors:           state.errors,
+    req_s,
     avg_response_ms:  computeAvg(state.response_ms),
     p95_response_ms:  computeP95(state.response_ms),
     orders_per_venue: { ...state.orders_per_venue },
+    log:              [...state.log],
   }
 }

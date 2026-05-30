@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, Clock, Banknote, UtensilsCrossed,
   Users, Building2, Settings, CalendarDays, UserSquare2,
-  TrendingUp, Megaphone, BarChart2, Package, ChefHat, GlassWater,
+  TrendingUp, Megaphone, BarChart2, Package, ChefHat, GlassWater, Activity,
 } from 'lucide-react'
 import styles from './layout.module.css'
 
@@ -72,7 +72,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'KPIs',
     items: [
-      { href: '/admin/analytics', label: 'Pulso del Negocio', short: 'Pulso', Icon: BarChart2 },
+      { href: '/admin/analytics',  label: 'Pulso del Negocio', short: 'Pulso',  Icon: BarChart2 },
+      { href: '/admin/simulator',  label: 'Simulador',         short: 'Simul.', Icon: Activity  },
     ],
   },
 ]
