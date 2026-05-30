@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getCurrentRate, calcBs } from '@/lib/dollar-rate'
 import { generateTicketCode } from '@/lib/ticket'
+import { routeOrder } from '@/lib/routing'
 import type { KitchenStatus, Zone } from '@/types'
 
 const OrderItemSchema = z.object({
@@ -61,7 +62,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    console.log('ORDER BODY:', JSON.stringify(body, null, 2))
     const result = CreateOrderSchema.safeParse(body)
 
     if (!result.success) {
@@ -87,15 +87,22 @@ export async function POST(req: NextRequest) {
       userId = sysUser.id
     }
 
-    const rate = await getCurrentRate()
-    const code = await generateTicketCode(origin)
-    const total_usd = items.reduce((sum, item) => sum + item.price_usd * item.qty, 0)
-    const total_bs  = calcBs(total_usd, rate)
+    const [rate, code, venue_destino_id, zoneRow] = await Promise.all([
+      getCurrentRate(),
+      generateTicketCode(origin),
+      routeOrder(zone),
+      prisma.zone.findUnique({ where: { name: zone }, select: { id: true } }),
+    ])
+
+    const total_usd  = items.reduce((sum, item) => sum + item.price_usd * item.qty, 0)
+    const total_bs   = calcBs(total_usd, rate)
+    const zone_id    = zoneRow?.id ?? null
 
     const order = await prisma.order.create({
       data: {
         code, origin, flujo, zone, seat, customer_name, customer_lastname: customer_lastname ?? '',
         customer_id, note, total_usd, rate_used: rate, total_bs,
+        zone_id, venue_destino_id,
         created_by: userId,
         items: {
           create: items.map((item) => ({
