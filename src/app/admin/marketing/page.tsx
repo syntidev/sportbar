@@ -116,44 +116,35 @@ export default function MarketingPage() {
     if (!ctx) return
 
     setRendering(true)
-    const W = 400, H = 520
-    const topLabel    = topText.trim()    || "ESCANEA AQUÍ"
+    const W = 400, H = 500
+    const topLabel    = topText.trim()    || "Usa tu cámara"
     const bottomLabel = bottomText.trim() || "tusport.bar"
-    const isLight     = qrColor === "#FFFFFF"
-    const onColor     = isLight ? "#0a0a0a" : "#ffffff"
 
-    // ─ Background ─────────────────────────────────────────────────────
-    ctx.fillStyle = "#111411"
-    roundRect(ctx, 0, 0, W, H, [20, 20, 20, 20])
+    // ─ Background (off-white premium) ─────────────────────────────────
+    ctx.fillStyle = "#f8fafc"
+    roundRect(ctx, 0, 0, W, H, [24, 24, 24, 24])
     ctx.fill()
 
     // ─ Top color bar ──────────────────────────────────────────────────
     ctx.fillStyle = qrColor
-    roundRect(ctx, 0, 0, W, 72, [20, 20, 0, 0])
+    roundRect(ctx, 0, 0, W, 74, [24, 24, 0, 0])
     ctx.fill()
 
     // ─ Top text (call to action) ──────────────────────────────────────
-    ctx.fillStyle   = onColor
-    ctx.font        = "bold 20px system-ui, -apple-system, sans-serif"
-    ctx.textAlign   = "center"
+    ctx.fillStyle    = "#ffffff"
+    ctx.font         = "bold 20px system-ui, -apple-system, sans-serif"
+    ctx.textAlign    = "center"
     ctx.textBaseline = "middle"
-    ctx.fillText(topLabel.toUpperCase().slice(0, 35), W / 2, 36)
+    ctx.fillText(topLabel.toUpperCase().slice(0, 35), W / 2, 46)
 
     // ─ Business name ──────────────────────────────────────────────────
-    ctx.fillStyle    = "#f0f5f0"
-    ctx.font         = "bold 19px system-ui, -apple-system, sans-serif"
+    ctx.fillStyle    = "#0f172a"
+    ctx.font         = "bold 21px system-ui, -apple-system, sans-serif"
     ctx.textBaseline = "alphabetic"
-    ctx.fillText(bizName.slice(0, 32), W / 2, 108)
-
-    // ─ White backing for monochrome (black) QR ───────────────────────
-    if (qrColor === '#0a0a0a') {
-      ctx.fillStyle = '#FFFFFF'
-      roundRect(ctx, 46, 116, 308, 308, [6, 6, 6, 6])
-      ctx.fill()
-    }
+    ctx.fillText(bizName.slice(0, 32), W / 2, 114)
 
     // ─ Scan corners (before QR) ───────────────────────────────────────
-    drawCorners(ctx, 48, 118, 304, 28, 5, qrColor)
+    drawCorners(ctx, 48, 124, 304, 30, 5, qrColor)
 
     // ─ Fetch QR SVG & draw ────────────────────────────────────────────
     try {
@@ -165,26 +156,26 @@ export default function MarketingPage() {
       const blobUrl = URL.createObjectURL(blob)
       await new Promise<void>((resolve) => {
         const img = new window.Image()
-        img.onload  = () => { ctx.drawImage(img, 58, 128, 284, 284); URL.revokeObjectURL(blobUrl); resolve() }
+        img.onload  = () => { ctx.drawImage(img, 58, 134, 284, 284); URL.revokeObjectURL(blobUrl); resolve() }
         img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve() }
         img.src = blobUrl
       })
     } catch { /* skip — canvas shows without QR */ }
 
-    // ─ Corners again on top of QR ─────────────────────────────────────
-    drawCorners(ctx, 48, 118, 304, 28, 5, qrColor)
+    // ─ Corners redrawn on top for crisp look ──────────────────────────
+    drawCorners(ctx, 48, 124, 304, 30, 5, qrColor)
 
     // ─ Bottom text ────────────────────────────────────────────────────
     ctx.fillStyle    = qrColor
-    ctx.font         = "bold 16px system-ui, -apple-system, sans-serif"
+    ctx.font         = "bold 17px system-ui, -apple-system, sans-serif"
     ctx.textAlign    = "center"
     ctx.textBaseline = "alphabetic"
     ctx.fillText(bottomLabel.slice(0, 45), W / 2, 452)
 
     // ─ Watermark ──────────────────────────────────────────────────────
-    ctx.fillStyle = "rgba(240,245,240,0.28)"
-    ctx.font      = "11px system-ui, -apple-system, sans-serif"
-    ctx.fillText("tusport.bar", W / 2, 474)
+    ctx.fillStyle = "#94a3b8"
+    ctx.font      = "12px system-ui, -apple-system, sans-serif"
+    ctx.fillText("tusport.bar", W / 2, 482)
 
     setRendering(false)
   }, [topText, bottomText, qrColor, zona, bizName, qrKey])
@@ -478,7 +469,7 @@ export default function MarketingPage() {
             <canvas
               ref={canvasRef}
               width={400}
-              height={520}
+              height={500}
               className={styles.stickerCanvas}
             />
           </div>
