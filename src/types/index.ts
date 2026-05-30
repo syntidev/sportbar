@@ -2,7 +2,7 @@
 
 export type Role = 'mesero' | 'cocina' | 'bar' | 'despacho' | 'validador' | 'admin';
 
-export type Category = 'hamburguesas' | 'raciones' | 'bebidas';
+export type Category = string; // free string — hamburguesas | raciones | bebidas | …
 
 export type Origin = 'PUB' | 'LOC';
 

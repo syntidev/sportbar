@@ -41,7 +41,12 @@
       "Bash(git *)",
       "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000\" -TimeoutSec 3 -UseBasicParsing; \"Server running: $\\($r.StatusCode\\)\" } catch { \"Server not running or error: $_\" })",
       "PowerShell(node -e $script 2>&1)",
-      "Bash(npx tsx *)"
+      "Bash(npx tsx *)",
+      "WebFetch(domain:www.pexels.com)",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\laragon\\\\www\\\\sportbar\\\\src\\\\app\\\\api\\\\cron\\\\bcv\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item *)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

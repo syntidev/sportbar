@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import type { Category } from '@/types'
 
-// Category es un enum de Prisma — los valores son fijos.
-// Este endpoint agrega conteos por categoría desde la tabla Product.
-
-const CATEGORY_ORDER: Category[] = ['hamburguesas', 'raciones', 'bebidas']
+// Category es String libre — se infiere de los productos existentes.
+// Retorna lista única de categorías con conteos.
 
 // ── GET /api/categories ───────────────────────────────────────────────────────
 
@@ -15,6 +12,7 @@ export async function GET() {
       prisma.product.groupBy({
         by:      ['category'],
         _count:  { id: true },
+        orderBy: { category: 'asc' },
       }),
       prisma.product.groupBy({
         by:      ['category'],
@@ -23,13 +21,12 @@ export async function GET() {
       }),
     ])
 
-    const totalMap  = new Map(totalRows.map((r)  => [r.category as Category, r._count.id]))
-    const activeMap = new Map(activeRows.map((r) => [r.category as Category, r._count.id]))
+    const activeMap = new Map(activeRows.map((r) => [r.category, r._count.id]))
 
-    const categories = CATEGORY_ORDER.map((key) => ({
-      key,
-      total:  totalMap.get(key)  ?? 0,
-      active: activeMap.get(key) ?? 0,
+    const categories = totalRows.map((r) => ({
+      key:    r.category,
+      total:  r._count.id,
+      active: activeMap.get(r.category) ?? 0,
     }))
 
     return NextResponse.json({ success: true, categories })
