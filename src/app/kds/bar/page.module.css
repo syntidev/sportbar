@@ -22,7 +22,7 @@
   gap: var(--space-4);
   padding: var(--space-3) var(--space-5);
   background: var(--color-surface);
-  border-bottom: 2px solid color-mix(in srgb, #60A5FA 35%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--color-kds-bar) 35%, transparent);
   flex-shrink: 0;
   min-height: 60px;
 }
@@ -31,7 +31,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: #60A5FA;
+  color: var(--color-kds-bar);
 }
 
 .headerTitle {
@@ -70,9 +70,9 @@
 }
 
 .pillNuevo {
-  background: color-mix(in srgb, #60A5FA 20%, transparent);
-  color: #60A5FA;
-  border: 1px solid color-mix(in srgb, #60A5FA 40%, transparent);
+  background: color-mix(in srgb, var(--color-kds-bar) 20%, transparent);
+  color: var(--color-kds-bar);
+  border: 1px solid color-mix(in srgb, var(--color-kds-bar) 40%, transparent);
 }
 
 .pillPrep {
@@ -137,7 +137,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid var(--color-border);
-  border-top-color: #60A5FA;
+  border-top-color: var(--color-kds-bar);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -188,13 +188,13 @@
 
 /* NUEVO — blue left stripe + pulse glow */
 .cardNuevo {
-  border-left: 5px solid #60A5FA;
+  border-left: 5px solid var(--color-kds-bar);
   animation: pulseNuevo 2s ease-in-out infinite;
 }
 
 @keyframes pulseNuevo {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, #60A5FA 40%, transparent); }
-  50%       { box-shadow: 0 0 16px 4px color-mix(in srgb, #60A5FA 15%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-kds-bar) 40%, transparent); }
+  50%       { box-shadow: 0 0 16px 4px color-mix(in srgb, var(--color-kds-bar) 15%, transparent); }
 }
 
 /* PREP — violet/credito left stripe */
@@ -204,18 +204,18 @@
 
 /* LICOR FUERTE — amber/gold tint */
 .cardLicor {
-  background: color-mix(in srgb, #F59E0B 6%, var(--color-surface-2));
-  border-color: color-mix(in srgb, #F59E0B 30%, transparent);
+  background: color-mix(in srgb, var(--color-kds-gold) 6%, var(--color-surface-2));
+  border-color: color-mix(in srgb, var(--color-kds-gold) 30%, transparent);
 }
 
 .cardLicor.cardNuevo {
-  border-left-color: #F59E0B;
+  border-left-color: var(--color-kds-gold);
   animation: pulseLicor 2s ease-in-out infinite;
 }
 
 @keyframes pulseLicor {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, #F59E0B 40%, transparent); }
-  50%       { box-shadow: 0 0 16px 4px color-mix(in srgb, #F59E0B 15%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-kds-gold) 40%, transparent); }
+  50%       { box-shadow: 0 0 16px 4px color-mix(in srgb, var(--color-kds-gold) 15%, transparent); }
 }
 
 /* ── Licor fuerte badge ──────────────────────────────────────────────────────── */
@@ -225,10 +225,10 @@
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
-  background: color-mix(in srgb, #F59E0B 18%, transparent);
-  border: 1px solid color-mix(in srgb, #F59E0B 40%, transparent);
+  background: color-mix(in srgb, var(--color-kds-gold) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-kds-gold) 40%, transparent);
   border-radius: var(--radius-full);
-  color: #F59E0B;
+  color: var(--color-kds-gold);
   font-size: 0.65rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -297,9 +297,9 @@
 }
 
 .badgeNuevo {
-  background: color-mix(in srgb, #60A5FA 18%, transparent);
-  color: #60A5FA;
-  border: 1px solid color-mix(in srgb, #60A5FA 35%, transparent);
+  background: color-mix(in srgb, var(--color-kds-bar) 18%, transparent);
+  color: var(--color-kds-bar);
+  border: 1px solid color-mix(in srgb, var(--color-kds-bar) 35%, transparent);
 }
 
 .badgePrep {
@@ -360,7 +360,7 @@
 }
 
 .itemLicor {
-  color: #F59E0B;
+  color: var(--color-kds-gold);
 }
 
 /* ── Note ────────────────────────────────────────────────────────────────────── */
@@ -402,11 +402,11 @@
 }
 
 .bumpNuevo {
-  background: #2563EB;
+  background: color-mix(in srgb, var(--color-kds-bar) 70%, #000);
 }
 
 .bumpNuevo:hover:not(:disabled) {
-  background: #3B82F6;
+  background: var(--color-kds-bar);
   transform: translateY(-1px);
 }
 
@@ -427,4 +427,110 @@
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
+}
+
+/* ── OVERFLOW (45-89s) — naranja ─────────────────────────────────────────────── */
+
+.cardOverflow {
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--color-surface-2));
+  border-left: 5px solid var(--color-brand) !important;
+  animation: pulseOverflow 1.8s ease-in-out infinite !important;
+}
+
+@keyframes pulseOverflow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand) 35%, transparent); }
+  50%       { box-shadow: 0 0 20px 6px color-mix(in srgb, var(--color-brand) 12%, transparent); }
+}
+
+/* ── EMERGENCY (90s+) — rojo parpadeante ────────────────────────────────────── */
+
+.cardEmergency {
+  background: color-mix(in srgb, var(--color-cancelado) 10%, var(--color-surface-2));
+  border-left: 5px solid var(--color-cancelado) !important;
+  animation: pulseEmergency 0.85s ease-in-out infinite !important;
+}
+
+@keyframes pulseEmergency {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-cancelado) 55%, transparent); }
+  50%       { box-shadow: 0 0 26px 8px color-mix(in srgb, var(--color-cancelado) 18%, transparent); }
+}
+
+.elapsedOverflow  { color: var(--color-brand); }
+.elapsedEmergency { color: var(--color-cancelado); }
+
+/* ── Claim banners ───────────────────────────────────────────────────────────── */
+
+.myClaimBanner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: color-mix(in srgb, var(--color-kds-bar) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-kds-bar) 35%, transparent);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-kds-bar);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+
+.claimedBanner {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: color-mix(in srgb, var(--color-text-subtle) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text-subtle) 25%, transparent);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+
+/* ── Action button base ──────────────────────────────────────────────────────── */
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.actionBtn:active:not(:disabled) { transform: translateY(0); }
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.claimBtn {
+  background: var(--color-kds-bar);
+  color: #000;
+}
+
+.claimBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-kds-bar) 80%, #fff);
+  transform: translateY(-1px);
+}
+
+.takenBtn {
+  background: var(--color-surface-3);
+  color: var(--color-text-muted);
 }

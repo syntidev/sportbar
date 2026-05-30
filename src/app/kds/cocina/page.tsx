@@ -1,7 +1,14 @@
 'use client'
 
+// src/app/kds/cocina/page.tsx
+// KDS Cocina — Hamburguesas + Raciones
+// Colores: verde NUEVO, naranja overflow 45s, rojo emergency 90s
+// Claim system: TOMAR → BUMP (INICIAR PREP) → MARCAR LISTO
+
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AlertTriangle, ChefHat, RefreshCw, StickyNote } from 'lucide-react'
+import {
+  AlertTriangle, ChefHat, Hand, RefreshCw, StickyNote, Zap,
+} from 'lucide-react'
 import type { Category } from '@/types'
 import styles from './page.module.css'
 
@@ -26,6 +33,7 @@ interface KdsOrder {
   code:           string
   origin:         'PUB' | 'LOC'
   kitchen_status: FoodStatus
+  venue_assigned: number | null
   zone:           string
   seat:           string | null
   note:           string | null
@@ -39,7 +47,8 @@ interface KdsOrder {
 const FOOD_CATEGORIES: Category[] = ['hamburguesas', 'raciones']
 const ACTOR_CODE                   = 'KDS-COC'
 const POLL_MS                      = 10_000
-const ALERT_SECS                   = 300   // 5 min
+const OVERFLOW_SECS                = 45   // naranja
+const EMERGENCY_SECS               = 90   // rojo parpadeante
 
 const BUMP_LABEL: Record<FoodStatus, string> = {
   NUEVO: 'INICIAR PREPARACIÓN',
@@ -58,49 +67,47 @@ function fmtElapsed(secs: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-async function fetchKitchenOrders(): Promise<KdsOrder[]> {
-  const [r1, r2] = await Promise.all([
-    fetch('/api/orders?status=NUEVO', { cache: 'no-store' }),
-    fetch('/api/orders?status=PREP',  { cache: 'no-store' }),
-  ])
-  const [d1, d2] = await Promise.all([r1.json(), r2.json()])
+async function fetchOrders(): Promise<{ orders: KdsOrder[]; myVenueId: number | null }> {
+  const res  = await fetch('/api/kds?status=active', { cache: 'no-store' })
+  const data = await res.json() as { success: boolean; orders?: KdsOrder[]; myVenueId?: number | null; error?: string }
+  if (!data.success) throw new Error(data.error ?? 'Error KDS')
 
-  const raw: KdsOrder[] = [
-    ...(d1.success ? d1.orders : []),
-    ...(d2.success ? d2.orders : []),
-  ]
-
-  // Deduplicate
-  const seen = new Set<number>()
-  return raw
-    .filter((o) => { if (seen.has(o.id)) return false; seen.add(o.id); return true })
-    .map((o) => ({ ...o, items: o.items.filter((i) => FOOD_CATEGORIES.includes(i.product.category)) }))
+  const orders = (data.orders ?? [])
+    .map((o) => ({
+      ...o,
+      items: o.items.filter((i) => FOOD_CATEGORIES.includes(i.product.category)),
+    }))
     .filter((o) => o.items.length > 0)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+  return { orders, myVenueId: data.myVenueId ?? null }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function KdsCocinaPage() {
-  const [orders,   setOrders]   = useState<KdsOrder[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState<string | null>(null)
-  const [bumping,  setBumping]  = useState<Set<number>>(new Set())
-  const [now,      setNow]      = useState(() => new Date())
-  const [lastSync, setLastSync] = useState<Date | null>(null)
+  const [orders,    setOrders]    = useState<KdsOrder[]>([])
+  const [myVenueId, setMyVenueId] = useState<number | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState<string | null>(null)
+  const [bumping,   setBumping]   = useState<Set<number>>(new Set())
+  const [claiming,  setClaiming]  = useState<Set<number>>(new Set())
+  const [now,       setNow]       = useState(() => new Date())
+  const [lastSync,  setLastSync]  = useState<Date | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // clock — 1 s tick
+  // 1 s clock
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1_000)
     return () => clearInterval(t)
   }, [])
 
-  // poll — every 10 s
+  // poll
   const poll = useCallback(async () => {
     try {
-      const data = await fetchKitchenOrders()
+      const { orders: data, myVenueId: vid } = await fetchOrders()
       setOrders(data)
+      setMyVenueId(vid)
       setError(null)
       setLastSync(new Date())
     } catch (e: unknown) {
@@ -116,6 +123,24 @@ export default function KdsCocinaPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [poll])
 
+  // claim
+  async function handleClaim(order: KdsOrder) {
+    if (claiming.has(order.id)) return
+    setClaiming((prev) => new Set(prev).add(order.id))
+    try {
+      const res  = await fetch(`/api/orders/${order.id}/claim`, { method: 'PATCH' })
+      const data = await res.json() as { success: boolean; venue_id?: number; error?: string }
+      if (!data.success) throw new Error(data.error)
+      setOrders((prev) =>
+        prev.map((o) => o.id === order.id ? { ...o, venue_assigned: data.venue_id ?? null } : o),
+      )
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al tomar orden')
+    } finally {
+      setClaiming((prev) => { const n = new Set(prev); n.delete(order.id); return n })
+    }
+  }
+
   // bump
   async function handleBump(order: KdsOrder) {
     if (bumping.has(order.id)) return
@@ -126,16 +151,14 @@ export default function KdsCocinaPage() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ order_id: order.id, actor_code: ACTOR_CODE }),
       })
-      const data = await res.json()
+      const data = await res.json() as { success: boolean; error?: string }
       if (!data.success) throw new Error(data.error)
 
       if (order.kitchen_status === 'NUEVO') {
-        // advance to PREP locally
         setOrders((prev) =>
           prev.map((o) => o.id === order.id ? { ...o, kitchen_status: 'PREP' as FoodStatus } : o),
         )
       } else {
-        // LISTO — remove from view
         setOrders((prev) => prev.filter((o) => o.id !== order.id))
       }
     } catch (e: unknown) {
@@ -145,7 +168,6 @@ export default function KdsCocinaPage() {
     }
   }
 
-  // counts
   const nuevoCount = orders.filter((o) => o.kitchen_status === 'NUEVO').length
   const prepCount  = orders.filter((o) => o.kitchen_status === 'PREP').length
 
@@ -212,20 +234,27 @@ export default function KdsCocinaPage() {
       {!loading && orders.length > 0 && (
         <main className={styles.grid} aria-label="Comandas de cocina">
           {orders.map((order) => {
-            const secs    = elapsedSecs(order.created_at, now)
-            const isAlert = secs >= ALERT_SECS
-            const isBusy  = bumping.has(order.id)
-            const isNuevo = order.kitchen_status === 'NUEVO'
+            const secs        = elapsedSecs(order.created_at, now)
+            const isOverflow  = order.kitchen_status === 'NUEVO' && secs >= OVERFLOW_SECS && secs < EMERGENCY_SECS
+            const isEmergency = order.kitchen_status === 'NUEVO' && secs >= EMERGENCY_SECS
+            const isNuevo     = order.kitchen_status === 'NUEVO'
+            const isClaimed   = order.venue_assigned !== null
+            const isMyOrder   = myVenueId !== null
+              ? order.venue_assigned === myVenueId
+              : order.venue_assigned === -1
+            const isBusy     = bumping.has(order.id)
+            const isClaiming = claiming.has(order.id)
+
+            const cardCls = [
+              styles.card,
+              isNuevo ? styles.cardNuevo : styles.cardPrep,
+              isOverflow  ? styles.cardOverflow  : '',
+              isEmergency ? styles.cardEmergency : '',
+            ].filter(Boolean).join(' ')
 
             return (
-              <article
-                key={order.id}
-                className={[
-                  styles.card,
-                  isNuevo ? styles.cardNuevo : styles.cardPrep,
-                  isAlert  ? styles.cardAlert  : '',
-                ].join(' ')}
-              >
+              <article key={order.id} className={cardCls}>
+
                 {/* Header row */}
                 <div className={styles.cardHeader}>
                   <div className={styles.cardLeft}>
@@ -233,20 +262,38 @@ export default function KdsCocinaPage() {
                       {order.code}
                     </span>
                     <span className={styles.zoneLabel}>
-                      {order.zone}{order.seat ? ` · Mesa ${order.seat}` : ''}
+                      {order.zone}{order.seat ? ` · ${order.seat}` : ''}
                     </span>
                   </div>
 
                   <div className={styles.cardRight}>
-                    <span className={`${styles.statusBadge} ${isNuevo ? styles.badgeNuevo : styles.badgePrep}`}>
-                      {order.kitchen_status}
-                    </span>
-                    <span className={`${styles.elapsed} ${isAlert ? styles.elapsedAlert : ''}`} aria-live="polite">
-                      {isAlert && <AlertTriangle size={13} aria-hidden />}
+                    <span
+                      className={[
+                        styles.elapsed,
+                        isOverflow  ? styles.elapsedOverflow  : '',
+                        isEmergency ? styles.elapsedEmergency : '',
+                      ].filter(Boolean).join(' ')}
+                      aria-live="polite"
+                    >
+                      {isEmergency && <Zap size={13} aria-hidden />}
+                      {isOverflow  && <AlertTriangle size={13} aria-hidden />}
                       {fmtElapsed(secs)}
                     </span>
                   </div>
                 </div>
+
+                {/* Claim banner */}
+                {isClaimed && isMyOrder && (
+                  <div className={styles.myClaimBanner}>
+                    <Hand size={11} aria-hidden />
+                    Esta estación
+                  </div>
+                )}
+                {isClaimed && !isMyOrder && (
+                  <div className={styles.claimedBanner}>
+                    Tomado por otra estación
+                  </div>
+                )}
 
                 {/* Items */}
                 <ul className={styles.itemsList} aria-label="Ítems">
@@ -266,17 +313,61 @@ export default function KdsCocinaPage() {
                   </p>
                 )}
 
-                {/* Bump */}
-                <button
-                  type="button"
-                  className={styles.bumpBtn}
-                  onClick={() => handleBump(order)}
-                  disabled={isBusy}
-                  aria-busy={isBusy}
-                  aria-label={`${BUMP_LABEL[order.kitchen_status]} — ${order.code}`}
-                >
-                  {isBusy ? 'Actualizando…' : BUMP_LABEL[order.kitchen_status]}
-                </button>
+                {/* NUEVO unclaimed → TOMAR */}
+                {isNuevo && !isClaimed && (
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.claimBtn}`}
+                    onClick={() => handleClaim(order)}
+                    disabled={isClaiming}
+                    aria-busy={isClaiming}
+                    aria-label={`Tomar orden ${order.code}`}
+                  >
+                    <Hand size={16} aria-hidden />
+                    {isClaiming ? 'Tomando…' : 'TOMAR'}
+                  </button>
+                )}
+
+                {/* NUEVO claimed by another → disabled */}
+                {isNuevo && isClaimed && !isMyOrder && (
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.takenBtn}`}
+                    disabled
+                    aria-label="Orden tomada por otra estación"
+                  >
+                    Tomado por otra estación
+                  </button>
+                )}
+
+                {/* NUEVO claimed by me → BUMP INICIAR PREP */}
+                {isNuevo && isClaimed && isMyOrder && (
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.bumpBtn}`}
+                    onClick={() => handleBump(order)}
+                    disabled={isBusy}
+                    aria-busy={isBusy}
+                    aria-label={`${BUMP_LABEL.NUEVO} — ${order.code}`}
+                  >
+                    {isBusy ? 'Actualizando…' : BUMP_LABEL.NUEVO}
+                  </button>
+                )}
+
+                {/* PREP → MARCAR LISTO (cualquier estación) */}
+                {!isNuevo && (
+                  <button
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.bumpBtn}`}
+                    onClick={() => handleBump(order)}
+                    disabled={isBusy}
+                    aria-busy={isBusy}
+                    aria-label={`${BUMP_LABEL.PREP} — ${order.code}`}
+                  >
+                    {isBusy ? 'Actualizando…' : BUMP_LABEL.PREP}
+                  </button>
+                )}
+
               </article>
             )
           })}
@@ -285,4 +376,3 @@ export default function KdsCocinaPage() {
     </div>
   )
 }
-

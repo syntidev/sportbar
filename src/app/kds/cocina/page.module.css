@@ -202,20 +202,28 @@
   border-left: 5px solid var(--color-credito);
 }
 
-/* ALERT (>5 min) — red bg tint */
-.cardAlert {
-  background: color-mix(in srgb, var(--color-cancelado) 9%, var(--color-surface-2));
-  border-color: color-mix(in srgb, var(--color-cancelado) 50%, transparent);
+/* OVERFLOW (45-89s) — naranja */
+.cardOverflow {
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--color-surface-2));
+  border-left-color: var(--color-brand) !important;
+  animation: pulseOverflow 1.8s ease-in-out infinite !important;
 }
 
-.cardAlert.cardNuevo {
-  border-left-color: var(--color-cancelado);
-  animation: pulseAlert 1.2s ease-in-out infinite;
+@keyframes pulseOverflow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand) 35%, transparent); }
+  50%       { box-shadow: 0 0 20px 6px color-mix(in srgb, var(--color-brand) 12%, transparent); }
 }
 
-@keyframes pulseAlert {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-cancelado) 40%, transparent); }
-  50%       { box-shadow: 0 0 20px 6px color-mix(in srgb, var(--color-cancelado) 15%, transparent); }
+/* EMERGENCY (90s+) — rojo parpadeante */
+.cardEmergency {
+  background: color-mix(in srgb, var(--color-cancelado) 10%, var(--color-surface-2));
+  border-left-color: var(--color-cancelado) !important;
+  animation: pulseEmergency 0.85s ease-in-out infinite !important;
+}
+
+@keyframes pulseEmergency {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-cancelado) 55%, transparent); }
+  50%       { box-shadow: 0 0 26px 8px color-mix(in srgb, var(--color-cancelado) 18%, transparent); }
 }
 
 /* ── Card header ─────────────────────────────────────────────────────────────── */
@@ -303,9 +311,8 @@
   letter-spacing: 0.06em;
 }
 
-.elapsedAlert {
-  color: var(--color-cancelado);
-}
+.elapsedOverflow  { color: var(--color-brand); }
+.elapsedEmergency { color: var(--color-cancelado); }
 
 /* ── Items list ──────────────────────────────────────────────────────────────── */
 
@@ -362,19 +369,51 @@
   border: 1px solid color-mix(in srgb, var(--color-brand-warm) 20%, transparent);
 }
 
-/* ── Bump button ─────────────────────────────────────────────────────────────── */
+/* ── Claim banners ───────────────────────────────────────────────────────────── */
 
-.bumpBtn {
+.myClaimBanner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-primary-light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+
+.claimedBanner {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: color-mix(in srgb, var(--color-text-subtle) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text-subtle) 25%, transparent);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+
+/* ── Action buttons ──────────────────────────────────────────────────────────── */
+
+.actionBtn {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   width: 100%;
-  min-height: 72px;
-  background: var(--color-primary);
+  min-height: 56px;
   border: none;
   border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -384,17 +423,38 @@
   flex-shrink: 0;
 }
 
+.actionBtn:active:not(:disabled) { transform: translateY(0); }
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* TOMAR */
+.claimBtn {
+  background: var(--color-brand);
+  color: #000;
+}
+
+.claimBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-brand) 80%, #fff);
+  transform: translateY(-1px);
+}
+
+/* BUMP (verde) */
+.bumpBtn {
+  background: var(--color-primary);
+  color: var(--color-text);
+}
+
 .bumpBtn:hover:not(:disabled) {
   background: var(--color-primary-light);
   transform: translateY(-1px);
 }
 
-.bumpBtn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.bumpBtn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
+/* TOMADO (gris disabled) */
+.takenBtn {
+  background: var(--color-surface-3);
+  color: var(--color-text-muted);
 }

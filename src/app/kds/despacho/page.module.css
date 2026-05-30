@@ -39,6 +39,13 @@
   letter-spacing: 0.07em;
 }
 
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
 .counter {
   display: flex;
   align-items: center;
@@ -50,6 +57,40 @@
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--color-primary-light);
+}
+
+.syncLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--color-text-subtle);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.errorBanner {
+  padding: var(--space-2) var(--space-4);
+  background: color-mix(in srgb, var(--color-cancelado) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-cancelado) 35%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--color-cancelado);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────────────── */
@@ -242,6 +283,34 @@
   color: var(--color-text-muted);
 }
 
+/* ── Mesero row ──────────────────────────────────────────────────────────────── */
+
+.meseroRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px var(--space-3);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.meseroName {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.meseroCode {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-primary-light);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 /* ── Deliver button ──────────────────────────────────────────────────────────── */
 
 .btnEntregar {
@@ -250,6 +319,7 @@
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
+  min-height: 56px;
   padding: 13px var(--space-4);
   background: var(--color-primary);
   border: 1px solid var(--color-primary);

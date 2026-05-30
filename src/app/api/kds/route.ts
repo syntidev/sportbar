@@ -72,12 +72,15 @@ export async function GET(req: NextRequest) {
   // 4. Determinar categorías permitidas según venue del usuario
   //    Admin ve todo sin filtro (allowedCategories === null)
   let allowedCategories: string[] | null = null
+  let myVenueId: number | null = null
 
   if (userRole !== 'admin') {
     const user = await prisma.user.findUnique({
       where:  { id: userId },
       select: { venue_id: true },
     })
+
+    myVenueId = user?.venue_id ?? null
 
     if (user?.venue_id) {
       // Tiene venue asignado → leer capabilities
@@ -138,7 +141,7 @@ export async function GET(req: NextRequest) {
             .filter((o) => o.items.length > 0)
         : orders
 
-    return NextResponse.json({ success: true, orders: result })
+    return NextResponse.json({ success: true, orders: result, myVenueId })
   } catch {
     return NextResponse.json(
       { success: false, error: 'Error al obtener comandas KDS' },
