@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
@@ -180,7 +180,7 @@ function ProdRow({ p, rate, qty, onAdd }: ProdRowProps) {
 
 // ── Main page ────────────────────────────────────────────────
 
-export default function MenuPublicoPage() {
+function MenuContent() {
   const [turno,       setTurno]       = useState<TurnoData | null>(null);
   const [products,    setProducts]    = useState<Product[]>([]);
   const [rate,        setRate]        = useState(50.0);
@@ -904,5 +904,13 @@ export default function MenuPublicoPage() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+export default function MenuPublicoPage() {
+  return (
+    <Suspense>
+      <MenuContent />
+    </Suspense>
   );
 }
