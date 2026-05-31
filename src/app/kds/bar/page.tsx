@@ -5,10 +5,12 @@
 // Colores: azul hielo (bebidas), dorado licor_fuerte, naranja overflow 45s, rojo emergency 90s
 // Claim system: TOMAR → BUMP (PREPARAR) → LISTO PARA SERVIR
 
+import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  AlertTriangle, Flame, Hand, RefreshCw, StickyNote, Wine, Zap,
+  AlertTriangle, ArrowLeft, Flame, Hand, RefreshCw, StickyNote, Wine, Zap,
 } from 'lucide-react'
+import HelpButton from '@/components/HelpButton'
 import type { Category } from '@/types'
 import styles from './page.module.css'
 
@@ -55,6 +57,28 @@ const SPIRITS = ['parr', 'buchanan', 'etiqueta', 'black', 'ron', 'whisky', 'vodk
 const BUMP_LABEL: Record<FoodStatus, string> = {
   NUEVO: 'PREPARAR',
   PREP:  'LISTO PARA SERVIR',
+}
+
+// ── Help content ──────────────────────────────────────────────────────────────
+
+const HELP_CONTENT = {
+  colors: [
+    { color: '#2E7D32', label: 'Verde — card tomada por esta estación' },
+    { color: '#C62828', label: 'Rojo parpadeante — emergencia >90s' },
+    { color: '#F5A623', label: 'Naranja — alerta >45s' },
+    { color: '#60A5FA', label: 'Azul — bebidas' },
+    { color: '#F59E0B', label: 'Dorado — licores fuertes' },
+  ],
+  icons: [
+    { icon: '✋ TOMAR',             label: 'Reclamar orden para esta estación' },
+    { icon: 'LISTO PARA SERVIR',    label: 'Bump final — notifica a despacho' },
+    { icon: '⏱ TIMER',             label: 'Tiempo transcurrido desde la orden' },
+  ],
+  actions: [
+    { action: 'TOMAR',             description: 'Asigna la orden a esta estación de bar' },
+    { action: 'PREPARAR',          description: 'Bump → avanza estado de NUEVO a PREP' },
+    { action: 'LISTO PARA SERVIR', description: 'Bump final → retira la comanda y notifica a despacho' },
+  ],
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -186,6 +210,10 @@ export default function KdsBarPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
+          <Link href="/admin" className={styles.dashboardBtn} aria-label="Volver al dashboard">
+            <ArrowLeft size={14} strokeWidth={2.5} aria-hidden />
+            Dashboard
+          </Link>
           <Wine size={22} strokeWidth={2} aria-hidden />
           <div>
             <span className={styles.headerTitle}>KDS Bar</span>
@@ -212,6 +240,11 @@ export default function KdsBarPage() {
               {lastSync.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
           )}
+          <HelpButton
+            module="KDS Bar"
+            title="Guía KDS Bar"
+            content={HELP_CONTENT}
+          />
         </div>
       </header>
 
@@ -283,19 +316,21 @@ export default function KdsBarPage() {
                     <span className={`${styles.statusBadge} ${isNuevo ? styles.badgeNuevo : styles.badgePrep}`}>
                       {order.kitchen_status}
                     </span>
-                    <span
-                      className={[
-                        styles.elapsed,
-                        isOverflow  ? styles.elapsedOverflow  : '',
-                        isEmergency ? styles.elapsedEmergency : '',
-                      ].filter(Boolean).join(' ')}
-                      aria-live="polite"
-                    >
-                      {isEmergency && <Zap size={13} aria-hidden />}
-                      {isOverflow  && <AlertTriangle size={13} aria-hidden />}
-                      {fmtElapsed(secs)}
-                    </span>
                   </div>
+                </div>
+
+                {/* Timer — own row */}
+                <div
+                  className={[
+                    styles.cardTimer,
+                    isOverflow  ? styles.timerOverflow  : '',
+                    isEmergency ? styles.timerEmergency : '',
+                  ].filter(Boolean).join(' ')}
+                  aria-live="polite"
+                >
+                  {isEmergency && <Zap size={13} aria-hidden />}
+                  {isOverflow  && <AlertTriangle size={13} aria-hidden />}
+                  {fmtElapsed(secs)}
                 </div>
 
                 {/* Licor fuerte badge */}

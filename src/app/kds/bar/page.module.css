@@ -85,7 +85,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 4px;
 }
 
 .clock {
@@ -105,6 +105,31 @@
   color: var(--color-text-subtle);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* ── Dashboard back button ───────────────────────────────────────────────────── */
+
+.dashboardBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.dashboardBtn:hover {
+  background: var(--color-surface-3);
+  color: var(--color-text);
 }
 
 /* ── Error banner ────────────────────────────────────────────────────────────── */
@@ -308,18 +333,21 @@
   border: 1px solid color-mix(in srgb, var(--color-credito) 35%, transparent);
 }
 
-/* ── Elapsed time ────────────────────────────────────────────────────────────── */
+/* ── Card timer — own row ────────────────────────────────────────────────────── */
 
-.elapsed {
+.cardTimer {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 1.05rem;
+  gap: 5px;
+  font-size: 1rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
   letter-spacing: 0.06em;
 }
+
+.timerOverflow  { color: var(--color-brand); }
+.timerEmergency { color: var(--color-cancelado); }
 
 /* ── Items list ──────────────────────────────────────────────────────────────── */
 
@@ -454,9 +482,6 @@
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-cancelado) 55%, transparent); }
   50%       { box-shadow: 0 0 26px 8px color-mix(in srgb, var(--color-cancelado) 18%, transparent); }
 }
-
-.elapsedOverflow  { color: var(--color-brand); }
-.elapsedEmergency { color: var(--color-cancelado); }
 
 /* ── Claim banners ───────────────────────────────────────────────────────────── */
 
