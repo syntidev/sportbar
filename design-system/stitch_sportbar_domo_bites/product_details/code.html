@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SportBar Venezuela - Detalle de Producto</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#ffc880",
+                    "on-primary": "#452b00",
+                    "surface-tint": "#ffb955",
+                    "surface-variant": "#333532",
+                    "surface-container-lowest": "#0d0f0c",
+                    "background": "#121412",
+                    "tertiary-fixed-dim": "#4ae183",
+                    "surface-bright": "#383a37",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-fixed-variant": "#454744",
+                    "surface-dim": "#121412",
+                    "surface-container-low": "#1a1c1a",
+                    "on-surface-variant": "#d7c3ae",
+                    "surface": "#121412",
+                    "error": "#ffb4ab",
+                    "tertiary-container": "#33cf74",
+                    "on-surface": "#e2e3de",
+                    "on-background": "#e2e3de",
+                    "error-container": "#93000a",
+                    "outline-variant": "#524534",
+                    "primary-fixed": "#ffddb4",
+                    "inverse-on-surface": "#2f312e",
+                    "on-secondary-container": "#b7b9b4",
+                    "inverse-primary": "#835500",
+                    "secondary-fixed-dim": "#c5c7c2",
+                    "secondary-container": "#474a46",
+                    "surface-container-highest": "#333532",
+                    "primary-container": "#f5a623",
+                    "primary-fixed-dim": "#ffb955",
+                    "on-secondary-fixed": "#191c19",
+                    "inverse-surface": "#e2e3de",
+                    "tertiary": "#57ec8d",
+                    "on-error": "#690005",
+                    "on-secondary": "#2e312e",
+                    "on-tertiary-fixed": "#00210c",
+                    "surface-container-high": "#282a28",
+                    "on-primary-fixed": "#291800",
+                    "on-primary-container": "#644000",
+                    "on-tertiary-container": "#005328",
+                    "on-primary-fixed-variant": "#633f00",
+                    "tertiary-fixed": "#6bfe9c",
+                    "on-tertiary-fixed-variant": "#005228",
+                    "outline": "#9f8e7a",
+                    "secondary": "#c5c7c2",
+                    "surface-container": "#1e201e",
+                    "on-tertiary": "#003919",
+                    "secondary-fixed": "#e1e3de"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "40px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "md": "24px",
+                    "sm": "12px",
+                    "base": "8px",
+                    "xl": "64px",
+                    "container-margin": "20px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Sora"],
+                    "label-md": ["Inter"],
+                    "display-lg-mobile": ["Sora"],
+                    "headline-lg-mobile": ["Sora"],
+                    "display-lg": ["Sora"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Sora"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "34px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-sheet {
+            background: rgba(26, 29, 26, 0.85);
+            backdrop-filter: blur(24px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .burger-float {
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+            transform: translateY(-10px);
+        }
+        .modal-enter {
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-hidden">
+<!-- Background Mock Content (Dimmed Menu List) -->
+<div class="fixed inset-0 z-0 opacity-20 pointer-events-none p-gutter pt-20">
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-surface-container h-48 rounded-xl border border-white/5"></div>
+<div class="bg-surface-container h-48 rounded-xl border border-white/5"></div>
+<div class="bg-surface-container h-48 rounded-xl border border-white/5"></div>
+<div class="bg-surface-container h-48 rounded-xl border border-white/5"></div>
+<div class="bg-surface-container h-48 rounded-xl border border-white/5"></div>
+<div class="bg-surface-container h-48 rounded-xl border border-white/5"></div>
+</div>
+</div>
+<!-- Top App Bar (From Shared Components) -->
+<header class="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl flex items-center justify-between px-gutter py-md">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary" data-icon="sports_basketball">sports_basketball</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-extrabold text-primary tracking-tight">SportBar Venezuela</h1>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-variant/20 transition-colors p-2 rounded-full active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined" data-icon="shopping_basket">shopping_basket</span>
+</button>
+</header>
+<!-- Modal Overlay Backdrop -->
+<div class="fixed inset-0 bg-black/60 z-[60]"></div>
+<!-- Bottom Sheet Modal Content -->
+<div class="fixed bottom-0 left-0 right-0 z-[70] h-[92vh] glass-sheet rounded-t-[32px] modal-enter flex flex-col">
+<!-- Pull Handle -->
+<div class="w-full flex justify-center py-4">
+<div class="w-12 h-1.5 bg-white/20 rounded-full"></div>
+</div>
+<!-- Product Image Section (Top 50%) -->
+<div class="relative w-full h-[45vh] flex items-center justify-center px-lg overflow-visible">
+<img alt="Super Burger Bolivariano" class="burger-float max-h-full object-contain z-10 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3F2HFVrBtL0aJE4hR3NQlGPw6T_XP_3zE0or8q_uzSM2t_od46yjfvOIZhxp-l1rN77fl0Na1Irh34LGjsguImv77Q_Mdx7q_I3zfCzzIfUdJzmsc0SHn7Es9TmBGeVlOEGTWpW2rCI5thy-TWtH47KwBipwsvq90G0aGEqPbanbbVBY_4UAqsV9KvbL82TAjPpS83s0nh_a4k0LkMgUJVYXZXtSDJ11bRPfWGZrBIH3GvyB1v0V0l0c-20iCWiwfOGFpA7FYUDA"/>
+<!-- Atmospheric Glow behind the burger -->
+<div class="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent blur-3xl rounded-full scale-75 opacity-50"></div>
+<button class="absolute top-0 right-gutter bg-surface-container-highest/50 backdrop-blur-md p-3 rounded-full text-white active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Product Details Section -->
+<div class="flex-1 px-gutter py-md space-y-md overflow-y-auto">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-white leading-tight">Super Burger Bolivariano</h2>
+<p class="text-on-surface-variant font-body-md max-w-[85%]">
+                        Doble carne premium, queso fundido, vegetales frescos y nuestra salsa secreta del estadio.
+                    </p>
+</div>
+<div class="text-right">
+<span class="font-headline-md text-primary-container text-headline-md">$15.00</span>
+</div>
+</div>
+<!-- Customization / Extras Chips (Contextual placeholder) -->
+<div class="space-y-sm">
+<p class="font-label-md text-label-md text-white/60">TÉRMINO DE LA CARNE</p>
+<div class="flex gap-sm">
+<button class="px-md py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md border-2 border-primary">Término Medio</button>
+<button class="px-md py-2 rounded-full bg-surface-variant/30 text-white font-label-md text-label-md border-2 border-transparent">Bien Cocida</button>
+</div>
+</div>
+<!-- Quantity & Actions Fixed Bottom -->
+<div class="pt-lg flex items-center gap-md">
+<!-- Stepper -->
+<div class="flex items-center bg-surface-container rounded-full p-1 border border-white/10">
+<button class="w-12 h-12 flex items-center justify-center text-primary-container active:scale-75 transition-transform" onclick="decrement()">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<span class="w-10 text-center font-headline-md text-headline-md text-white" id="quantity">1</span>
+<button class="w-12 h-12 flex items-center justify-center text-primary-container active:scale-75 transition-transform" onclick="increment()">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+<!-- CTA Button -->
+<button class="flex-1 h-14 bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-xl flex items-center justify-center gap-sm shadow-[0_8px_24px_rgba(245,166,35,0.3)] active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+                    Agregar al pedido
+                </button>
+</div>
+</div>
+<!-- Spacing for bottom navbar area -->
+<div class="h-base"></div>
+</div>
+<!-- Bottom Nav Bar (From Shared Components - Filtered as this is a focused task) -->
+<!-- Suppressed based on "Task-Focused: Any sub-page featuring a 'Close' action..." rule -->
+<script>
+        let count = 1;
+        const qtyElement = document.getElementById('quantity');
+
+        function increment() {
+            count++;
+            qtyElement.innerText = count;
+            qtyElement.classList.add('scale-110');
+            setTimeout(() => qtyElement.classList.remove('scale-110'), 100);
+        }
+
+        function decrement() {
+            if (count > 1) {
+                count--;
+                qtyElement.innerText = count;
+                qtyElement.classList.add('scale-90');
+                setTimeout(() => qtyElement.classList.remove('scale-90'), 100);
+            }
+        }
+
+        // Simple entrance animation for the burger
+        window.addEventListener('DOMContentLoaded', () => {
+            const burger = document.querySelector('.burger-float');
+            burger.style.opacity = '0';
+            burger.style.transform = 'translateY(40px) scale(0.8)';
+            setTimeout(() => {
+                burger.style.transition = 'all 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+                burger.style.opacity = '1';
+                burger.style.transform = 'translateY(-10px) scale(1.1)';
+            }, 300);
+        });
+    </script>
+</body></html>

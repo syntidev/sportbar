@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SportBar Venezuela | Splash Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Sora:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#ffc880",
+                        "on-primary": "#452b00",
+                        "surface-tint": "#ffb955",
+                        "surface-variant": "#333532",
+                        "surface-container-lowest": "#0d0f0c",
+                        "background": "#080a08", // Custom specific dark background
+                        "tertiary-fixed-dim": "#4ae183",
+                        "surface-bright": "#383a37",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#454744",
+                        "surface-dim": "#121412",
+                        "surface-container-low": "#1a1c1a",
+                        "on-surface-variant": "#d7c3ae",
+                        "surface": "#121412",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#33cf74",
+                        "on-surface": "#e2e3de",
+                        "on-background": "#e2e3de",
+                        "error-container": "#93000a",
+                        "outline-variant": "#524534",
+                        "primary-fixed": "#ffddb4",
+                        "inverse-on-surface": "#2f312e",
+                        "on-secondary-container": "#b7b9b4",
+                        "inverse-primary": "#835500",
+                        "secondary-fixed-dim": "#c5c7c2",
+                        "secondary-container": "#474a46",
+                        "surface-container-highest": "#333532",
+                        "primary-container": "#f5a623",
+                        "primary-fixed-dim": "#ffb955",
+                        "on-secondary-fixed": "#191c19",
+                        "inverse-surface": "#e2e3de",
+                        "tertiary": "#57ec8d",
+                        "on-error": "#690005",
+                        "on-secondary": "#2e312e",
+                        "on-tertiary-fixed": "#00210c",
+                        "surface-container-high": "#282a28",
+                        "on-primary-fixed": "#291800",
+                        "on-primary-container": "#644000",
+                        "on-tertiary-container": "#005328",
+                        "on-primary-fixed-variant": "#633f00",
+                        "tertiary-fixed": "#6bfe9c",
+                        "on-tertiary-fixed-variant": "#005228",
+                        "outline": "#9f8e7a",
+                        "secondary": "#c5c7c2",
+                        "surface-container": "#1e201e",
+                        "on-tertiary": "#003919",
+                        "secondary-fixed": "#e1e3de"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "md": "24px",
+                        "sm": "12px",
+                        "base": "8px",
+                        "xl": "64px",
+                        "container-margin": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Sora"],
+                        "label-md": ["Inter"],
+                        "display-lg-mobile": ["Sora"],
+                        "headline-lg-mobile": ["Sora"],
+                        "display-lg": ["Sora"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Sora"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Atmospheric Stadium Lighting */
+        .stadium-glow {
+            background: radial-gradient(circle at center, rgba(245, 166, 35, 0.15) 0%, rgba(8, 10, 8, 0) 70%);
+        }
+
+        /* Frame breaking animation */
+        @keyframes float {
+            0% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-10px) scale(1.02); }
+            100% { transform: translateY(0px) scale(1); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Glassmorphism subtle overlay */
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            background: rgba(26, 29, 26, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface overflow-hidden h-screen font-body-md select-none">
+<!-- Ambient Background Elements -->
+<div class="fixed inset-0 stadium-glow pointer-events-none z-0"></div>
+<div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full pointer-events-none"></div>
+<!-- Splash Container -->
+<main class="relative h-screen w-full flex flex-col items-center justify-between px-container-margin py-xl z-10">
+<!-- Header / Logo Area -->
+<header class="w-full flex justify-center pt-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl">sports_basketball</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tighter uppercase font-extrabold">VEN <span class="text-primary">USA</span></span>
+</div>
+</header>
+<!-- Centered Interactive Content -->
+<div class="relative w-full flex flex-col items-center flex-grow justify-center mt-[-5vh]">
+<!-- Hero Burger Image: Frame Breaking & Floating -->
+<div class="relative w-full max-w-[450px] aspect-square mb-[-80px] z-20">
+<!-- Drop shadow for 3D effect -->
+<div class="absolute inset-0 rounded-full bg-black/40 blur-3xl transform scale-75 translate-y-20"></div>
+<img alt="Giant Venezuelan Double Cheese Burger" class="w-full h-full object-contain animate-float drop-shadow-[0_35px_35px_rgba(0,0,0,0.6)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3F2HFVrBtL0aJE4hR3NQlGPw6T_XP_3zE0or8q_uzSM2t_od46yjfvOIZhxp-l1rN77fl0Na1Irh34LGjsguImv77Q_Mdx7q_I3zfCzzIfUdJzmsc0SHn7Es9TmBGeVlOEGTWpW2rCI5thy-TWtH47KwBipwsvq90G0aGEqPbanbbVBY_4UAqsV9KvbL82TAjPpS83s0nh_a4k0LkMgUJVYXZXtSDJ11bRPfWGZrBIH3GvyB1v0V0l0c-20iCWiwfOGFpA7FYUDA" style="mask-image: linear-gradient(to bottom, transparent 0%, black 15%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%);"/>
+</div>
+<!-- Typography Cluster -->
+<div class="text-center z-30 transform -translate-y-4">
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:text-display-lg text-on-surface uppercase tracking-[0.1em] font-extrabold drop-shadow-lg">
+                    SPORT BAR
+                </h1>
+<p class="font-label-md text-label-md text-primary tracking-[0.3em] uppercase mt-2 opacity-90">
+                    Domo Bolivariano
+                </p>
+<!-- Tagline Decor -->
+<div class="flex items-center justify-center gap-4 mt-6">
+<div class="h-[1px] w-8 bg-surface-variant"></div>
+<span class="font-label-md text-[10px] text-on-surface-variant tracking-widest uppercase italic">The Game Starts Here</span>
+<div class="h-[1px] w-8 bg-surface-variant"></div>
+</div>
+</div>
+</div>
+<!-- Action Section (Stacked Buttons) -->
+<div class="w-full max-w-sm flex flex-col gap-4 z-40 pb-lg">
+<!-- Ver Menú Button -->
+<button class="w-full h-[64px] bg-primary-container hover:bg-primary text-on-primary-container font-headline-md text-headline-md rounded-xl transition-all duration-300 active:scale-95 shadow-xl shadow-primary/10 flex items-center justify-center gap-3 group">
+                Ver Menú
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<!-- Escanea tu zona Button -->
+<button class="w-full h-[64px] bg-transparent border-2 border-on-surface/20 hover:border-on-surface/50 text-on-surface font-headline-md text-headline-md rounded-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-3 backdrop-blur-sm">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+                Escanea tu zona
+            </button>
+<!-- Small Interactive Footer Link -->
+<div class="text-center mt-4">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors opacity-60" href="#">
+                    ¿Ya tienes una mesa? Inicia sesión
+                </a>
+</div>
+</div>
+</main>
+<!-- Decorative Scoreboard Aesthetic Elements (Glassmorphic) -->
+<div class="fixed bottom-10 left-[-40px] transform -rotate-90 hidden lg:block opacity-20 pointer-events-none">
+<span class="font-headline-lg text-primary text-[120px] font-black select-none">SCORE 04-00</span>
+</div>
+<!-- Micro-interaction JavaScript -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('button');
+            
+            buttons.forEach(btn => {
+                btn.addEventListener('mousedown', () => {
+                    btn.style.transform = 'scale(0.96)';
+                });
+                btn.addEventListener('mouseup', () => {
+                    btn.style.transform = 'scale(1)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.transform = 'scale(1)';
+                });
+            });
+
+            // Smooth fade-in for the typography
+            const h1 = document.querySelector('h1');
+            h1.style.opacity = '0';
+            h1.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                h1.style.transition = 'all 1s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                h1.style.opacity = '1';
+                h1.style.transform = 'translateY(0)';
+            }, 300);
+        });
+    </script>
+</body></html>

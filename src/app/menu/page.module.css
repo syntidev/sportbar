@@ -496,3 +496,228 @@
   color: var(--color-brand);
   font-variant-numeric: tabular-nums;
 }
+
+/* ══════════════════════════════════════════════════════════
+   SPLASH SCREEN (Estado 1)
+   ══════════════════════════════════════════════════════════ */
+.splash {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--color-bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+.splashGlow {
+  position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
+  width: 90vw; height: 70vw; max-width: 600px;
+  background: radial-gradient(circle, rgba(245,166,35,.32) 0%, transparent 65%);
+  filter: blur(55px); pointer-events: none; z-index: 0;
+}
+.splashGlow2 {
+  position: absolute; bottom: -5%; left: 50%; transform: translateX(-50%);
+  width: 60vw; height: 40vw;
+  background: radial-gradient(circle, rgba(46,125,50,.22) 0%, transparent 65%);
+  filter: blur(40px); pointer-events: none; z-index: 0;
+}
+.splashTopLogo {
+  position: relative; z-index: 1;
+  width: 52px; height: 52px; object-fit: contain;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 16px rgba(245,166,35,.35));
+}
+.splashImgWrap {
+  position: relative; z-index: 2;
+  width: min(68vw, 300px); height: min(68vw, 300px);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 0 16px;
+}
+.splashImg {
+  width: 100%; height: 100%;
+  object-fit: cover; border-radius: 50%;
+  filter: drop-shadow(0 24px 60px rgba(245,166,35,.45))
+          drop-shadow(0 8px 24px rgba(0,0,0,.7));
+}
+.splashRing {
+  position: absolute; inset: -10px;
+  border-radius: 50%;
+  border: 2px solid rgba(245,166,35,.4);
+  pointer-events: none;
+}
+.splashRing2 {
+  position: absolute; inset: -24px;
+  border-radius: 50%;
+  border: 1px solid rgba(245,166,35,.18);
+  pointer-events: none;
+}
+.splashTextBlock {
+  position: relative; z-index: 1;
+  text-align: center;
+}
+.splashBrand {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 13vw, 62px);
+  letter-spacing: .04em; line-height: .9;
+  color: var(--color-text);
+  text-shadow: 0 4px 28px rgba(0,0,0,.6);
+}
+.splashSub {
+  font-size: 15px; color: var(--color-text-muted);
+  margin-top: 7px; letter-spacing: .03em;
+}
+.splashDots {
+  position: absolute; bottom: 52px;
+  display: flex; gap: 8px; z-index: 1;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PRODUCT MODAL (Estado 3)
+   ══════════════════════════════════════════════════════════ */
+.prodModal {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  background: var(--color-surface);
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--shadow-sheet);
+  max-height: 92dvh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.prodModalImgWrap {
+  position: relative; width: 100%;
+  aspect-ratio: 4/3; overflow: hidden;
+  border-radius: 0; flex: none;
+  max-height: 260px; min-height: 180px;
+}
+.prodModalImg {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.prodModalImgEmpty {
+  width: 100%; height: 100%;
+  background: radial-gradient(circle at 38% 32%, #38291a, #15110d);
+  display: flex; align-items: center; justify-content: center;
+}
+.prodModalImgGrad {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 72px;
+  background: linear-gradient(to top, var(--color-surface), transparent);
+  pointer-events: none;
+}
+.prodModalClose {
+  position: absolute; top: 12px; right: 12px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--color-text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.prodModalClose:active { background: rgba(0,0,0,.75); }
+.prodModalCartBadge {
+  position: absolute; top: 12px; left: 12px;
+  background: var(--color-primary); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  padding: 4px 10px; border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.prodModalBody {
+  padding: 14px 20px 6px; overflow-y: auto; flex: 1;
+}
+.prodModalBody::-webkit-scrollbar { display: none; }
+.prodModalName {
+  font-family: var(--font-display); font-size: 28px;
+  letter-spacing: .02em; line-height: 1; color: var(--color-text);
+}
+.prodModalDesc {
+  font-size: 13.5px; color: var(--color-text-muted);
+  line-height: 1.45; margin-top: 7px; max-width: 92%;
+}
+.prodModalPriceRow {
+  display: flex; align-items: flex-end;
+  justify-content: space-between; margin-top: 12px;
+}
+.prodModalPrice {
+  font-family: var(--font-display); font-size: 34px;
+  color: var(--color-brand); line-height: 1;
+  text-shadow: 0 0 24px rgba(245,166,35,.3);
+}
+.prodModalBs {
+  font-size: 11.5px; color: var(--color-text-muted); margin-top: 3px;
+}
+.prodModalBadge {
+  font-size: 11px; font-weight: 700;
+  background: rgba(245,166,35,.15); color: var(--color-brand);
+  border: 1px solid rgba(245,166,35,.3);
+  border-radius: 999px; padding: 5px 12px;
+  white-space: nowrap;
+}
+.prodModalFoot {
+  flex: none; display: flex; align-items: center;
+  gap: 12px; padding: 12px 20px calc(20px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+}
+.prodModalAdd {
+  flex: 1; height: 56px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-brand), #e0890f);
+  color: #1a1308;
+  font-family: var(--font-display); font-size: 18px; letter-spacing: .03em;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: var(--glow-accent), 0 8px 24px rgba(0,0,0,.4);
+  transition: filter .12s; white-space: nowrap;
+}
+.prodModalAdd:active { filter: brightness(.95); transform: scale(.99); }
+
+/* ══════════════════════════════════════════════════════════
+   ANIMATED TAB INDICATOR
+   ══════════════════════════════════════════════════════════ */
+.custTabs { position: relative; } /* ensure relative for indicator */
+.tabIndicatorBar {
+  position: absolute;
+  top: 12px;   /* nav padding-top */
+  height: 42px; /* tab height */
+  border-radius: 999px;
+  background: var(--color-brand);
+  box-shadow: var(--glow-accent);
+  z-index: 0;
+  pointer-events: none;
+}
+/* Override active tab: indicator provides the background */
+.custTabActive {
+  background: transparent !important;
+  color: #1a1308 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  position: relative; z-index: 1;
+}
+.custTab { position: relative; z-index: 1; }
+.tabBtnIcon { flex: none; }
+.tabBtnLbl  { white-space: nowrap; }
+
+/* ══════════════════════════════════════════════════════════
+   HERO Ken Burns zoom + price shimmer
+   ══════════════════════════════════════════════════════════ */
+@keyframes kenBurns {
+  0%   { transform: scale(1.05); }
+  100% { transform: scale(1.18); }
+}
+.heroImg {
+  animation: kenBurns 7s ease-in-out infinite alternate;
+}
+@keyframes priceShimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .7; text-shadow: 0 0 28px rgba(245,166,35,.8); }
+}
+.heroPrice {
+  animation: priceShimmer 2.8s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CART FAB — pulse when items present
+   ══════════════════════════════════════════════════════════ */
+@keyframes fabPulse {
+  0%, 100% { box-shadow: var(--glow-accent), 0 14px 34px rgba(0,0,0,.55); }
+  50%       { box-shadow: var(--glow-accent), 0 14px 44px rgba(245,166,35,.55); }
+}
+.cartFab {
+  animation: fabPulse 2.4s ease-in-out infinite;
+}
