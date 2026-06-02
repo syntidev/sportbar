@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir, unlink } from 'fs/promises'
+import { writeFile, mkdir, unlink, readdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 import sharp from 'sharp'
@@ -9,10 +9,25 @@ export const runtime = 'nodejs'
 
 const VALID = [1, 2, 3, 4, 5]
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'hero')
-const MAX_BYTES  = 1.5 * 1024 * 1024
 
 async function ensureDir() {
   if (!existsSync(UPLOAD_DIR)) await mkdir(UPLOAD_DIR, { recursive: true })
+}
+
+// Elimina archivos previos del slot (slot_N_*.webp) excepto el nuevo
+async function cleanOldFiles(slot: number, keepFilename: string) {
+  try {
+    const files = await readdir(UPLOAD_DIR)
+    const pattern = new RegExp(`^slot_${slot}_\\d+\\.webp$`)
+    await Promise.all(
+      files
+        .filter(f => pattern.test(f) && f !== keepFilename)
+        .map(f => unlink(path.join(UPLOAD_DIR, f)).catch(() => {})),
+    )
+    // Limpiar el nombre legado fijo slot_N.webp si existía
+    const legacy = path.join(UPLOAD_DIR, `slot_${slot}.webp`)
+    if (existsSync(legacy)) await unlink(legacy).catch(() => {})
+  } catch { /* no crítico */ }
 }
 
 export async function POST(
@@ -36,27 +51,28 @@ export async function POST(
     await ensureDir()
     let buf: Buffer = Buffer.from(await file.arrayBuffer()) as Buffer
 
-    // Siempre redimensionar a máx 1200px y convertir a WebP
-    // — fotos Unsplash de 6 MB quedan en ~80–120 KB
     buf = await sharp(buf)
       .resize({ width: 1200, withoutEnlargement: true })
       .webp({ quality: buf.byteLength > 1.5 * 1024 * 1024 ? 76 : 82 })
       .toBuffer()
 
-    const filename = `slot_${slot}.webp`
+    // Nombre único con timestamp — el browser SIEMPRE ve una URL nueva
+    const ts       = Date.now()
+    const filename = `slot_${slot}_${ts}.webp`
     await writeFile(path.join(UPLOAD_DIR, filename), buf)
 
-    // Incluir version en la URL guardada en DB para que cada reload use URL única
-    // y el browser no sirva la imagen anterior del cache
-    const urlWithVersion = `/uploads/hero/${filename}?v=${Date.now()}`
+    // Borrar archivos previos de este slot
+    await cleanOldFiles(slot, filename)
+
+    const url = `/uploads/hero/${filename}`
     const key = `hero_slot_${slot}`
     await prisma.config.upsert({
       where:  { key },
-      create: { key, value: urlWithVersion },
-      update: { value: urlWithVersion },
+      create: { key, value: url },
+      update: { value: url },
     })
 
-    return NextResponse.json({ success: true, url: urlWithVersion })
+    return NextResponse.json({ success: true, url })
   } catch (err) {
     console.error('hero-slot upload:', err)
     return NextResponse.json({ success: false, error: 'Error al subir imagen' }, { status: 500 })
@@ -74,8 +90,16 @@ export async function DELETE(
   }
 
   try {
-    const filePath = path.join(UPLOAD_DIR, `slot_${slot}.webp`)
-    if (existsSync(filePath)) await unlink(filePath)
+    // Borrar todos los archivos de este slot (nombre dinámico)
+    try {
+      const files = await readdir(UPLOAD_DIR)
+      const pattern = new RegExp(`^slot_${slot}(_\\d+)?\\.webp$`)
+      await Promise.all(
+        files
+          .filter(f => pattern.test(f))
+          .map(f => unlink(path.join(UPLOAD_DIR, f)).catch(() => {})),
+      )
+    } catch { /* dir puede no existir */ }
 
     await prisma.config.deleteMany({ where: { key: `hero_slot_${slot}` } })
     return NextResponse.json({ success: true })

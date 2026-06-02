@@ -143,6 +143,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })
   }, [])
 
+  // Escucha el evento que lanza Perfil cuando sube un logo nuevo —
+  // así el navbar se actualiza en la misma sesión sin recargar la página
+  useEffect(() => {
+    function onLogoUpdated(e: Event) {
+      const url = (e as CustomEvent<{ url: string }>).detail?.url
+      if (url) setData(prev => ({ ...prev, logoUrl: url }))
+    }
+    window.addEventListener('logo-updated', onLogoUpdated)
+    return () => window.removeEventListener('logo-updated', onLogoUpdated)
+  }, [])
+
   function isActive(href: string) {
     if (href === '/admin') return pathname === '/admin'
     return pathname.startsWith(href)

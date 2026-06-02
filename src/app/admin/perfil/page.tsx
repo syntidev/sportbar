@@ -190,6 +190,8 @@ export default function PerfilPage() {
       setLocalPreview('')
       setPendingFile(null)
       if (logoInputRef.current) logoInputRef.current.value = ''
+      // Notificar al navbar para que actualice el logo sin recargar la página
+      window.dispatchEvent(new CustomEvent('logo-updated', { detail: { url: data.url } }))
       showToast('Logo actualizado correctamente')
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Error al subir logo')
