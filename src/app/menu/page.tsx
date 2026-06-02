@@ -161,7 +161,7 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
         transition={{ type: "spring", damping: 18, stiffness: 140, delay: 0.1 }}
       >
         <motion.img
-          src="/uploads/menu-demo/hamburguesa-splash.jpg"
+          src="/uploads/menu-demo/hamburguesa-splash.png"
           alt="Hamburguesa Sport Bar"
           className={styles.splashImg}
           animate={{ y: [0, -12, 0] }}
@@ -892,7 +892,8 @@ function MenuContent() {
                 className={styles.featRail}
                 variants={staggerContainer}
                 initial="hidden"
-                animate="visible"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.1 }}
               >
                 {featured.map(p => (
                   <motion.div key={p.id} variants={fadeInUp} style={{ flex: "none" }}>
@@ -924,7 +925,8 @@ function MenuContent() {
                   className={styles.prodList}
                   variants={staggerContainerFast}
                   initial="hidden"
-                  animate="visible"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.05 }}
                 >
                   {items.map(p => (
                     <motion.div key={p.id} variants={slideInLeft}>
