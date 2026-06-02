@@ -492,7 +492,7 @@ function MenuContent() {
           }
         }
         if (rData.rate) setRate(rData.rate as number);
-        const slots = (hsData as HeroSlot[]).filter((s: HeroSlot) => s.url !== null);
+        const slots = ((hsData as { success: boolean; slots: HeroSlot[] }).slots ?? []).filter((s: HeroSlot) => s.url !== null);
         setHeroSlots(slots);
       } finally {
         setLoading(false);
@@ -559,13 +559,19 @@ function MenuContent() {
   }, []);
 
   // Update animated tab indicator position
+  // Depende de groupTabs también: cuando los tabs aparecen en DOM por primera vez
+  // (productos cargados), el effect debe re-correr aunque activeGroup no cambie
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
-    const btn = nav.querySelector<HTMLElement>('[data-active="true"]');
-    if (!btn) return;
-    setTabPill({ left: btn.offsetLeft, width: btn.offsetWidth });
-  }, [activeGroup]);
+    // rAF garantiza que el DOM ya pintó los botones antes de medir
+    const id = requestAnimationFrame(() => {
+      const btn = nav.querySelector<HTMLElement>('[data-active="true"]');
+      if (!btn) return;
+      setTabPill({ left: btn.offsetLeft, width: btn.offsetWidth });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [activeGroup, groupTabs]);
 
   // Group tabs — only groups with at least one product
   const groupTabs = useMemo(() => {
