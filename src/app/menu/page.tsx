@@ -559,7 +559,7 @@ function MenuContent() {
   }, []);
 
   // Update animated tab indicator position
-  // Depende de groupTabs también: cuando los tabs aparecen en DOM por primera vez
+  // Depende de products también: cuando los tabs aparecen en DOM por primera vez
   // (productos cargados), el effect debe re-correr aunque activeGroup no cambie
   useEffect(() => {
     const nav = navRef.current;
@@ -571,7 +571,7 @@ function MenuContent() {
       setTabPill({ left: btn.offsetLeft, width: btn.offsetWidth });
     });
     return () => cancelAnimationFrame(id);
-  }, [activeGroup, groupTabs]);
+  }, [activeGroup, products]);
 
   // Group tabs — only groups with at least one product
   const groupTabs = useMemo(() => {
