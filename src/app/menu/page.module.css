@@ -816,36 +816,30 @@
   — Pico de opacidad ~0.38 (traslúcido)
   — 7+ fotogramas para la curva serpentina
 */
-.steamWispA { animation: steamA 7.2s cubic-bezier(0.25,0,0.5,1) infinite; }
-.steamWispB { animation: steamB 8.6s cubic-bezier(0.20,0,0.6,1) infinite; }
-.steamWispC { animation: steamC 6.8s cubic-bezier(0.30,0,0.4,1) infinite; }
+.steamWispA { animation: steamA 4.8s ease-out infinite; }
+.steamWispB { animation: steamB 5.8s ease-out infinite; }
+.steamWispC { animation: steamC 5.2s ease-out infinite; }
 
 @keyframes steamA {
-  0%   { transform: translate(  0px,   0px) scale(0.38) rotate(0deg);   opacity: 0;    }
-  8%   { transform: translate( -4px, -18px) scale(0.55) rotate(-2deg);  opacity: 0.32; }
-  22%  { transform: translate(  8px, -42px) scale(0.75) rotate( 4deg);  opacity: 0.38; }
-  38%  { transform: translate( -6px, -72px) scale(0.95) rotate(-5deg);  opacity: 0.30; }
-  55%  { transform: translate( 12px,-105px) scale(1.18) rotate( 6deg);  opacity: 0.20; }
-  72%  { transform: translate( -5px,-138px) scale(1.40) rotate(-3deg);  opacity: 0.10; }
-  100% { transform: translate(  4px,-175px) scale(1.65) rotate( 2deg);  opacity: 0;    }
+  0%   { transform: translate(  0px,   0px) scale(0.45) rotate(0deg);   opacity: 0;    }
+  10%  { transform: translate( -5px, -22px) scale(0.65) rotate(-3deg);  opacity: 0.68; }
+  35%  { transform: translate(  9px, -60px) scale(0.90) rotate( 5deg);  opacity: 0.62; }
+  65%  { transform: translate( -7px,-105px) scale(1.20) rotate(-4deg);  opacity: 0.35; }
+  100% { transform: translate(  5px,-155px) scale(1.55) rotate( 3deg);  opacity: 0;    }
 }
 @keyframes steamB {
   0%   { transform: translate(  0px,   0px) scale(0.42) rotate(0deg);   opacity: 0;    }
-  6%   { transform: translate(  6px, -14px) scale(0.58) rotate( 3deg);  opacity: 0.28; }
-  20%  { transform: translate(-10px, -38px) scale(0.78) rotate(-6deg);  opacity: 0.35; }
-  35%  { transform: translate(  7px, -65px) scale(0.98) rotate( 4deg);  opacity: 0.28; }
-  52%  { transform: translate(-12px, -96px) scale(1.22) rotate(-7deg);  opacity: 0.18; }
-  70%  { transform: translate(  8px,-130px) scale(1.48) rotate( 3deg);  opacity: 0.08; }
-  100% { transform: translate( -3px,-168px) scale(1.78) rotate(-2deg);  opacity: 0;    }
+  8%   { transform: translate(  7px, -18px) scale(0.60) rotate( 4deg);  opacity: 0.64; }
+  32%  { transform: translate(-11px, -55px) scale(0.85) rotate(-6deg);  opacity: 0.58; }
+  62%  { transform: translate(  8px, -98px) scale(1.15) rotate( 5deg);  opacity: 0.30; }
+  100% { transform: translate( -4px,-148px) scale(1.50) rotate(-2deg);  opacity: 0;    }
 }
 @keyframes steamC {
-  0%   { transform: translate(  0px,   0px) scale(0.35) rotate(0deg);   opacity: 0;    }
-  10%  { transform: translate(  3px, -20px) scale(0.50) rotate( 2deg);  opacity: 0.30; }
-  25%  { transform: translate(-8px,  -50px) scale(0.72) rotate(-4deg);  opacity: 0.36; }
-  42%  { transform: translate( 10px, -82px) scale(0.92) rotate( 6deg);  opacity: 0.24; }
-  60%  { transform: translate( -7px,-116px) scale(1.15) rotate(-5deg);  opacity: 0.13; }
-  80%  { transform: translate(  5px,-148px) scale(1.38) rotate( 2deg);  opacity: 0.05; }
-  100% { transform: translate( -2px,-180px) scale(1.60) rotate(-1deg);  opacity: 0;    }
+  0%   { transform: translate(  0px,   0px) scale(0.40) rotate(0deg);   opacity: 0;    }
+  12%  { transform: translate(  4px, -24px) scale(0.62) rotate( 2deg);  opacity: 0.70; }
+  38%  { transform: translate( -9px, -65px) scale(0.88) rotate(-5deg);  opacity: 0.60; }
+  68%  { transform: translate( 11px,-110px) scale(1.18) rotate( 6deg);  opacity: 0.28; }
+  100% { transform: translate( -3px,-158px) scale(1.52) rotate(-3deg);  opacity: 0;    }
 }
 
 /* ── COLD: overlay de escarcha y gotas ───────────────────── */
@@ -883,28 +877,28 @@
   will-change: transform, opacity;
 }
 
-/* Duración más lenta y suave — la condensación escurre lento */
-.coldDropS { animation: dropS 5.5s ease-in infinite; }
-.coldDropM { animation: dropM 6.8s ease-in infinite; }
-.coldDropL { animation: dropL 8.0s ease-in infinite; }
+/* Duración intermedia — gotas visibles pero no frenéticas */
+.coldDropS { animation: dropS 3.8s ease-in infinite; }
+.coldDropM { animation: dropM 4.8s ease-in infinite; }
+.coldDropL { animation: dropL 6.0s ease-in infinite; }
 
 @keyframes dropS {
-  0%   { transform: translateY(-4px); opacity: 0;   }
-  6%   { opacity: 0.72; }
-  80%  { opacity: 0.40; }
-  100% { transform: translateY(85px);  opacity: 0;  }
+  0%   { transform: translateY(-4px); opacity: 0;    }
+  5%   { opacity: 0.82; }
+  85%  { opacity: 0.55; }
+  100% { transform: translateY(85px);  opacity: 0;   }
 }
 @keyframes dropM {
-  0%   { transform: translateY(-4px); opacity: 0;   }
-  6%   { opacity: 0.68; }
-  80%  { opacity: 0.38; }
-  100% { transform: translateY(120px); opacity: 0;  }
+  0%   { transform: translateY(-4px); opacity: 0;    }
+  5%   { opacity: 0.78; }
+  85%  { opacity: 0.50; }
+  100% { transform: translateY(120px); opacity: 0;   }
 }
 @keyframes dropL {
-  0%   { transform: translateY(-4px); opacity: 0;   }
-  6%   { opacity: 0.62; }
-  80%  { opacity: 0.32; }
-  100% { transform: translateY(160px); opacity: 0;  }
+  0%   { transform: translateY(-4px); opacity: 0;    }
+  5%   { opacity: 0.72; }
+  85%  { opacity: 0.44; }
+  100% { transform: translateY(160px); opacity: 0;   }
 }
 
 
