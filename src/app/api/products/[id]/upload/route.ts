@@ -71,7 +71,10 @@ export async function POST(
 
     try {
       const sharp  = (await import('sharp')).default
-      outputBuffer = await sharp(raw).webp({ quality: 85 }).toBuffer()
+      outputBuffer = await sharp(raw)
+        .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer()
     } catch {
       // sharp no disponible — conservar formato original
       const mimeExt: Record<string, string> = {

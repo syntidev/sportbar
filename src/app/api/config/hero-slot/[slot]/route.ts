@@ -36,15 +36,12 @@ export async function POST(
     await ensureDir()
     let buf: Buffer = Buffer.from(await file.arrayBuffer()) as Buffer
 
-    if (buf.byteLength > MAX_BYTES) {
-      buf = await sharp(buf)
-        .resize({ width: 1440, withoutEnlargement: true })
-        .webp({ quality: 82 })
-        .toBuffer()
-    } else {
-      // Always convert to webp for consistency
-      buf = await sharp(buf).webp({ quality: 88 }).toBuffer()
-    }
+    // Siempre redimensionar a máx 1200px y convertir a WebP
+    // — fotos Unsplash de 6 MB quedan en ~80–120 KB
+    buf = await sharp(buf)
+      .resize({ width: 1200, withoutEnlargement: true })
+      .webp({ quality: buf.byteLength > 1.5 * 1024 * 1024 ? 76 : 82 })
+      .toBuffer()
 
     const filename = `slot_${slot}.webp`
     await writeFile(path.join(UPLOAD_DIR, filename), buf)
