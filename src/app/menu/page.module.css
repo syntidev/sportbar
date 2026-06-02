@@ -594,25 +594,34 @@
   display: flex; flex-direction: column;
   overflow: hidden;
 }
+/* Área de imagen — respira como en Stitch: 42dvh, imagen flota */
 .prodModalImgWrap {
   position: relative; width: 100%;
-  aspect-ratio: 4/3; overflow: hidden;
-  border-radius: 0; flex: none;
-  max-height: 260px; min-height: 180px;
+  height: 42dvh; min-height: 200px; max-height: 340px;
+  overflow: visible;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 24px;
 }
+/* object-contain: muestra el producto completo, sin recorte */
 .prodModalImg {
-  width: 100%; height: 100%;
-  object-fit: cover; display: block;
+  max-width: 100%; max-height: 100%;
+  object-fit: contain; display: block;
+  filter: drop-shadow(0 20px 32px rgba(0,0,0,0.7)) drop-shadow(0 6px 16px rgba(0,0,0,0.5));
+  position: relative; z-index: 1;
 }
 .prodModalImgEmpty {
-  width: 100%; height: 100%;
+  width: 160px; height: 160px; border-radius: 50%;
   background: radial-gradient(circle at 38% 32%, #38291a, #15110d);
   display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
 }
+/* Glow atmosférico detrás del producto (efecto Stitch) */
 .prodModalImgGrad {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 72px;
-  background: linear-gradient(to top, rgba(12,16,12,0.92), transparent);
-  pointer-events: none;
+  position: absolute; inset: 15% 5% 0;
+  background: radial-gradient(ellipse at 50% 90%, rgba(245,166,35,0.14) 0%, transparent 68%);
+  filter: blur(24px);
+  pointer-events: none; z-index: 0;
 }
 .prodModalClose {
   position: absolute; top: 12px; right: 12px;
@@ -632,12 +641,13 @@
   box-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
 .prodModalBody {
-  padding: 14px 20px 6px; overflow-y: auto; flex: 1;
+  padding: 16px 20px 6px; overflow-y: auto; flex: 1;
 }
 .prodModalBody::-webkit-scrollbar { display: none; }
+/* Sora headline: peso visual de producto */
 .prodModalName {
-  font-family: var(--font-display); font-size: 28px;
-  letter-spacing: .02em; line-height: 1; color: var(--color-text);
+  font-family: var(--font-sora, var(--font-display)); font-size: 26px;
+  font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; color: var(--color-text);
 }
 .prodModalDesc {
   font-size: 13.5px; color: var(--color-text-muted);

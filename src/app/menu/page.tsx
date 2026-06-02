@@ -247,23 +247,29 @@ function ProductModal({
       >
         <div className={styles.handle} />
 
-        {/* Product image — parallax scale on open */}
+        {/* Product image — burger-float: entra desde abajo, flota con drop-shadow */}
         <div className={styles.prodModalImgWrap}>
+          {/* Glow atmosférico detrás del producto */}
+          <div className={styles.prodModalImgGrad} />
           {product.image_url ? (
             <motion.img
               src={product.image_url}
               alt={product.name}
               className={styles.prodModalImg}
-              initial={{ scale: 1.1 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ scale: 0.78, y: 60, opacity: 0 }}
+              animate={{ scale: 1.05, y: -10, opacity: 1 }}
+              transition={{ duration: 0.8, ease: [0.17, 0.67, 0.83, 0.67], delay: 0.05 }}
             />
           ) : (
-            <div className={styles.prodModalImgEmpty}>
+            <motion.div
+              className={styles.prodModalImgEmpty}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
               <CatPlaceholder category={product.category} size={80} opacity={0.3} />
-            </div>
+            </motion.div>
           )}
-          <div className={styles.prodModalImgGrad} />
           <button className={styles.prodModalClose} onClick={onClose} aria-label="Cerrar">
             <X size={18} />
           </button>
