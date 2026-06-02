@@ -240,7 +240,8 @@ export default function MarketingPage() {
       const res  = await fetch(`/api/config/hero-slot/${slot}`, { method: "POST", body: fd })
       const data = await res.json() as { success: boolean; url?: string; error?: string }
       if (data.success && data.url) {
-        setSlots(prev => prev.map((s, i) => i === idx ? { ...s, url: data.url + "&r=" + Date.now(), loading: false } : s))
+        // data.url ya incluye ?v=timestamp desde la API — no agregar otro cache-buster
+        setSlots(prev => prev.map((s, i) => i === idx ? { ...s, url: data.url!, loading: false } : s))
         showToast(`Slot ${slot} guardado`, "ok")
       } else {
         showToast(data.error ?? "Error", "err")
@@ -263,9 +264,11 @@ export default function MarketingPage() {
         showToast(`Slot ${slot} eliminado`, "ok")
       } else {
         setSlots(prev => prev.map((s, i) => i === idx ? { ...s, loading: false } : s))
+        showToast(`Error al eliminar slot ${slot}`, "err")
       }
     } catch {
       setSlots(prev => prev.map((s, i) => i === idx ? { ...s, loading: false } : s))
+      showToast("Error de red al eliminar", "err")
     }
   }
 

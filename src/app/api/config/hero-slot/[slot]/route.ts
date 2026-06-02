@@ -46,14 +46,17 @@ export async function POST(
     const filename = `slot_${slot}.webp`
     await writeFile(path.join(UPLOAD_DIR, filename), buf)
 
+    // Incluir version en la URL guardada en DB para que cada reload use URL única
+    // y el browser no sirva la imagen anterior del cache
+    const urlWithVersion = `/uploads/hero/${filename}?v=${Date.now()}`
     const key = `hero_slot_${slot}`
     await prisma.config.upsert({
       where:  { key },
-      create: { key, value: `/uploads/hero/${filename}` },
-      update: { value: `/uploads/hero/${filename}` },
+      create: { key, value: urlWithVersion },
+      update: { value: urlWithVersion },
     })
 
-    return NextResponse.json({ success: true, url: `/uploads/hero/${filename}?t=${Date.now()}` })
+    return NextResponse.json({ success: true, url: urlWithVersion })
   } catch (err) {
     console.error('hero-slot upload:', err)
     return NextResponse.json({ success: false, error: 'Error al subir imagen' }, { status: 500 })
