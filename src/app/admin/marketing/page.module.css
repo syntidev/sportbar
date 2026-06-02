@@ -339,3 +339,65 @@
 }
 .btnDownloadSvg:hover:not(:disabled) { background: var(--color-surface-3, #22281f); color: var(--color-text); }
 .btnDownloadSvg:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Splash Image section ────────────────────────────────────────────── */
+
+.splashUploadArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 160px;
+  border: 2px dashed var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  padding: 24px;
+  text-align: center;
+}
+.splashUploadArea:hover { border-color: var(--color-brand); }
+.splashUploadAreaOver  { border-color: var(--color-brand) !important; background: rgba(245,166,35,.07) !important; }
+
+.splashPreviewWrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 320px;
+  margin: 0 auto;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+.splashPreviewImg {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+  max-height: 240px;
+  object-fit: contain;
+  /* checkered bg to show transparency */
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,.06) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,.06) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,.06) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.06) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+.splashPreviewActions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.splashHint {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+.splashHintStrong { color: var(--color-brand); font-weight: 700; }
+
+.splashEmptyIcon  { color: var(--color-text-muted); }
+.splashEmptyLabel { font-size: 13px; font-weight: 600; color: var(--color-text-muted); }
+.splashEmptyHint  { font-size: 11px; color: var(--color-text-muted); opacity: .7; }

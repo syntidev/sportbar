@@ -12,10 +12,7 @@ export async function GET() {
       url:  map.get(`hero_slot_${n}`)        ?? null,
       type: map.get(`hero_slot_${n}_type`)   ?? 'none',
     }))
-    return NextResponse.json(
-      { success: true, slots },
-      { headers: { 'Cache-Control': 'no-store' } },
-    )
+    return NextResponse.json({ success: true, slots })
   } catch {
     return NextResponse.json({ success: false, error: 'Error' }, { status: 500 })
   }

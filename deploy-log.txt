@@ -1,0 +1,156 @@
+remote: error: GH013: Repository rule violations found for refs/heads/main.        
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   —————————————————————————————————————————        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push        
+remote:             
+remote:             
+remote:       —— GCP API Key Bound to a Service Account ————————————        
+remote:        locations:        
+remote:          - commit: ddcbe3d50725803dce51ca79c50de5311e6748bf        
+remote:            path: .claude/settings.local.json:45        
+remote:          - commit: ddcbe3d50725803dce51ca79c50de5311e6748bf        
+remote:            path: .claude/settings.local.json:48        
+remote:          - commit: ddcbe3d50725803dce51ca79c50de5311e6748bf        
+remote:            path: .claude/settings.local.json:51        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/syntidev/sportbar/security/secret-scanning/unblock-secret/3EWEMT8EScvwJ5ZW2DOZYfIcv7R        
+remote:             
+remote: 
+remote: 
+To https://github.com/syntidev/sportbar.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/syntidev/sportbar.git'
+--- SSH deploy --- 
+Already up to date.
+
+> SportBar@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/63) ...
+   Generating static pages (15/63) 
+   Generating static pages (31/63) 
+   Generating static pages (47/63) 
+ ✓ Generating static pages (63/63)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    7.3 kB          149 kB
+├ ○ /_not-found                          880 B          88.8 kB
+├ ○ /admin                               4.14 kB         150 kB
+├ ○ /admin/analytics                     114 kB          202 kB
+├ ○ /admin/caja                          4.42 kB         129 kB
+├ ○ /admin/config                        8.97 kB         151 kB
+├ ○ /admin/equipo                        6.94 kB        94.9 kB
+├ ○ /admin/estructura                    7.88 kB        95.8 kB
+├ ○ /admin/inventario                    3.66 kB        91.6 kB
+├ ○ /admin/marketing                     6.23 kB        94.2 kB
+├ ○ /admin/menu                          7.98 kB        95.9 kB
+├ ○ /admin/partido                       2.41 kB         145 kB
+├ ƒ /admin/partido/[id]                  19.9 kB         165 kB
+├ ○ /admin/perfil                        8.33 kB         150 kB
+├ ○ /admin/simulator                     2.43 kB        90.4 kB
+├ ○ /admin/turno                         3.34 kB         145 kB
+├ ○ /api/analytics/data                  0 B                0 B
+├ ƒ /api/analytics/track                 0 B                0 B
+├ ƒ /api/auth/me                         0 B                0 B
+├ ƒ /api/auth/pin                        0 B                0 B
+├ ƒ /api/auth/session                    0 B                0 B
+├ ○ /api/caja                            0 B                0 B
+├ ○ /api/categories                      0 B                0 B
+├ ƒ /api/config                          0 B                0 B
+├ ƒ /api/config/business                 0 B                0 B
+├ ƒ /api/config/hero-slot/[slot]         0 B                0 B
+├ ○ /api/config/hero-slots               0 B                0 B
+├ ƒ /api/config/logo                     0 B                0 B
+├ ƒ /api/config/payment-data             0 B                0 B
+├ ƒ /api/cron/bcv                        0 B                0 B
+├ ƒ /api/currency                        0 B                0 B
+├ ƒ /api/currency/manual                 0 B                0 B
+├ ƒ /api/inventory                       0 B                0 B
+├ ƒ /api/kds                             0 B                0 B
+├ ƒ /api/kds/bump                        0 B                0 B
+├ ƒ /api/kds/despacho                    0 B                0 B
+├ ƒ /api/kds/routing                     0 B                0 B
+├ ƒ /api/orders                          0 B                0 B
+├ ƒ /api/orders/[id]/cancel              0 B                0 B
+├ ƒ /api/orders/[id]/claim               0 B                0 B
+├ ƒ /api/orders/[id]/status              0 B                0 B
+├ ƒ /api/orders/[id]/ticket              0 B                0 B
+├ ƒ /api/orders/by-code/[code]           0 B                0 B
+├ ○ /api/partido                         0 B                0 B
+├ ƒ /api/partido/[id]                    0 B                0 B
+├ ƒ /api/payment-methods                 0 B                0 B
+├ ƒ /api/payment-methods/[id]            0 B                0 B
+├ ƒ /api/payment-methods/[id]/toggle     0 B                0 B
+├ ƒ /api/payment-methods/reorder         0 B                0 B
+├ ƒ /api/products                        0 B                0 B
+├ ƒ /api/products/[id]                   0 B                0 B
+├ ƒ /api/products/[id]/upload            0 B                0 B
+├ ƒ /api/products/import                 0 B                0 B
+├ ƒ /api/qr/download                     0 B                0 B
+├ ƒ /api/qr/generate                     0 B                0 B
+├ ƒ /api/simulate/control                0 B                0 B
+├ ƒ /api/simulate/run                    0 B                0 B
+├ ○ /api/simulate/status                 0 B                0 B
+├ ƒ /api/simulate/stop                   0 B                0 B
+├ ƒ /api/terminals                       0 B                0 B
+├ ƒ /api/terminals/[id]                  0 B                0 B
+├ ƒ /api/turno                           0 B                0 B
+├ ƒ /api/users                           0 B                0 B
+├ ƒ /api/users/[id]                      0 B                0 B
+├ ƒ /api/venues                          0 B                0 B
+├ ƒ /api/venues/[id]                     0 B                0 B
+├ ƒ /api/venues/[id]/payment-methods     0 B                0 B
+├ ƒ /api/venues/[id]/users               0 B                0 B
+├ ƒ /api/venues/[id]/zones               0 B                0 B
+├ ƒ /api/zones                           0 B                0 B
+├ ƒ /api/zones/[id]                      0 B                0 B
+├ ○ /kds/bar                             6.18 kB         103 kB
+├ ○ /kds/cocina                          4.52 kB        92.5 kB
+├ ○ /kds/despacho                        3.22 kB         155 kB
+├ ○ /login                               4 kB            137 kB
+├ ○ /menu                                69.4 kB         221 kB
+├ ƒ /pedido/[code]                       3.49 kB        91.5 kB
+├ ○ /pos/cobrar                          7.58 kB         150 kB
+├ ○ /pos/comandas                        5.01 kB         102 kB
+└ ○ /pos/nueva-orden                     5.91 kB         166 kB
++ First Load JS shared by all            88 kB
+  ├ chunks/2117-7f1f231e6bafb727.js      31.9 kB
+  ├ chunks/fd9d1056-2cfa95adc0565b0e.js  53.6 kB
+  └ other shared chunks (total)          2.42 kB
+
+
+ƒ Middleware                             32.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [sportbar](ids: [ 0 ])
+[PM2] [sportbar](0) ✓
+┌────┬─────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name        │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ sportbar    │ default     │ N/A     │ fork    │ 956334   │ 0s     │ 472  │ online    │ 0%       │ 19.6mb   │ root     │ disabled │
+└────┴─────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+┌────┬─────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name        │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ sportbar    │ default     │ N/A     │ fork    │ 956334   │ 0s     │ 472  │ online    │ 0%       │ 56.0mb   │ root     │ disabled │
+└────┴─────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘

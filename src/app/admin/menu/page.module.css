@@ -256,15 +256,21 @@
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prodDesc {
   font-size: 0.72rem;
   color: var(--color-text-muted);
   margin-top: 2px;
-  white-space: nowrap;
+  /* 2-line clamp */
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 260px;
 }
 

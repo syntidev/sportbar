@@ -224,6 +224,9 @@
   font-weight: 700;
   color: var(--color-text-muted);
   letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ─── Card footer ────────────────────────────────────── */
@@ -474,7 +477,7 @@
 
 .btnCancel {
   flex: 1;
-  height: 44px;
+  min-height: 56px;
   border-radius: 11px;
   background: color-mix(in srgb, var(--color-text) 6%, transparent);
   color: var(--color-text-muted);
@@ -489,7 +492,7 @@
 
 .btnSave {
   flex: 2;
-  height: 44px;
+  min-height: 56px;
   border-radius: 11px;
   background: var(--color-primary);
   color: var(--color-text);

@@ -185,7 +185,7 @@ function SlotEffect({ type }: { type: SlotEffectType }) {
 }
 
 // ── SplashScreen ──────────────────────────────────────────────────────────────
-function SplashScreen({ onDone }: { onDone: () => void }) {
+function SplashScreen({ onDone, splashUrl }: { onDone: () => void; splashUrl: string | null }) {
   useEffect(() => {
     const t = setTimeout(onDone, 2500);
     return () => clearTimeout(t);
@@ -210,38 +210,35 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
         transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       />
 
-      {/* Hero hamburger — dramatic scale+float entrance */}
-      <motion.div
-        className={styles.splashImgWrap}
-        initial={{ y: 100, scale: 0.78, opacity: 0 }}
-        animate={{ y: 0, scale: 1, opacity: 1 }}
-        transition={{ type: "spring", damping: 18, stiffness: 140, delay: 0.1 }}
-      >
-        <motion.img
-          src="/uploads/menu-demo/hamburguesa-splash.png"
-          alt="Hamburguesa Sport Bar"
-          className={styles.splashImg}
-          animate={{ y: [0, -12, 0] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          onError={(e) => {
-            const img = e.target as HTMLImageElement;
-            img.src = "/logo-color.png";
-            img.style.borderRadius = "50%";
-          }}
-        />
-        {/* Pulsing ring */}
+      {/* Hero image — dinámica desde config o ninguna si no está configurada */}
+      {splashUrl && (
         <motion.div
-          className={styles.splashRing}
-          animate={{ scale: [1, 1.14, 1], opacity: [0.28, 0.58, 0.28] }}
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        {/* Second ring, offset */}
-        <motion.div
-          className={styles.splashRing2}
-          animate={{ scale: [1.15, 1, 1.15], opacity: [0.12, 0.28, 0.12] }}
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-        />
-      </motion.div>
+          className={styles.splashImgWrap}
+          initial={{ y: 100, scale: 0.78, opacity: 0 }}
+          animate={{ y: 0, scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 18, stiffness: 140, delay: 0.1 }}
+        >
+          <motion.img
+            src={splashUrl}
+            alt="Sport Bar"
+            className={styles.splashImg}
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          />
+          {/* Pulsing ring */}
+          <motion.div
+            className={styles.splashRing}
+            animate={{ scale: [1, 1.14, 1], opacity: [0.28, 0.58, 0.28] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          {/* Second ring, offset */}
+          <motion.div
+            className={styles.splashRing2}
+            animate={{ scale: [1.15, 1, 1.15], opacity: [0.12, 0.28, 0.12] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+          />
+        </motion.div>
+      )}
 
       {/* Brand text */}
       <motion.div
@@ -1350,15 +1347,26 @@ function MenuContent() {
 export default function MenuPublicoPage() {
   const [ready,      setReady]      = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [splashUrl,  setSplashUrl]  = useState<string | null>(null);
 
   useEffect(() => {
+    // Determinar si mostrar splash
+    let shouldShow = false;
     try {
-      const shown = sessionStorage.getItem("sb-splash") === "1";
-      setShowSplash(!shown);
+      shouldShow = sessionStorage.getItem("sb-splash") !== "1";
+      setShowSplash(shouldShow);
     } catch {
       setShowSplash(false);
     }
     setReady(true);
+
+    // Cargar URL dinámica del splash desde config
+    fetch("/api/config/splash")
+      .then(r => r.json())
+      .then((d: { success: boolean; url: string | null }) => {
+        if (d.success && d.url) setSplashUrl(d.url);
+      })
+      .catch(() => {});
   }, []);
 
   const onSplashDone = useCallback(() => {
@@ -1373,7 +1381,7 @@ export default function MenuPublicoPage() {
     <Suspense>
       <AnimatePresence mode="wait">
         {showSplash ? (
-          <SplashScreen key="splash" onDone={onSplashDone} />
+          <SplashScreen key="splash" onDone={onSplashDone} splashUrl={splashUrl} />
         ) : (
           <MenuContent key="menu" />
         )}

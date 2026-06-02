@@ -1,8 +1,12 @@
+/**
+ * Wrapper para hero-slot que delega el procesamiento de imagen a src/lib/media.ts
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir, unlink, readdir } from 'fs/promises'
+import { readdir, unlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
-import sharp from 'sharp'
+import { uploadMedia } from '@/lib/media'
 import { prisma } from '@/lib/prisma'
 
 export const runtime = 'nodejs'
@@ -10,26 +14,23 @@ export const runtime = 'nodejs'
 const VALID = [1, 2, 3, 4, 5]
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'hero')
 
-async function ensureDir() {
-  if (!existsSync(UPLOAD_DIR)) await mkdir(UPLOAD_DIR, { recursive: true })
-}
-
 // Elimina archivos previos del slot (slot_N_*.webp) excepto el nuevo
 async function cleanOldFiles(slot: number, keepFilename: string) {
   try {
-    const files = await readdir(UPLOAD_DIR)
+    const files   = await readdir(UPLOAD_DIR)
     const pattern = new RegExp(`^slot_${slot}_\\d+\\.webp$`)
     await Promise.all(
       files
         .filter(f => pattern.test(f) && f !== keepFilename)
         .map(f => unlink(path.join(UPLOAD_DIR, f)).catch(() => {})),
     )
-    // Limpiar el nombre legado fijo slot_N.webp si existía
+    // Limpiar nombre legado fijo slot_N.webp
     const legacy = path.join(UPLOAD_DIR, `slot_${slot}.webp`)
     if (existsSync(legacy)) await unlink(legacy).catch(() => {})
   } catch { /* no crítico */ }
 }
 
+// ── POST — subir imagen ────────────────────────────────────────────────────────
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slot: string }> },
@@ -48,23 +49,13 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Solo imágenes' }, { status: 400 })
     }
 
-    await ensureDir()
-    let buf: Buffer = Buffer.from(await file.arrayBuffer()) as Buffer
+    // Delegar procesamiento y almacenamiento a media.ts
+    const url      = await uploadMedia(file, 'hero-slot', slot)
+    const filename = path.basename(url) // slot_N_ts.webp
 
-    buf = await sharp(buf)
-      .resize({ width: 1200, withoutEnlargement: true })
-      .webp({ quality: buf.byteLength > 1.5 * 1024 * 1024 ? 76 : 82 })
-      .toBuffer()
-
-    // Nombre único con timestamp — el browser SIEMPRE ve una URL nueva
-    const ts       = Date.now()
-    const filename = `slot_${slot}_${ts}.webp`
-    await writeFile(path.join(UPLOAD_DIR, filename), buf)
-
-    // Borrar archivos previos de este slot
+    // Borrar versiones anteriores de este slot
     await cleanOldFiles(slot, filename)
 
-    const url = `/uploads/hero/${filename}`
     const key = `hero_slot_${slot}`
     await prisma.config.upsert({
       where:  { key },
@@ -74,11 +65,13 @@ export async function POST(
 
     return NextResponse.json({ success: true, url })
   } catch (err) {
-    console.error('hero-slot upload:', err)
-    return NextResponse.json({ success: false, error: 'Error al subir imagen' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : 'Error al subir imagen'
+    console.error('[hero-slot POST]', err)
+    return NextResponse.json({ success: false, error: msg }, { status: 500 })
   }
 }
 
+// ── DELETE ─────────────────────────────────────────────────────────────────────
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ slot: string }> },
@@ -92,7 +85,7 @@ export async function DELETE(
   try {
     // Borrar todos los archivos de este slot (nombre dinámico)
     try {
-      const files = await readdir(UPLOAD_DIR)
+      const files   = await readdir(UPLOAD_DIR)
       const pattern = new RegExp(`^slot_${slot}(_\\d+)?\\.webp$`)
       await Promise.all(
         files
@@ -104,12 +97,12 @@ export async function DELETE(
     await prisma.config.deleteMany({ where: { key: `hero_slot_${slot}` } })
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('hero-slot delete:', err)
+    console.error('[hero-slot DELETE]', err)
     return NextResponse.json({ success: false, error: 'Error al eliminar slot' }, { status: 500 })
   }
 }
 
-// PATCH /api/config/hero-slot/[slot] → save only the effect type (hot|cold|none)
+// ── PATCH — guardar solo el tipo de efecto (hot|cold|none) ────────────────────
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slot: string }> },
@@ -130,7 +123,7 @@ export async function PATCH(
     })
     return NextResponse.json({ success: true, type })
   } catch (err) {
-    console.error('hero-slot patch type:', err)
+    console.error('[hero-slot PATCH]', err)
     return NextResponse.json({ success: false, error: 'Error' }, { status: 500 })
   }
 }

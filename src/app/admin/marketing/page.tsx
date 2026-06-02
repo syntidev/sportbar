@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
-  Download, FileImage, Flame, Image as ImageIcon, Minus, QrCode,
+  Download, FileImage, Flame, ImageIcon, Layers, Minus, QrCode,
   RefreshCw, Snowflake, Trash2, Upload, X, ZoomIn,
 } from "lucide-react"
 import styles from "./page.module.css"
@@ -80,6 +80,12 @@ export default function MarketingPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
 
+  // Splash state
+  const [splashUrl,     setSplashUrl]     = useState<string | null>(null)
+  const [splashLoading, setSplashLoading] = useState(false)
+  const [splashDragOver, setSplashDragOver] = useState(false)
+  const splashFileRef = useRef<HTMLInputElement | null>(null)
+
   // QR sticker state
   const [zona,       setZona]       = useState<Zona>("general")
   const [qrColor,    setQrColor]    = useState<string>(COLOR_PALETTE[0].value)
@@ -101,6 +107,16 @@ export default function MarketingPage() {
           url:  d.slots[i]?.url  ?? null,
           type: (['hot','cold','none'].includes(d.slots[i]?.type) ? d.slots[i].type : 'none') as SlotEffectType,
         })))
+      })
+      .catch(() => {})
+  }, [])
+
+  // ── Load splash ──────────────────────────────────────────────────────
+  useEffect(() => {
+    fetch("/api/config/splash")
+      .then(r => r.json())
+      .then((d: { success: boolean; url: string | null }) => {
+        if (d.success) setSplashUrl(d.url)
       })
       .catch(() => {})
   }, [])
@@ -298,6 +314,46 @@ export default function MarketingPage() {
     } catch { /* silencioso — el estado visual ya cambió */ }
   }
 
+  // ── Splash handlers ──────────────────────────────────────────────────
+  const uploadSplash = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) { showToast("Solo imágenes", "err"); return }
+    setSplashLoading(true)
+    try {
+      const fd = new FormData()
+      fd.append("image", file)
+      const res  = await fetch("/api/config/splash", { method: "POST", body: fd })
+      const data = await res.json() as { success: boolean; url?: string; error?: string }
+      if (data.success && data.url) {
+        setSplashUrl(data.url)
+        showToast("Splash guardado", "ok")
+      } else {
+        showToast(data.error ?? "Error al subir splash", "err")
+      }
+    } catch {
+      showToast("Error de red", "err")
+    } finally {
+      setSplashLoading(false)
+    }
+  }, [])
+
+  async function deleteSplash() {
+    setSplashLoading(true)
+    try {
+      const res  = await fetch("/api/config/splash", { method: "DELETE" })
+      const data = await res.json() as { success: boolean }
+      if (data.success) {
+        setSplashUrl(null)
+        showToast("Splash eliminado", "ok")
+      } else {
+        showToast("Error al eliminar splash", "err")
+      }
+    } catch {
+      showToast("Error de red", "err")
+    } finally {
+      setSplashLoading(false)
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -396,6 +452,87 @@ export default function MarketingPage() {
           ))}
         </div>
         <p className={styles.slotHint}>Arte recomendado: <strong>1440 × 400 px</strong> — Autoplay cada 4 segundos.</p>
+      </section>
+
+      {/* ── IMAGEN SPLASH ───────────────────────────────────────────── */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <Layers size={18} className={styles.sectionIcon} />
+          <div>
+            <h2 className={styles.sectionTitle}>Imagen Splash</h2>
+            <p className={styles.sectionSub}>Aparece al abrir el menú por primera vez • Reemplaza la imagen por defecto</p>
+          </div>
+        </div>
+
+        {splashUrl && !splashLoading ? (
+          <>
+            <div className={styles.splashPreviewWrap}>
+              <img
+                src={splashUrl}
+                alt="Splash actual"
+                className={styles.splashPreviewImg}
+              />
+            </div>
+            <div className={styles.splashPreviewActions}>
+              <button
+                className={styles.slotAction}
+                onClick={() => setPreview(splashUrl)}
+                title="Ver"
+              >
+                <ZoomIn size={14} />
+              </button>
+              <button
+                className={styles.slotAction}
+                onClick={() => splashFileRef.current?.click()}
+                title="Reemplazar"
+              >
+                <Upload size={14} />
+              </button>
+              <button
+                className={`${styles.slotAction} ${styles.slotDelete}`}
+                onClick={() => void deleteSplash()}
+                title="Eliminar"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              ref={splashFileRef}
+              className={styles.fileInput}
+              onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSplash(f); e.target.value = "" }}
+            />
+          </>
+        ) : splashLoading ? (
+          <div className={styles.slotSpinner}><RefreshCw size={24} className={styles.spin} /></div>
+        ) : (
+          <>
+            <div
+              className={`${styles.splashUploadArea} ${splashDragOver ? styles.splashUploadAreaOver : ""}`}
+              onDragOver={e => { e.preventDefault(); setSplashDragOver(true) }}
+              onDragLeave={() => setSplashDragOver(false)}
+              onDrop={e => { e.preventDefault(); setSplashDragOver(false); const f = e.dataTransfer.files[0]; if (f) void uploadSplash(f) }}
+              onClick={() => splashFileRef.current?.click()}
+            >
+              <Upload size={32} className={styles.splashEmptyIcon} />
+              <span className={styles.splashEmptyLabel}>Arrastra o haz click para subir</span>
+              <span className={styles.splashEmptyHint}>PNG · JPG · WebP · AVIF — máx 5 MB</span>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              ref={splashFileRef}
+              className={styles.fileInput}
+              onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSplash(f); e.target.value = "" }}
+            />
+          </>
+        )}
+
+        <p className={styles.splashHint}>
+          <span className={styles.splashHintStrong}>Recomendado:</span>{" "}
+          PNG con fondo transparente • mín <strong>800 × 800 px</strong> • la transparencia se preserva automáticamente
+        </p>
       </section>
 
       {/* ── QR STICKER BUILDER ──────────────────────────────────────── */}
