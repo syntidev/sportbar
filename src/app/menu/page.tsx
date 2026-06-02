@@ -684,16 +684,16 @@ function MenuContent() {
     return products.filter(p => cats.includes(p.category));
   }, [activeGroup, products, allGroupCats]);
 
-  // Hero — first is_featured in active group, fallback first product
-  const hero = useMemo(
-    () => activeGroupProducts.find(p => p.is_featured) ?? activeGroupProducts[0] ?? null,
+  // Pinned duo — primeros 2 productos con estrella, lado a lado
+  const pinnedDuo = useMemo(
+    () => activeGroupProducts.filter(p => p.is_featured).slice(0, 2),
     [activeGroupProducts],
   );
 
-  // Featured rail — is_featured products excluding hero, max 6
+  // Featured rail — productos con estrella más allá del duo, max 6
   const featured = useMemo(
-    () => activeGroupProducts.filter(p => p.is_featured && p.id !== hero?.id).slice(0, 6),
-    [activeGroupProducts, hero],
+    () => activeGroupProducts.filter(p => p.is_featured).slice(2, 8),
+    [activeGroupProducts],
   );
 
   // Subcategory sections within the active group
@@ -947,45 +947,19 @@ function MenuContent() {
           style={{ paddingBottom: cartCount > 0 ? 110 : 24 }}
         >
 
-          {/* Hero — Ken Burns effect on image */}
-          {hero && (
-            <div className={styles.hero}>
-              <div className={styles.heroHalo} />
-              <div className={styles.heroWm}>
-                {hero.name.split(" ")[0].toUpperCase()}
-              </div>
-              <div className={styles.heroTop}>
-                <div>
-                  <div className={styles.heroPrice}>
-                    REF {Number(hero.price_usd).toFixed(2)}
-                  </div>
-                  <div className={styles.heroPriceBs}>
-                    {formatBs(Number(hero.price_usd) * rate)}
-                  </div>
-                </div>
-                <span className={styles.socialPill}>
-                  <Flame size={13} color="var(--color-brand)" />
-                  {turno.partido_nombre}
-                </span>
-              </div>
-              <div className={styles.heroPhoto}>
-                {hero.image_url
-                  ? <img src={hero.image_url} alt={hero.name} className={styles.heroImg} />
-                  : <div className={styles.heroImgEmpty}>
-                      <Beef size={90} color="rgba(240,245,240,0.25)" />
-                    </div>
-                }
-              </div>
-              <div className={styles.heroInfo}>
-                <div className={styles.heroName}>{hero.name}</div>
-                {hero.description && (
-                  <div className={styles.heroDesc}>{hero.description}</div>
-                )}
-                <button className={styles.heroCta} onClick={() => addToCart(hero)}>
-                  <Plus size={22} color="#1a1308" strokeWidth={2.6} />
-                  AGREGAR AL PEDIDO
-                </button>
-              </div>
+          {/* Pinned Duo — los 2 primeros productos con estrella, lado a lado */}
+          {pinnedDuo.length > 0 && (
+            <div className={styles.pinnedDuo}>
+              {pinnedDuo.map(p => (
+                <FeatCard
+                  key={p.id}
+                  p={p}
+                  rate={rate}
+                  qty={cart.get(p.id)?.qty ?? 0}
+                  onAdd={addToCart}
+                  onSelect={openModal}
+                />
+              ))}
             </div>
           )}
 

@@ -112,6 +112,19 @@
 .secHeadT { font-family:var(--font-display); font-size:30px; letter-spacing:.02em; line-height:1; }
 .secHeadN { margin-left:auto; font-size:11px; color:var(--color-text-subtle); }
 
+/* ============ PINNED DUO ============ */
+/* 2 productos destacados lado a lado — reemplaza el hero grande */
+.pinnedDuo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 10px 16px 6px;
+}
+.pinnedDuo .featCard {
+  width: auto;
+  flex: unset;
+}
+
 /* ============ FEATURED RAIL ============ */
 .featRail { display:flex; gap:14px; overflow-x:auto; padding:4px 16px 14px; scrollbar-width:none; }
 .featRail::-webkit-scrollbar { display:none; }
