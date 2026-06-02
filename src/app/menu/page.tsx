@@ -874,44 +874,6 @@ function MenuContent() {
           </div>
         </div>
 
-        {/* Ad banner slider */}
-        {activeSlots.length > 0 && (
-          <div
-              className={styles.adSlider}
-              onTouchStart={onSliderTouchStart}
-              onTouchEnd={onSliderTouchEnd}
-              onMouseDown={onSliderTouchStart}
-              onMouseUp={onSliderTouchEnd}
-            >
-            <div
-              className={styles.adTrack}
-              style={{ transform: `translateX(-${sliderIdx * 100}%)` }}
-            >
-              {activeSlots.map((s, i) => (
-                <div key={s.slot} className={styles.adSlide} style={{ position: 'relative' }}>
-                  <img src={s.url!} alt={`Banner ${i + 1}`} className={styles.adSlideImg} />
-                  <SlotEffect type={s.type} />
-                </div>
-              ))}
-            </div>
-            {activeSlots.length > 1 && (
-              <div className={styles.adDots}>
-                {activeSlots.map((_, i) => (
-                  <button
-                    key={i}
-                    className={styles.adDot + (i === sliderIdx ? " " + styles.adDotActive : "")}
-                    onClick={() => {
-                      setSliderIdx(i);
-                      restartSliderTimer(activeSlots);
-                    }}
-                    aria-label={`Slide ${i + 1}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Group tabs — animated sliding indicator */}
         <nav className={styles.custTabs} ref={navRef}>
           {/* Spring-animated indicator bar */}
@@ -946,6 +908,44 @@ function MenuContent() {
           ref={scrollRef}
           style={{ paddingBottom: cartCount > 0 ? 110 : 24 }}
         >
+
+          {/* Ad banner slider — scrollea con el contenido */}
+          {activeSlots.length > 0 && (
+            <div
+              className={styles.adSlider}
+              onTouchStart={onSliderTouchStart}
+              onTouchEnd={onSliderTouchEnd}
+              onMouseDown={onSliderTouchStart}
+              onMouseUp={onSliderTouchEnd}
+            >
+              <div
+                className={styles.adTrack}
+                style={{ transform: `translateX(-${sliderIdx * 100}%)` }}
+              >
+                {activeSlots.map((s, i) => (
+                  <div key={s.slot} className={styles.adSlide} style={{ position: 'relative' }}>
+                    <img src={s.url!} alt={`Banner ${i + 1}`} className={styles.adSlideImg} />
+                    <SlotEffect type={s.type} />
+                  </div>
+                ))}
+              </div>
+              {activeSlots.length > 1 && (
+                <div className={styles.adDots}>
+                  {activeSlots.map((_, i) => (
+                    <button
+                      key={i}
+                      className={styles.adDot + (i === sliderIdx ? " " + styles.adDotActive : "")}
+                      onClick={() => {
+                        setSliderIdx(i);
+                        restartSliderTimer(activeSlots);
+                      }}
+                      aria-label={`Slide ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Pinned Duo — los 2 primeros productos con estrella, lado a lado */}
           {pinnedDuo.length > 0 && (
