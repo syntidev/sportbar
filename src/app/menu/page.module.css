@@ -775,7 +775,7 @@
   inset: 0;
   pointer-events: none;
   z-index: 3;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ── HOT: glow ámbar sutil en la base ───────────────────── */

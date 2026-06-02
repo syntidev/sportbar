@@ -133,12 +133,12 @@ type WispVariant = 'steamWispA' | 'steamWispB' | 'steamWispC'
 type DropVariant = 'coldDropS'  | 'coldDropM'  | 'coldDropL'
 
 const HOT_WISPS: { left: string; v: WispVariant; delay: string }[] = [
-  { left: '22%', v: 'steamWispB', delay: '0s'    },
-  { left: '33%', v: 'steamWispA', delay: '1.8s'  },
-  { left: '44%', v: 'steamWispC', delay: '0.7s'  },
-  { left: '54%', v: 'steamWispA', delay: '3.1s'  },
-  { left: '63%', v: 'steamWispB', delay: '1.3s'  },
-  { left: '72%', v: 'steamWispC', delay: '4.4s'  },
+  { left: '22%', v: 'steamWispB', delay: '0s'   },
+  { left: '33%', v: 'steamWispA', delay: '0.6s' },
+  { left: '44%', v: 'steamWispC', delay: '1.2s' },
+  { left: '54%', v: 'steamWispA', delay: '0.4s' },
+  { left: '63%', v: 'steamWispB', delay: '1.8s' },
+  { left: '72%', v: 'steamWispC', delay: '0.9s' },
 ]
 
 const COLD_DROPS_DATA: { left: string; w: string; h: string; delay: string; v: DropVariant }[] = [
@@ -585,7 +585,7 @@ function MenuContent() {
     if (slots.length <= 1) return;
     sliderTimer.current = setInterval(() => {
       setSliderIdx(i => (i + 1) % slots.length);
-    }, 4000);
+    }, 7000);
   }, []);
 
   useEffect(() => {
