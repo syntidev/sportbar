@@ -470,6 +470,33 @@
 .portadaToggleText { flex: 1; font-size: 13px; font-weight: 600; color: var(--color-text); }
 .portadaToggleHint { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
 
+/* Separador slot 2 */
+.portadaSlot2Sep {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 4px;
+}
+.portadaSlot2Label {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .09em; color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.portadaSlot2Badge {
+  font-size: 9px; font-weight: 800; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 999px;
+  background: rgba(46,125,50,.18); color: var(--color-primary-light);
+  border: 1px solid rgba(46,125,50,.3);
+  white-space: nowrap;
+}
+.portadaSlot2Line {
+  flex: 1; height: 1px; background: var(--color-border);
+}
+/* Imagen slot 2 — más pequeña que slot 1 */
+.portadaImageBox2 {
+  aspect-ratio: 1;
+  min-height: unset !important;
+  height: 110px !important;
+}
+
 /* Botón guardar config */
 .portadaSaveRow { display: flex; justify-content: flex-end; padding-top: 4px; }
 .portadaSaveBtn {

@@ -81,15 +81,19 @@ export default function MarketingPage() {
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // ── Portada (Splash Screen) state ───────────────────────────────────
-  const [splashProductImage, setSplashProductImage] = useState<string | null>(null)
-  const [splashProductName,  setSplashProductName]  = useState<string>("")
-  const [splashSubtitle,     setSplashSubtitle]     = useState<string>("")
-  const [splashDuration,     setSplashDuration]     = useState<number>(4)
-  const [splashForceReload,  setSplashForceReload]  = useState<boolean>(true)
-  const [splashLoading,      setSplashLoading]      = useState(false)
-  const [splashSaving,       setSplashSaving]       = useState(false)
-  const [splashDragOver,     setSplashDragOver]     = useState(false)
-  const splashFileRef = useRef<HTMLInputElement | null>(null)
+  const [splashProductImage,  setSplashProductImage]  = useState<string | null>(null)
+  const [splashProductImage2, setSplashProductImage2] = useState<string | null>(null)
+  const [splashProductName,   setSplashProductName]   = useState<string>("")
+  const [splashSubtitle,      setSplashSubtitle]      = useState<string>("")
+  const [splashDuration,      setSplashDuration]      = useState<number>(4)
+  const [splashForceReload,   setSplashForceReload]   = useState<boolean>(true)
+  const [splashLoading,       setSplashLoading]       = useState(false)
+  const [splashLoading2,      setSplashLoading2]      = useState(false)
+  const [splashSaving,        setSplashSaving]        = useState(false)
+  const [splashDragOver,      setSplashDragOver]      = useState(false)
+  const [splashDragOver2,     setSplashDragOver2]     = useState(false)
+  const splashFileRef  = useRef<HTMLInputElement | null>(null)
+  const splashFileRef2 = useRef<HTMLInputElement | null>(null)
 
   // QR sticker state
   const [zona,       setZona]       = useState<Zona>("general")
@@ -123,15 +127,17 @@ export default function MarketingPage() {
       .then((d: {
         success: boolean
         config: {
-          productImage: string | null
-          productName: string
-          subtitle: string
+          productImage:  string | null
+          productImage2: string | null
+          productName:   string
+          subtitle:      string
           durationSeconds: number
-          forceReload: boolean
+          forceReload:   boolean
         }
       }) => {
         if (!d.success) return
         setSplashProductImage(d.config.productImage)
+        setSplashProductImage2(d.config.productImage2)
         setSplashProductName(d.config.productName)
         setSplashSubtitle(d.config.subtitle)
         setSplashDuration(d.config.durationSeconds)
@@ -373,6 +379,47 @@ export default function MarketingPage() {
     }
   }
 
+  // ── Slot 2 ────────────────────────────────────────────────────────────
+  const uploadSplash2 = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) { showToast("Solo imágenes", "err"); return }
+    setSplashLoading2(true)
+    try {
+      const fd = new FormData()
+      fd.append("image", file)
+      fd.append("slot", "2")
+      const res  = await fetch("/api/config/splash", { method: "POST", body: fd })
+      const data = await res.json() as { success: boolean; url?: string; error?: string }
+      if (data.success && data.url) {
+        setSplashProductImage2(data.url)
+        showToast("Imagen 2 guardada", "ok")
+      } else {
+        showToast(data.error ?? "Error al subir imagen 2", "err")
+      }
+    } catch {
+      showToast("Error de red", "err")
+    } finally {
+      setSplashLoading2(false)
+    }
+  }, [])
+
+  async function deleteSplash2() {
+    setSplashLoading2(true)
+    try {
+      const res  = await fetch("/api/config/splash?slot=2", { method: "DELETE" })
+      const data = await res.json() as { success: boolean }
+      if (data.success) {
+        setSplashProductImage2(null)
+        showToast("Imagen 2 eliminada", "ok")
+      } else {
+        showToast("Error al eliminar imagen 2", "err")
+      }
+    } catch {
+      showToast("Error de red", "err")
+    } finally {
+      setSplashLoading2(false)
+    }
+  }
+
   async function saveSplashConfig() {
     setSplashSaving(true)
     try {
@@ -551,6 +598,51 @@ export default function MarketingPage() {
             <p className={styles.splashHint}>
               <span className={styles.splashHintStrong}>PNG con fondo transparente</span>{" "}
               para efecto flotante. El sujeto principal debe estar centrado.
+            </p>
+
+            {/* ── Slot 2 — modo slider ─────────────── */}
+            <div className={styles.portadaSlot2Sep}>
+              <span className={styles.portadaSlot2Label}>Imagen 2</span>
+              <span className={styles.portadaSlot2Badge}>SLIDER</span>
+              <div className={styles.portadaSlot2Line} />
+            </div>
+
+            <div
+              className={`${styles.portadaImageBox} ${styles.portadaImageBox2} ${splashDragOver2 ? styles.portadaImageBoxOver : ""}`}
+              onDragOver={e => { e.preventDefault(); setSplashDragOver2(true) }}
+              onDragLeave={() => setSplashDragOver2(false)}
+              onDrop={e => { e.preventDefault(); setSplashDragOver2(false); const f = e.dataTransfer.files[0]; if (f) void uploadSplash2(f) }}
+              onClick={() => !splashProductImage2 && splashFileRef2.current?.click()}
+            >
+              {splashLoading2 ? (
+                <RefreshCw size={20} className={styles.spin} color="var(--color-brand)" />
+              ) : splashProductImage2 ? (
+                <img src={splashProductImage2} alt="Imagen portada 2" className={styles.portadaImagePreview} />
+              ) : (
+                <div className={styles.portadaImageEmpty}>
+                  <Upload size={20} className={styles.portadaImageEmptyIcon} />
+                  <span className={styles.portadaImageEmptyHint}>Opcional</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={splashFileRef2}
+                className={styles.fileInput}
+                onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSplash2(f); e.target.value = "" }}
+              />
+            </div>
+
+            {splashProductImage2 && !splashLoading2 && (
+              <div className={styles.portadaImageActions}>
+                <button className={styles.slotAction} onClick={() => setPreview(splashProductImage2)} title="Ver"><ZoomIn size={13} /></button>
+                <button className={styles.slotAction} onClick={() => splashFileRef2.current?.click()} title="Reemplazar"><Upload size={13} /></button>
+                <button className={`${styles.slotAction} ${styles.slotDelete}`} onClick={() => void deleteSplash2()} title="Eliminar"><Trash2 size={13} /></button>
+              </div>
+            )}
+
+            <p className={styles.splashHint}>
+              Si cargas esta imagen, la portada alterna entre ambas automáticamente.
             </p>
           </div>
 

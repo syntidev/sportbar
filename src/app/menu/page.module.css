@@ -677,6 +677,36 @@
   50%       { opacity: .85; transform: translateY(-3px); }
 }
 
+/* ── Slider mode (2 imágenes) ─────────────────────────────────────── */
+.splashSliderWrap {
+  position: relative; z-index: 2;
+  width: min(58vw, 295px); height: min(58vw, 295px);
+  overflow: hidden;
+  margin: 0 0 18px;
+  /* sin border-radius: PNGs transparentes */
+}
+.splashSliderImg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 56px rgba(245,166,35,.5))
+          drop-shadow(0 6px 20px rgba(0,0,0,.65));
+}
+.splashSliderDots {
+  position: absolute; bottom: -18px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 7px;
+}
+.splashSliderDot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(245,166,35,.3);
+  transition: background .3s, transform .3s;
+}
+.splashSliderDotActive {
+  background: var(--color-brand);
+  transform: scale(1.3);
+}
+
 /* Legacy — conservar para compatibilidad */
 .splashTextBlock { position: relative; z-index: 1; text-align: center; }
 .splashBrand {

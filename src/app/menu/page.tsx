@@ -187,6 +187,7 @@ function SlotEffect({ type }: { type: SlotEffectType }) {
 // ── SplashConfig interface ────────────────────────────────────────────────────
 interface SplashConfig {
   productImage:    string | null
+  productImage2:   string | null   // segundo slot — activa modo slider
   productName:     string
   subtitle:        string
   durationMs:      number   // ms
@@ -213,6 +214,21 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
     const t = setTimeout(onDone, config.durationMs);
     return () => clearTimeout(t);
   }, [onDone, config.durationMs]);
+
+  // Slider: lista de imágenes disponibles (filtra nulls)
+  const images = useMemo(
+    () => [config.productImage, config.productImage2].filter((u): u is string => !!u),
+    [config.productImage, config.productImage2],
+  );
+  const isSlider = images.length > 1;
+  const [imgIdx, setImgIdx] = useState(0);
+
+  // Ciclo automático del slider — cada 1.4s
+  useEffect(() => {
+    if (!isSlider) return;
+    const t = setInterval(() => setImgIdx(i => (i + 1) % images.length), 1400);
+    return () => clearInterval(t);
+  }, [isSlider, images.length]);
 
   const displayName = config.productName || config.businessName;
   const displaySub  = config.subtitle    || "El menú del partido";
@@ -258,8 +274,40 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
         {config.businessName}
       </motion.div>
 
-      {/* 2 — Imagen producto — 55% viewport, entra desde abajo con spring */}
-      {config.productImage && (
+      {/* 2 — Imagen producto */}
+      {isSlider ? (
+        /* ── Modo slider: 2 imágenes alternadas con slide lateral ── */
+        <motion.div
+          className={styles.splashSliderWrap}
+          initial={{ y: 80, scale: 0.82, opacity: 0 }}
+          animate={{ y: 0, scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 18, stiffness: 140, delay: 0.1 }}
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.img
+              key={imgIdx}
+              src={images[imgIdx]}
+              alt={displayName}
+              className={styles.splashSliderImg}
+              initial={{ x: '105%', opacity: 0 }}
+              animate={{ x: 0,      opacity: 1,
+                transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] } }}
+              exit={{    x: '-105%', opacity: 0,
+                transition: { duration: 0.30, ease: [0.4, 0, 1, 1] } }}
+            />
+          </AnimatePresence>
+          {/* Dots indicadores */}
+          <div className={styles.splashSliderDots}>
+            {images.map((_, i) => (
+              <div
+                key={i}
+                className={`${styles.splashSliderDot} ${i === imgIdx ? styles.splashSliderDotActive : ""}`}
+              />
+            ))}
+          </div>
+        </motion.div>
+      ) : images.length === 1 ? (
+        /* ── Modo single: flota suavemente ── */
         <motion.div
           className={styles.splashImgWrap}
           initial={{ y: 120, scale: 0.78, opacity: 0 }}
@@ -267,7 +315,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
           transition={{ type: "spring", damping: 17, stiffness: 130, delay: 0.1 }}
         >
           <motion.img
-            src={config.productImage}
+            src={images[0]}
             alt={displayName}
             className={styles.splashImg}
             animate={{ y: [0, -10, 0] }}
@@ -284,7 +332,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
           />
         </motion.div>
-      )}
+      ) : null}
 
       {/* 3 — Nombre del producto — letra por letra + glow CSS continuo */}
       <motion.div
@@ -1443,7 +1491,7 @@ export default function MenuPublicoPage() {
       fetch("/api/config/business").then(r => r.json()),
     ])
       .then(([splashData, bizData]: [
-        { success: boolean; config?: { productImage: string|null; productName: string; subtitle: string; durationSeconds: number; forceReload: boolean } },
+        { success: boolean; config?: { productImage: string|null; productImage2: string|null; productName: string; subtitle: string; durationSeconds: number; forceReload: boolean } },
         { success: boolean; profile?: Record<string, string> },
       ]) => {
         const biz         = bizData.profile ?? {};
@@ -1453,6 +1501,7 @@ export default function MenuPublicoPage() {
         const raw = splashData.success && splashData.config ? splashData.config : null;
         const cfg: SplashConfig = {
           productImage:  raw?.productImage  ?? null,
+          productImage2: raw?.productImage2 ?? null,
           productName:   raw?.productName   ?? "",
           subtitle:      raw?.subtitle      ?? "",
           durationMs:    ((raw?.durationSeconds ?? 4)) * 1000,

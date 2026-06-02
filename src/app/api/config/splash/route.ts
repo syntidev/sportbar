@@ -1,8 +1,8 @@
 /**
- * GET    /api/config/splash  → { success, config: SplashConfigResponse }
- * POST   /api/config/splash  { image: File }  → sube splash_product_image
- * PATCH  /api/config/splash  { productName?, subtitle?, durationSeconds?, forceReload? }
- * DELETE /api/config/splash  → elimina imagen del producto
+ * GET    /api/config/splash           → { success, config: SplashConfigResponse }
+ * POST   /api/config/splash           { image: File, slot?: '1'|'2' }
+ * PATCH  /api/config/splash           { productName?, subtitle?, durationSeconds?, forceReload? }
+ * DELETE /api/config/splash?slot=1|2  → elimina imagen del slot indicado
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -14,6 +14,7 @@ export const runtime = 'nodejs'
 // ── Config keys ────────────────────────────────────────────────────────────────
 const KEYS = {
   productImage:    'splash_product_image',
+  productImage2:   'splash_product_image_2',
   productName:     'splash_product_name',
   subtitle:        'splash_subtitle',
   durationSeconds: 'splash_duration_seconds',
@@ -22,9 +23,9 @@ const KEYS = {
 
 type SplashKey = typeof KEYS[keyof typeof KEYS]
 
-// ── Response type ──────────────────────────────────────────────────────────────
 export interface SplashConfigResponse {
   productImage:    string | null
+  productImage2:   string | null
   productName:     string
   subtitle:        string
   durationSeconds: number
@@ -35,6 +36,7 @@ function buildConfig(rows: { key: string; value: string }[]): SplashConfigRespon
   const map = Object.fromEntries(rows.map(r => [r.key, r.value]))
   return {
     productImage:    map[KEYS.productImage]    ?? null,
+    productImage2:   map[KEYS.productImage2]   ?? null,
     productName:     map[KEYS.productName]     ?? '',
     subtitle:        map[KEYS.subtitle]        ?? '',
     durationSeconds: (parseInt(map[KEYS.durationSeconds] ?? '4', 10) || 4),
@@ -55,18 +57,20 @@ export async function GET() {
   }
 }
 
-// ── POST — subir imagen del producto ──────────────────────────────────────────
+// ── POST — subir imagen (slot 1 ó 2) ─────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const form = await req.formData()
-    const file = form.get('image')
+    const form   = await req.formData()
+    const file   = form.get('image')
+    const isSlot2 = form.get('slot') === '2'
+    const imageKey = isSlot2 ? KEYS.productImage2 : KEYS.productImage
 
     if (!(file instanceof File)) {
       return NextResponse.json({ success: false, error: 'Campo "image" requerido' }, { status: 400 })
     }
 
-    // Eliminar imagen anterior si existe
-    const prev = await prisma.config.findUnique({ where: { key: KEYS.productImage } })
+    // Eliminar imagen anterior del mismo slot si existe
+    const prev = await prisma.config.findUnique({ where: { key: imageKey } })
     if (prev?.value) {
       await deleteMedia(prev.value).catch(() => {})
     }
@@ -74,12 +78,12 @@ export async function POST(req: NextRequest) {
     const url = await uploadMedia(file, 'splash')
 
     await prisma.config.upsert({
-      where:  { key: KEYS.productImage },
-      create: { key: KEYS.productImage, value: url },
+      where:  { key: imageKey },
+      create: { key: imageKey, value: url },
       update: { value: url },
     })
 
-    return NextResponse.json({ success: true, url })
+    return NextResponse.json({ success: true, url, slot: isSlot2 ? 2 : 1 })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error al subir imagen'
     console.error('[splash POST]', err)
@@ -129,14 +133,17 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// ── DELETE — eliminar imagen del producto ─────────────────────────────────────
-export async function DELETE() {
+// ── DELETE — eliminar imagen del slot indicado (?slot=1 ó ?slot=2) ────────────
+export async function DELETE(req: NextRequest) {
   try {
-    const row = await prisma.config.findUnique({ where: { key: KEYS.productImage } })
+    const isSlot2  = req.nextUrl.searchParams.get('slot') === '2'
+    const imageKey = isSlot2 ? KEYS.productImage2 : KEYS.productImage
+
+    const row = await prisma.config.findUnique({ where: { key: imageKey } })
     if (row?.value) {
       await deleteMedia(row.value)
     }
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, slot: isSlot2 ? 2 : 1 })
   } catch (err) {
     console.error('[splash DELETE]', err)
     return NextResponse.json({ success: false, error: 'Error al eliminar imagen' }, { status: 500 })
