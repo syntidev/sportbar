@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Download, FileImage, Flame, ImageIcon, Layers, Minus, QrCode,
-  RefreshCw, Snowflake, Trash2, Upload, X, ZoomIn,
+  RefreshCw, Save, Snowflake, Trash2, Upload, X, ZoomIn,
 } from "lucide-react"
 import styles from "./page.module.css"
 
@@ -80,10 +80,15 @@ export default function MarketingPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Splash state
-  const [splashUrl,     setSplashUrl]     = useState<string | null>(null)
-  const [splashLoading, setSplashLoading] = useState(false)
-  const [splashDragOver, setSplashDragOver] = useState(false)
+  // ── Portada (Splash Screen) state ───────────────────────────────────
+  const [splashProductImage, setSplashProductImage] = useState<string | null>(null)
+  const [splashProductName,  setSplashProductName]  = useState<string>("")
+  const [splashSubtitle,     setSplashSubtitle]     = useState<string>("")
+  const [splashDuration,     setSplashDuration]     = useState<number>(4)
+  const [splashForceReload,  setSplashForceReload]  = useState<boolean>(true)
+  const [splashLoading,      setSplashLoading]      = useState(false)
+  const [splashSaving,       setSplashSaving]       = useState(false)
+  const [splashDragOver,     setSplashDragOver]     = useState(false)
   const splashFileRef = useRef<HTMLInputElement | null>(null)
 
   // QR sticker state
@@ -111,12 +116,26 @@ export default function MarketingPage() {
       .catch(() => {})
   }, [])
 
-  // ── Load splash ──────────────────────────────────────────────────────
+  // ── Load portada config ──────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/config/splash")
       .then(r => r.json())
-      .then((d: { success: boolean; url: string | null }) => {
-        if (d.success) setSplashUrl(d.url)
+      .then((d: {
+        success: boolean
+        config: {
+          productImage: string | null
+          productName: string
+          subtitle: string
+          durationSeconds: number
+          forceReload: boolean
+        }
+      }) => {
+        if (!d.success) return
+        setSplashProductImage(d.config.productImage)
+        setSplashProductName(d.config.productName)
+        setSplashSubtitle(d.config.subtitle)
+        setSplashDuration(d.config.durationSeconds)
+        setSplashForceReload(d.config.forceReload)
       })
       .catch(() => {})
   }, [])
@@ -314,7 +333,7 @@ export default function MarketingPage() {
     } catch { /* silencioso — el estado visual ya cambió */ }
   }
 
-  // ── Splash handlers ──────────────────────────────────────────────────
+  // ── Portada handlers ─────────────────────────────────────────────────
   const uploadSplash = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) { showToast("Solo imágenes", "err"); return }
     setSplashLoading(true)
@@ -324,10 +343,10 @@ export default function MarketingPage() {
       const res  = await fetch("/api/config/splash", { method: "POST", body: fd })
       const data = await res.json() as { success: boolean; url?: string; error?: string }
       if (data.success && data.url) {
-        setSplashUrl(data.url)
-        showToast("Splash guardado", "ok")
+        setSplashProductImage(data.url)
+        showToast("Imagen guardada", "ok")
       } else {
-        showToast(data.error ?? "Error al subir splash", "err")
+        showToast(data.error ?? "Error al subir imagen", "err")
       }
     } catch {
       showToast("Error de red", "err")
@@ -342,15 +361,41 @@ export default function MarketingPage() {
       const res  = await fetch("/api/config/splash", { method: "DELETE" })
       const data = await res.json() as { success: boolean }
       if (data.success) {
-        setSplashUrl(null)
-        showToast("Splash eliminado", "ok")
+        setSplashProductImage(null)
+        showToast("Imagen eliminada", "ok")
       } else {
-        showToast("Error al eliminar splash", "err")
+        showToast("Error al eliminar imagen", "err")
       }
     } catch {
       showToast("Error de red", "err")
     } finally {
       setSplashLoading(false)
+    }
+  }
+
+  async function saveSplashConfig() {
+    setSplashSaving(true)
+    try {
+      const res = await fetch("/api/config/splash", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName:     splashProductName,
+          subtitle:        splashSubtitle,
+          durationSeconds: splashDuration,
+          forceReload:     splashForceReload,
+        }),
+      })
+      const data = await res.json() as { success: boolean; error?: string }
+      if (data.success) {
+        showToast("Portada guardada", "ok")
+      } else {
+        showToast(data.error ?? "Error al guardar", "err")
+      }
+    } catch {
+      showToast("Error de red", "err")
+    } finally {
+      setSplashSaving(false)
     }
   }
 
@@ -454,85 +499,148 @@ export default function MarketingPage() {
         <p className={styles.slotHint}>Arte recomendado: <strong>1440 × 400 px</strong> — Autoplay cada 4 segundos.</p>
       </section>
 
-      {/* ── IMAGEN SPLASH ───────────────────────────────────────────── */}
+      {/* ── PORTADA (SPLASH SCREEN) ──────────────────────────────────── */}
       <section className={styles.section}>
         <div className={styles.sectionHead}>
           <Layers size={18} className={styles.sectionIcon} />
           <div>
-            <h2 className={styles.sectionTitle}>Imagen Splash</h2>
-            <p className={styles.sectionSub}>Aparece al abrir el menú por primera vez • Reemplaza la imagen por defecto</p>
+            <h2 className={styles.sectionTitle}>Portada</h2>
+            <p className={styles.sectionSub}>Pantalla de bienvenida al abrir el menú • Configurable por partido</p>
           </div>
         </div>
 
-        {splashUrl && !splashLoading ? (
-          <>
-            <div className={styles.splashPreviewWrap}>
-              <img
-                src={splashUrl}
-                alt="Splash actual"
-                className={styles.splashPreviewImg}
-              />
-            </div>
-            <div className={styles.splashPreviewActions}>
-              <button
-                className={styles.slotAction}
-                onClick={() => setPreview(splashUrl)}
-                title="Ver"
-              >
-                <ZoomIn size={14} />
-              </button>
-              <button
-                className={styles.slotAction}
-                onClick={() => splashFileRef.current?.click()}
-                title="Reemplazar"
-              >
-                <Upload size={14} />
-              </button>
-              <button
-                className={`${styles.slotAction} ${styles.slotDelete}`}
-                onClick={() => void deleteSplash()}
-                title="Eliminar"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              ref={splashFileRef}
-              className={styles.fileInput}
-              onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSplash(f); e.target.value = "" }}
-            />
-          </>
-        ) : splashLoading ? (
-          <div className={styles.slotSpinner}><RefreshCw size={24} className={styles.spin} /></div>
-        ) : (
-          <>
+        <div className={styles.portadaGrid}>
+
+          {/* ── Columna imagen ── */}
+          <div className={styles.portadaImageCol}>
             <div
-              className={`${styles.splashUploadArea} ${splashDragOver ? styles.splashUploadAreaOver : ""}`}
+              className={`${styles.portadaImageBox} ${splashDragOver ? styles.portadaImageBoxOver : ""}`}
               onDragOver={e => { e.preventDefault(); setSplashDragOver(true) }}
               onDragLeave={() => setSplashDragOver(false)}
               onDrop={e => { e.preventDefault(); setSplashDragOver(false); const f = e.dataTransfer.files[0]; if (f) void uploadSplash(f) }}
-              onClick={() => splashFileRef.current?.click()}
+              onClick={() => !splashProductImage && splashFileRef.current?.click()}
             >
-              <Upload size={32} className={styles.splashEmptyIcon} />
-              <span className={styles.splashEmptyLabel}>Arrastra o haz click para subir</span>
-              <span className={styles.splashEmptyHint}>PNG · JPG · WebP · AVIF — máx 5 MB</span>
+              {splashLoading ? (
+                <RefreshCw size={28} className={styles.spin} color="var(--color-brand)" />
+              ) : splashProductImage ? (
+                <img src={splashProductImage} alt="Imagen portada" className={styles.portadaImagePreview} />
+              ) : (
+                <div className={styles.portadaImageEmpty}>
+                  <Upload size={32} className={styles.portadaImageEmptyIcon} />
+                  <span className={styles.portadaImageEmptyLabel}>PNG transparente</span>
+                  <span className={styles.portadaImageEmptyHint}>mín 800 × 800 px</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={splashFileRef}
+                className={styles.fileInput}
+                onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSplash(f); e.target.value = "" }}
+              />
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              ref={splashFileRef}
-              className={styles.fileInput}
-              onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSplash(f); e.target.value = "" }}
-            />
-          </>
-        )}
 
-        <p className={styles.splashHint}>
-          <span className={styles.splashHintStrong}>Recomendado:</span>{" "}
-          PNG con fondo transparente • mín <strong>800 × 800 px</strong> • la transparencia se preserva automáticamente
-        </p>
+            {splashProductImage && !splashLoading && (
+              <div className={styles.portadaImageActions}>
+                <button className={styles.slotAction} onClick={() => setPreview(splashProductImage)} title="Ver"><ZoomIn size={13} /></button>
+                <button className={styles.slotAction} onClick={() => splashFileRef.current?.click()} title="Reemplazar"><Upload size={13} /></button>
+                <button className={`${styles.slotAction} ${styles.slotDelete}`} onClick={() => void deleteSplash()} title="Eliminar"><Trash2 size={13} /></button>
+              </div>
+            )}
+
+            <p className={styles.splashHint}>
+              <span className={styles.splashHintStrong}>PNG con fondo transparente</span>{" "}
+              para efecto flotante. El sujeto principal debe estar centrado.
+            </p>
+          </div>
+
+          {/* ── Columna formulario ── */}
+          <div className={styles.portadaFormCol}>
+
+            {/* Nombre del producto */}
+            <div className={styles.portadaField}>
+              <label className={styles.portadaLabel}>Nombre del producto / promo</label>
+              <input
+                className={styles.portadaInput}
+                type="text"
+                maxLength={32}
+                placeholder="Ej: BACONISE, PROMO CERVEZA…"
+                value={splashProductName}
+                onChange={e => setSplashProductName(e.target.value)}
+              />
+              <span className={styles.portadaHelp}>Este nombre aparece animado en la portada. Cámbialo cada partido.</span>
+            </div>
+
+            {/* Subtítulo */}
+            <div className={styles.portadaField}>
+              <label className={styles.portadaLabel}>Subtítulo</label>
+              <input
+                className={styles.portadaInput}
+                type="text"
+                maxLength={52}
+                placeholder="Ej: El menú del partido, Solo por hoy…"
+                value={splashSubtitle}
+                onChange={e => setSplashSubtitle(e.target.value)}
+              />
+            </div>
+
+            {/* Timing */}
+            <div className={styles.portadaField}>
+              <label className={styles.portadaLabel}>Duración</label>
+              <div className={styles.portadaSliderRow}>
+                <input
+                  type="range"
+                  min={2} max={8} step={1}
+                  value={splashDuration}
+                  className={styles.portadaSlider}
+                  style={{ "--slider-pct": `${((splashDuration - 2) / 6) * 100}%` } as React.CSSProperties}
+                  onChange={e => setSplashDuration(Number(e.target.value))}
+                />
+                <span className={styles.portadaSliderValue}>{splashDuration}s</span>
+              </div>
+              <span className={styles.portadaHelp}>Tiempo antes de que el usuario pueda entrar al menú</span>
+            </div>
+
+            {/* Force reload toggle */}
+            <div className={styles.portadaField}>
+              <label className={styles.portadaLabel}>Forzar recarga</label>
+              <button
+                type="button"
+                className={styles.portadaToggleRow}
+                onClick={() => setSplashForceReload(v => !v)}
+              >
+                <div className={`${styles.portadaToggleTrack} ${splashForceReload ? styles.portadaToggleTrackOn : ""}`}>
+                  <div className={styles.portadaToggleKnob} />
+                </div>
+                <div>
+                  <div className={styles.portadaToggleText}>
+                    {splashForceReload ? "ON — siempre muestra la portada" : "OFF — solo la primera vez por sesión"}
+                  </div>
+                  <div className={styles.portadaToggleHint}>
+                    {splashForceReload
+                      ? "El splash aparece cada vez que el cliente abre el menú"
+                      : "Solo aparece una vez por sesión de navegador"}
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Botón guardar */}
+            <div className={styles.portadaSaveRow}>
+              <button
+                className={styles.portadaSaveBtn}
+                onClick={() => void saveSplashConfig()}
+                disabled={splashSaving}
+              >
+                {splashSaving
+                  ? <><RefreshCw size={14} className={styles.spin} /> Guardando…</>
+                  : <><Save size={14} /> Guardar portada</>
+                }
+              </button>
+            </div>
+
+          </div>
+        </div>
       </section>
 
       {/* ── QR STICKER BUILDER ──────────────────────────────────────── */}

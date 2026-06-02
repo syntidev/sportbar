@@ -184,82 +184,133 @@ function SlotEffect({ type }: { type: SlotEffectType }) {
   )
 }
 
+// ── SplashConfig interface ────────────────────────────────────────────────────
+interface SplashConfig {
+  productImage:    string | null
+  productName:     string
+  subtitle:        string
+  durationMs:      number   // ms
+  forceReload:     boolean
+  logoUrl:         string | null
+  businessName:    string
+}
+
+// ── Framer Motion variants para letter stagger ────────────────────────────────
+const charContainer: Variants = {
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.05, delayChildren: 0.85 } },
+}
+const charItem: Variants = {
+  hidden:  { opacity: 0, y: 22, scale: 0.8 },
+  visible: { opacity: 1, y: 0,  scale: 1,
+    transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
+}
+
 // ── SplashScreen ──────────────────────────────────────────────────────────────
-function SplashScreen({ onDone, splashUrl }: { onDone: () => void; splashUrl: string | null }) {
+function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => void }) {
+  // Auto-avance configurable
   useEffect(() => {
-    const t = setTimeout(onDone, 2500);
+    const t = setTimeout(onDone, config.durationMs);
     return () => clearTimeout(t);
-  }, [onDone]);
+  }, [onDone, config.durationMs]);
+
+  const displayName = config.productName || config.businessName;
+  const displaySub  = config.subtitle    || "El menú del partido";
 
   return (
     <motion.div
       className={styles.splash}
-      exit={{ opacity: 0, transition: { duration: 0.55, ease: "easeInOut" } }}
+      exit={{ opacity: 0, transition: { duration: 0.5, ease: "easeInOut" } }}
+      onClick={onDone}
     >
-      {/* Background glows */}
+      {/* Fondos */}
       <div className={styles.splashGlow} />
       <div className={styles.splashGlow2} />
 
-      {/* Top logo */}
-      <motion.img
-        src="/logo-color.png"
-        alt="Sport Bar"
-        className={styles.splashTopLogo}
-        initial={{ opacity: 0, y: -24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+      {/* 1 — Logo */}
+      {config.logoUrl ? (
+        <motion.img
+          src={config.logoUrl}
+          alt={config.businessName}
+          className={styles.splashTopLogo}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      ) : (
+        <motion.div
+          className={styles.splashLogoPlaceholder}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {config.businessName.charAt(0).toUpperCase()}
+        </motion.div>
+      )}
 
-      {/* Hero image — dinámica desde config o ninguna si no está configurada */}
-      {splashUrl && (
+      {/* 2 — Imagen producto — 55% viewport, entra desde abajo con spring */}
+      {config.productImage && (
         <motion.div
           className={styles.splashImgWrap}
-          initial={{ y: 100, scale: 0.78, opacity: 0 }}
+          initial={{ y: 120, scale: 0.78, opacity: 0 }}
           animate={{ y: 0, scale: 1, opacity: 1 }}
-          transition={{ type: "spring", damping: 18, stiffness: 140, delay: 0.1 }}
+          transition={{ type: "spring", damping: 17, stiffness: 130, delay: 0.1 }}
         >
           <motion.img
-            src={splashUrl}
-            alt="Sport Bar"
+            src={config.productImage}
+            alt={displayName}
             className={styles.splashImg}
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
           />
-          {/* Pulsing ring */}
           <motion.div
             className={styles.splashRing}
-            animate={{ scale: [1, 1.14, 1], opacity: [0.28, 0.58, 0.28] }}
+            animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.6, 0.3] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
           />
-          {/* Second ring, offset */}
           <motion.div
             className={styles.splashRing2}
-            animate={{ scale: [1.15, 1, 1.15], opacity: [0.12, 0.28, 0.12] }}
+            animate={{ scale: [1.14, 1, 1.14], opacity: [0.1, 0.25, 0.1] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
           />
         </motion.div>
       )}
 
-      {/* Brand text */}
+      {/* 3 — Nombre del producto — letra por letra + glow CSS continuo */}
       <motion.div
-        className={styles.splashTextBlock}
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className={styles.splashProductNameWrap}
+        variants={charContainer}
+        initial="hidden"
+        animate="visible"
       >
-        <div className={styles.splashBrand}>SPORT BAR</div>
-        <div className={styles.splashSub}>El menú del partido</div>
+        <span className={styles.splashProductName}>
+          {displayName.split("").map((char, i) => (
+            <motion.span key={i} className={styles.splashChar} variants={charItem}>
+              {char === " " ? " " : char}
+            </motion.span>
+          ))}
+        </span>
       </motion.div>
 
-      {/* Loading dots */}
+      {/* 4 — Subtítulo */}
       <motion.div
-        className={styles.splashDots}
+        className={styles.splashSub}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.3, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {displaySub}
+      </motion.div>
+
+      {/* 5 — Indicador de tap */}
+      <motion.div
+        className={styles.splashTapHint}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.3, duration: 0.4 }}
+        transition={{ delay: 1.6, duration: 0.4 }}
       >
         <span className={styles.dot} />
-        <span className={styles.dot} />
+        <span>Toca para ver el menú</span>
         <span className={styles.dot} />
       </motion.div>
     </motion.div>
@@ -506,6 +557,10 @@ function MenuContent() {
     cedula:   "",
   });
 
+  // Business identity
+  const [logoUrl,      setLogoUrl]      = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState<string>("SPORT BAR");
+
   // Hero slider state
   const [heroSlots,  setHeroSlots]  = useState<HeroSlot[]>([]);
   const [sliderIdx,  setSliderIdx]  = useState(0);
@@ -533,12 +588,18 @@ function MenuContent() {
   useEffect(() => {
     async function init() {
       try {
-        const [tRes, rRes, hsRes] = await Promise.all([
+        const [tRes, rRes, hsRes, bizRes] = await Promise.all([
           fetch("/api/turno"),
           fetch("/api/currency"),
           fetch("/api/config/hero-slots"),
+          fetch("/api/config/business"),
         ]);
-        const [tData, rData, hsData] = await Promise.all([tRes.json(), rRes.json(), hsRes.json()]);
+        const [tData, rData, hsData, bizData] = await Promise.all([
+          tRes.json(), rRes.json(), hsRes.json(), bizRes.json(),
+        ]);
+        const biz = (bizData as { success: boolean; profile?: Record<string, string> }).profile ?? {};
+        if (biz.business_logo_url) setLogoUrl(biz.business_logo_url);
+        if (biz.business_name)     setBusinessName(biz.business_name.toUpperCase());
         if (tData.success) {
           setTurno(tData.turno as TurnoData);
           if ((tData.turno as TurnoData).is_active) {
@@ -832,13 +893,23 @@ function MenuContent() {
     return (
       <div className={styles.curtain}>
         <div className={styles.curtainGlow} />
-        <motion.img
-          src="/logo-color.png"
-          alt="Sport Bar"
-          className={styles.curtainLogo}
-          animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
-          transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
-        />
+        {logoUrl ? (
+          <motion.img
+            src={logoUrl}
+            alt={businessName}
+            className={styles.curtainLogo}
+            animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
+            transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
+          />
+        ) : (
+          <motion.div
+            className={styles.curtainLogoPlaceholder}
+            animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
+            transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
+          >
+            {businessName.charAt(0)}
+          </motion.div>
+        )}
         <div className={styles.curtainBody}>
           <span className={styles.curtainMatch}>
             {turno?.partido_nombre || "Proximo partido"}
@@ -859,8 +930,14 @@ function MenuContent() {
 
         {/* Header */}
         <div className={styles.custHead}>
-          <img src="/logo-color.png" alt="Sport Bar" className={styles.custHeadLogo} />
-          <div className={styles.custHeadWm}>SPORT BAR</div>
+          {logoUrl ? (
+            <img src={logoUrl} alt={businessName} className={styles.custHeadLogo} />
+          ) : (
+            <div className={styles.custHeadLogoPlaceholder}>
+              {businessName.charAt(0)}
+            </div>
+          )}
+          <div className={styles.custHeadWm}>{businessName}</div>
           <button className={styles.custTicketsBtn} aria-label="Mis pedidos">
             <Receipt size={19} />
             {orderCount > 0 && <span className={styles.nb}>{orderCount}</span>}
@@ -1345,34 +1422,64 @@ function MenuContent() {
 
 // ── MenuPublicoPage — splash gate ─────────────────────────────────────────────
 export default function MenuPublicoPage() {
-  const [ready,      setReady]      = useState(false);
-  const [showSplash, setShowSplash] = useState(false);
-  const [splashUrl,  setSplashUrl]  = useState<string | null>(null);
+  const [ready,        setReady]        = useState(false);
+  const [showSplash,   setShowSplash]   = useState(false);
+  const [splashConfig, setSplashConfig] = useState<SplashConfig | null>(null);
 
   useEffect(() => {
-    // Determinar si mostrar splash
-    let shouldShow = false;
-    try {
-      shouldShow = sessionStorage.getItem("sb-splash") !== "1";
-      setShowSplash(shouldShow);
-    } catch {
-      setShowSplash(false);
-    }
-    setReady(true);
+    // Cargar config splash + negocio en paralelo antes de decidir si mostrar splash
+    Promise.all([
+      fetch("/api/config/splash").then(r => r.json()),
+      fetch("/api/config/business").then(r => r.json()),
+    ])
+      .then(([splashData, bizData]: [
+        { success: boolean; config?: { productImage: string|null; productName: string; subtitle: string; durationSeconds: number; forceReload: boolean } },
+        { success: boolean; profile?: Record<string, string> },
+      ]) => {
+        const biz         = bizData.profile ?? {};
+        const logoUrl     = biz.business_logo_url || null;
+        const businessName = biz.business_name    || "Sport Bar";
 
-    // Cargar URL dinámica del splash desde config
-    fetch("/api/config/splash")
-      .then(r => r.json())
-      .then((d: { success: boolean; url: string | null }) => {
-        if (d.success && d.url) setSplashUrl(d.url);
+        const raw = splashData.success && splashData.config ? splashData.config : null;
+        const cfg: SplashConfig = {
+          productImage:  raw?.productImage  ?? null,
+          productName:   raw?.productName   ?? "",
+          subtitle:      raw?.subtitle      ?? "",
+          durationMs:    ((raw?.durationSeconds ?? 4)) * 1000,
+          forceReload:   raw?.forceReload   ?? true,
+          logoUrl,
+          businessName,
+        };
+
+        setSplashConfig(cfg);
+
+        // Lógica forceReload
+        if (cfg.forceReload) {
+          setShowSplash(true);
+        } else {
+          try {
+            setShowSplash(sessionStorage.getItem("sb-splash") !== "1");
+          } catch {
+            setShowSplash(true);
+          }
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        // En caso de error de red: no bloquear el menú
+        setShowSplash(false);
+      })
+      .finally(() => {
+        setReady(true);
+      });
   }, []);
 
   const onSplashDone = useCallback(() => {
-    try { sessionStorage.setItem("sb-splash", "1"); } catch {}
+    // Solo guardar en sessionStorage si forceReload está OFF
+    if (splashConfig && !splashConfig.forceReload) {
+      try { sessionStorage.setItem("sb-splash", "1"); } catch {}
+    }
     setShowSplash(false);
-  }, []);
+  }, [splashConfig]);
 
   // Prevent SSR / hydration mismatch
   if (!ready) return null;
@@ -1380,8 +1487,8 @@ export default function MenuPublicoPage() {
   return (
     <Suspense>
       <AnimatePresence mode="wait">
-        {showSplash ? (
-          <SplashScreen key="splash" onDone={onSplashDone} splashUrl={splashUrl} />
+        {showSplash && splashConfig ? (
+          <SplashScreen key="splash" config={splashConfig} onDone={onSplashDone} />
         ) : (
           <MenuContent key="menu" />
         )}
