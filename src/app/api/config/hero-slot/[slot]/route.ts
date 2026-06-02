@@ -84,3 +84,29 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: 'Error al eliminar slot' }, { status: 500 })
   }
 }
+
+// PATCH /api/config/hero-slot/[slot] → save only the effect type (hot|cold|none)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ slot: string }> },
+) {
+  const { slot: s } = await params
+  const slot = parseInt(s, 10)
+  if (!VALID.includes(slot)) {
+    return NextResponse.json({ success: false, error: 'Slot inválido' }, { status: 400 })
+  }
+  try {
+    const body = await req.json() as { type?: string }
+    const type = ['hot', 'cold', 'none'].includes(body.type ?? '') ? body.type! : 'none'
+    const key  = `hero_slot_${slot}_type`
+    await prisma.config.upsert({
+      where:  { key },
+      create: { key, value: type },
+      update: { value: type },
+    })
+    return NextResponse.json({ success: true, type })
+  } catch (err) {
+    console.error('hero-slot patch type:', err)
+    return NextResponse.json({ success: false, error: 'Error' }, { status: 500 })
+  }
+}

@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
-  Download, FileImage, Image as ImageIcon, QrCode, RefreshCw,
-  Trash2, Upload, X, ZoomIn,
+  Download, FileImage, Flame, Image as ImageIcon, Minus, QrCode,
+  RefreshCw, Snowflake, Trash2, Upload, X, ZoomIn,
 } from "lucide-react"
 import styles from "./page.module.css"
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+type SlotEffectType = 'hot' | 'cold' | 'none'
+
 interface SlotState {
   url:      string | null
+  type:     SlotEffectType
   loading:  boolean
   dragOver: boolean
 }
@@ -70,7 +73,7 @@ function drawCorners(
 export default function MarketingPage() {
   // Hero slider state
   const [slots, setSlots] = useState<SlotState[]>(
-    Array.from({ length: 5 }, () => ({ url: null, loading: false, dragOver: false })),
+    Array.from({ length: 5 }, () => ({ url: null, type: 'none' as SlotEffectType, loading: false, dragOver: false })),
   )
   const [saving,  setSaving]  = useState<number | null>(null)
   const [toast,   setToast]   = useState<{ msg: string; type: "ok" | "err" } | null>(null)
@@ -91,9 +94,13 @@ export default function MarketingPage() {
   useEffect(() => {
     fetch("/api/config/hero-slots")
       .then(r => r.json())
-      .then((d: { success: boolean; slots: { slot: number; url: string | null }[] }) => {
+      .then((d: { success: boolean; slots: { slot: number; url: string | null; type: string }[] }) => {
         if (!d.success) return
-        setSlots(prev => prev.map((s, i) => ({ ...s, url: d.slots[i]?.url ?? null })))
+        setSlots(prev => prev.map((s, i) => ({
+          ...s,
+          url:  d.slots[i]?.url  ?? null,
+          type: (['hot','cold','none'].includes(d.slots[i]?.type) ? d.slots[i].type : 'none') as SlotEffectType,
+        })))
       })
       .catch(() => {})
   }, [])
@@ -276,6 +283,18 @@ export default function MarketingPage() {
     if (file) void uploadSlot(idx, file)
   }
 
+  async function setSlotType(idx: number, type: SlotEffectType) {
+    const slot = idx + 1
+    setSlots(prev => prev.map((s, i) => i === idx ? { ...s, type } : s))
+    try {
+      await fetch(`/api/config/hero-slot/${slot}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      })
+    } catch { /* silencioso — el estado visual ya cambió */ }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -329,6 +348,24 @@ export default function MarketingPage() {
                     <button className={styles.slotAction} onClick={e => { e.stopPropagation(); setPreview(slot.url!) }} title="Ver"><ZoomIn size={16} /></button>
                     <button className={styles.slotAction} onClick={e => { e.stopPropagation(); fileRefs.current[idx]?.click() }} title="Reemplazar"><Upload size={16} /></button>
                     <button className={`${styles.slotAction} ${styles.slotDelete}`} onClick={e => { e.stopPropagation(); void deleteSlot(idx) }} title="Eliminar" disabled={saving === idx}><Trash2 size={16} /></button>
+                  </div>
+                  {/* Selector de efecto temperatura */}
+                  <div className={styles.slotTypeBar} onClick={e => e.stopPropagation()}>
+                    <button
+                      className={`${styles.slotTypeBtn} ${slot.type === 'hot'  ? styles.slotTypeBtnHot  : ''}`}
+                      onClick={() => void setSlotType(idx, 'hot')}
+                      title="Caliente — vapor"
+                    ><Flame size={13} /></button>
+                    <button
+                      className={`${styles.slotTypeBtn} ${slot.type === 'none' ? styles.slotTypeBtnNone : ''}`}
+                      onClick={() => void setSlotType(idx, 'none')}
+                      title="Sin efecto"
+                    ><Minus size={13} /></button>
+                    <button
+                      className={`${styles.slotTypeBtn} ${slot.type === 'cold' ? styles.slotTypeBtnCold : ''}`}
+                      onClick={() => void setSlotType(idx, 'cold')}
+                      title="Frío — condensación"
+                    ><Snowflake size={13} /></button>
                   </div>
                 </>
               ) : (
