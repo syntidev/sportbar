@@ -751,133 +751,131 @@
 
 /* ══════════════════════════════════════════════════════════
    EFECTOS TEMPERATURA — slider slots
-   HOT: partículas de vapor subiendo
-   COLD: empañado + escarcha + gotas
+   HOT: columnas de vapor/humo subiendo
+   COLD: escarcha + gotas de condensación
    ══════════════════════════════════════════════════════════ */
 
-/* Contenedor del efecto sobre el slide */
+/* Contenedor transparente que cubre todo el slide */
 .slotEffect {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
   overflow: hidden;
 }
 
-/* ── HOT: vapor / humo ─────────────────────────────────── */
-.slotEffect[data-effect="hot"]::before {
-  content: '';
+/* ── HOT: glow ámbar en la base ──────────────────────────── */
+.hotGlow {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(255, 140, 40, 0.06) 0%,
-    rgba(255, 180, 60, 0.03) 50%,
+  bottom: 0; left: 0; right: 0;
+  height: 60%;
+  background: linear-gradient(to top,
+    rgba(255, 80, 0, 0.35) 0%,
+    rgba(255, 140, 20, 0.18) 40%,
     transparent 100%
   );
-}
-
-/* Partícula de vapor individual */
-.steamParticle {
-  position: absolute;
-  bottom: 0;
-  width: 28px;
-  height: 52px;
-  border-radius: 50% 50% 30% 30%;
-  background: radial-gradient(ellipse at 50% 60%,
-    rgba(255,255,255,0.22) 0%,
-    rgba(255,255,255,0.06) 60%,
-    transparent 100%
-  );
-  filter: blur(6px);
-  animation: steamRise var(--dur, 2.4s) ease-in var(--delay, 0s) infinite;
-  opacity: 0;
-}
-
-@keyframes steamRise {
-  0%   { transform: translateY(0)   translateX(0)    scaleX(1);   opacity: 0; }
-  10%  { opacity: 0.55; }
-  60%  { transform: translateY(-70px) translateX(var(--drift, 8px)) scaleX(1.3); opacity: 0.3; }
-  100% { transform: translateY(-120px) translateX(var(--drift2, -4px)) scaleX(1.6); opacity: 0; }
-}
-
-/* ── COLD: empañado + gotas ────────────────────────────── */
-.slotEffect[data-effect="cold"]::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  /* leve velo azul-frío encima */
-  background: linear-gradient(
-    160deg,
-    rgba(180,220,255,0.07) 0%,
-    rgba(140,200,255,0.04) 50%,
-    transparent 100%
-  );
-  backdrop-filter: blur(0.5px);
-}
-
-/* "Escarcha" en bordes con gradiente */
-.slotEffect[data-effect="cold"]::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 0% 0%,   rgba(200,235,255,0.18) 0%, transparent 40%),
-    radial-gradient(ellipse at 100% 0%, rgba(200,235,255,0.14) 0%, transparent 35%),
-    radial-gradient(ellipse at 50% 100%,rgba(180,220,255,0.10) 0%, transparent 45%);
   mix-blend-mode: screen;
 }
 
-/* Gota de condensación */
+/* ── Columna de vapor — base compartida ─────────────────── */
+.steamWisp {
+  position: absolute;
+  bottom: 8%;
+  width: 70px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 68%,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(230, 230, 230, 0.55) 42%,
+    transparent 100%
+  );
+  filter: blur(14px);
+  opacity: 0;
+  transform-origin: bottom center;
+}
+
+/* Variante A — deriva a la derecha */
+.steamWispA { animation: steamRiseA 3.0s ease-out infinite; }
+/* Variante B — deriva a la izquierda */
+.steamWispB { animation: steamRiseB 2.7s ease-out infinite; }
+/* Variante C — sube más alto, más fino */
+.steamWispC { animation: steamRiseC 3.4s ease-out infinite; }
+
+@keyframes steamRiseA {
+  0%   { transform: translateY(0)    translateX(0)    scale(0.45); opacity: 0;    }
+  10%  { opacity: 0.88; }
+  60%  { transform: translateY(-90px)  translateX(16px)  scale(1.30); opacity: 0.50; }
+  100% { transform: translateY(-165px) translateX(10px)  scale(1.75); opacity: 0;    }
+}
+@keyframes steamRiseB {
+  0%   { transform: translateY(0)    translateX(0)    scale(0.50); opacity: 0;    }
+  10%  { opacity: 0.80; }
+  60%  { transform: translateY(-80px)  translateX(-18px) scale(1.40); opacity: 0.45; }
+  100% { transform: translateY(-155px) translateX(-11px) scale(1.80); opacity: 0;    }
+}
+@keyframes steamRiseC {
+  0%   { transform: translateY(0)    translateX(0)    scale(0.40); opacity: 0;    }
+  10%  { opacity: 0.92; }
+  60%  { transform: translateY(-105px) translateX(9px)   scale(1.20); opacity: 0.42; }
+  100% { transform: translateY(-180px) translateX(-6px)  scale(1.65); opacity: 0;    }
+}
+
+/* ── COLD: overlay escarcha ──────────────────────────────── */
+.coldOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 2%   2%,   rgba(180,220,255,0.28) 0%, transparent 44%),
+    radial-gradient(ellipse at 98%  2%,   rgba(180,220,255,0.22) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 98%,   rgba(140,200,255,0.18) 0%, transparent 50%);
+  mix-blend-mode: screen;
+}
+.coldGlow {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to top,
+    rgba(60, 140, 255, 0.28) 0%,
+    rgba(100, 180, 255, 0.10) 50%,
+    transparent 100%
+  );
+}
+
+/* Gota de condensación — base */
 .coldDrop {
   position: absolute;
-  top: -8px;
-  width: var(--w, 2px);
-  height: var(--h, 14px);
+  top: 0;
   border-radius: 0 0 999px 999px;
   background: linear-gradient(to bottom,
-    rgba(200,235,255,0.55),
-    rgba(180,220,255,0.18)
+    rgba(200, 235, 255, 0.82),
+    rgba(180, 220, 255, 0.28)
   );
-  filter: blur(0.5px);
-  animation: dropFall var(--dur, 3.2s) linear var(--delay, 0s) infinite;
+  filter: blur(0.6px);
   opacity: 0;
 }
 
-@keyframes dropFall {
-  0%   { transform: translateY(0);   opacity: 0;    }
-  8%   { opacity: 0.7; }
-  85%  { opacity: 0.4; }
-  100% { transform: translateY(calc(var(--travel, 80px))); opacity: 0; }
+/* Variantes de recorrido */
+.coldDropS { animation: dropFallS 3.2s linear infinite; }
+.coldDropM { animation: dropFallM 3.8s linear infinite; }
+.coldDropL { animation: dropFallL 4.4s linear infinite; }
+
+@keyframes dropFallS {
+  0%   { transform: translateY(-6px); opacity: 0;   }
+  8%   { opacity: 0.85; }
+  88%  { opacity: 0.50; }
+  100% { transform: translateY(80px);  opacity: 0;   }
+}
+@keyframes dropFallM {
+  0%   { transform: translateY(-6px); opacity: 0;   }
+  8%   { opacity: 0.85; }
+  88%  { opacity: 0.50; }
+  100% { transform: translateY(115px); opacity: 0;   }
+}
+@keyframes dropFallL {
+  0%   { transform: translateY(-6px); opacity: 0;   }
+  8%   { opacity: 0.85; }
+  88%  { opacity: 0.50; }
+  100% { transform: translateY(150px); opacity: 0;   }
 }
 
-/* Badge de temperatura (esquina superior izquierda del slide) */
-.slotTempBadge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px 3px 6px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  backdrop-filter: blur(8px);
-  pointer-events: none;
-}
-
-.slotTempBadge[data-effect="hot"] {
-  background: rgba(220, 80, 20, 0.55);
-  border: 1px solid rgba(255,120,40,0.4);
-  color: #ffd3a0;
-}
-
-.slotTempBadge[data-effect="cold"] {
-  background: rgba(30, 100, 180, 0.50);
-  border: 1px solid rgba(140,200,255,0.4);
-  color: #c8e8ff;
-}
 

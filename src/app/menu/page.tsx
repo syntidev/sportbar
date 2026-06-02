@@ -129,63 +129,58 @@ const slideInLeft: Variants = {
 };
 
 // ── SlotEffect — vapor (hot) / condensación (cold) ─────────────────────────────
-const HOT_PARTICLES  = [
-  { left: '18%', dur: '2.2s', delay: '0s',    drift: '6px',  drift2: '-3px' },
-  { left: '38%', dur: '2.8s', delay: '0.6s',  drift: '-7px', drift2: '4px'  },
-  { left: '55%', dur: '2.5s', delay: '1.1s',  drift: '5px',  drift2: '-6px' },
-  { left: '72%', dur: '2.1s', delay: '0.3s',  drift: '-4px', drift2: '3px'  },
-  { left: '85%', dur: '3.0s', delay: '1.5s',  drift: '8px',  drift2: '-5px' },
+type WispVariant = 'steamWispA' | 'steamWispB' | 'steamWispC'
+type DropVariant = 'coldDropS'  | 'coldDropM'  | 'coldDropL'
+
+const HOT_WISPS: { left: string; v: WispVariant; delay: string }[] = [
+  { left: '6%',  v: 'steamWispA', delay: '0s'    },
+  { left: '20%', v: 'steamWispB', delay: '0.55s' },
+  { left: '36%', v: 'steamWispC', delay: '1.10s' },
+  { left: '52%', v: 'steamWispA', delay: '0.30s' },
+  { left: '68%', v: 'steamWispB', delay: '0.85s' },
+  { left: '82%', v: 'steamWispC', delay: '1.50s' },
 ]
-const COLD_DROPS = [
-  { left: '12%', w: '1.5px', h: '16px', dur: '3.0s', delay: '0s',   travel: '88px' },
-  { left: '27%', w: '2px',   h: '12px', dur: '3.6s', delay: '0.8s', travel: '72px' },
-  { left: '44%', w: '1px',   h: '18px', dur: '2.8s', delay: '0.3s', travel: '96px' },
-  { left: '61%', w: '2px',   h: '14px', dur: '4.0s', delay: '1.2s', travel: '80px' },
-  { left: '76%', w: '1.5px', h: '10px', dur: '3.2s', delay: '0.5s', travel: '68px' },
-  { left: '88%', w: '1px',   h: '20px', dur: '3.8s', delay: '1.7s', travel: '92px' },
+
+const COLD_DROPS_DATA: { left: string; w: string; h: string; delay: string; v: DropVariant }[] = [
+  { left: '10%', w: '1.5px', h: '15px', delay: '0s',   v: 'coldDropM' },
+  { left: '24%', w: '2px',   h: '11px', delay: '0.7s', v: 'coldDropS' },
+  { left: '38%', w: '1px',   h: '18px', delay: '0.2s', v: 'coldDropL' },
+  { left: '53%', w: '2px',   h: '13px', delay: '1.1s', v: 'coldDropM' },
+  { left: '67%', w: '1.5px', h: '10px', delay: '0.5s', v: 'coldDropS' },
+  { left: '80%', w: '1px',   h: '20px', delay: '1.6s', v: 'coldDropL' },
+  { left: '92%', w: '2px',   h: '14px', delay: '0.9s', v: 'coldDropM' },
 ]
 
 function SlotEffect({ type }: { type: SlotEffectType }) {
   if (type === 'none') return null
   return (
-    <>
-      {/* Temperatura badge */}
-      <span className={styles.slotTempBadge} data-effect={type}>
-        {type === 'hot'
-          ? <><Flame size={11} /> CALIENTE</>
-          : <><Snowflake size={11} /> FRÍO</>
-        }
-      </span>
-      <div className={styles.slotEffect} data-effect={type}>
-        {type === 'hot' && HOT_PARTICLES.map((p, i) => (
-          <div
-            key={i}
-            className={styles.steamParticle}
-            style={{
-              left: p.left,
-              '--dur':    p.dur,
-              '--delay':  p.delay,
-              '--drift':  p.drift,
-              '--drift2': p.drift2,
-            } as React.CSSProperties}
-          />
-        ))}
-        {type === 'cold' && COLD_DROPS.map((d, i) => (
-          <div
-            key={i}
-            className={styles.coldDrop}
-            style={{
-              left:        d.left,
-              '--w':       d.w,
-              '--h':       d.h,
-              '--dur':     d.dur,
-              '--delay':   d.delay,
-              '--travel':  d.travel,
-            } as React.CSSProperties}
-          />
-        ))}
-      </div>
-    </>
+    <div className={styles.slotEffect}>
+      {type === 'hot' && (
+        <>
+          <div className={styles.hotGlow} />
+          {HOT_WISPS.map((w, i) => (
+            <div
+              key={i}
+              className={`${styles.steamWisp} ${styles[w.v]}`}
+              style={{ left: w.left, animationDelay: w.delay }}
+            />
+          ))}
+        </>
+      )}
+      {type === 'cold' && (
+        <>
+          <div className={styles.coldOverlay} />
+          <div className={styles.coldGlow} />
+          {COLD_DROPS_DATA.map((d, i) => (
+            <div
+              key={i}
+              className={`${styles.coldDrop} ${styles[d.v]}`}
+              style={{ left: d.left, width: d.w, height: d.h, animationDelay: d.delay }}
+            />
+          ))}
+        </>
+      )}
+    </div>
   )
 }
 
