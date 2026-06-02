@@ -133,12 +133,12 @@ type WispVariant = 'steamWispA' | 'steamWispB' | 'steamWispC'
 type DropVariant = 'coldDropS'  | 'coldDropM'  | 'coldDropL'
 
 const HOT_WISPS: { left: string; v: WispVariant; delay: string }[] = [
-  { left: '6%',  v: 'steamWispA', delay: '0s'    },
-  { left: '20%', v: 'steamWispB', delay: '0.55s' },
-  { left: '36%', v: 'steamWispC', delay: '1.10s' },
-  { left: '52%', v: 'steamWispA', delay: '0.30s' },
-  { left: '68%', v: 'steamWispB', delay: '0.85s' },
-  { left: '82%', v: 'steamWispC', delay: '1.50s' },
+  { left: '22%', v: 'steamWispB', delay: '0s'    },
+  { left: '33%', v: 'steamWispA', delay: '1.8s'  },
+  { left: '44%', v: 'steamWispC', delay: '0.7s'  },
+  { left: '54%', v: 'steamWispA', delay: '3.1s'  },
+  { left: '63%', v: 'steamWispB', delay: '1.3s'  },
+  { left: '72%', v: 'steamWispC', delay: '4.4s'  },
 ]
 
 const COLD_DROPS_DATA: { left: string; w: string; h: string; delay: string; v: DropVariant }[] = [

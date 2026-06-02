@@ -765,118 +765,133 @@
   overflow: hidden;
 }
 
-/* ── HOT: glow ámbar en la base ──────────────────────────── */
+/* ── HOT: glow ámbar sutil en la base ───────────────────── */
 .hotGlow {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 60%;
-  background: linear-gradient(to top,
-    rgba(255, 80, 0, 0.35) 0%,
-    rgba(255, 140, 20, 0.18) 40%,
+  bottom: 0; left: 10%; right: 10%;
+  height: 55%;
+  background: radial-gradient(ellipse at 50% 100%,
+    rgba(255, 90, 10, 0.22) 0%,
+    rgba(255, 140, 20, 0.10) 50%,
     transparent 100%
   );
   mix-blend-mode: screen;
 }
 
-/* ── Columna de vapor — base compartida ─────────────────── */
+/* ── Voluta de vapor — base compartida ──────────────────── */
+/* Usamos filter:blur grande + opacidad baja = aspecto real de humo */
 .steamWisp {
   position: absolute;
-  bottom: 8%;
-  width: 70px;
-  height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 68%,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(230, 230, 230, 0.55) 42%,
+  bottom: 4%;
+  width: 90px;
+  height: 140px;
+  border-radius: 50% 45% 55% 40%;
+  background: radial-gradient(ellipse at 48% 72%,
+    rgba(210, 210, 200, 0.42) 0%,
+    rgba(190, 190, 180, 0.18) 55%,
     transparent 100%
   );
-  filter: blur(14px);
+  filter: blur(18px);
   opacity: 0;
-  transform-origin: bottom center;
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
 }
 
-/* Variante A — deriva a la derecha */
-.steamWispA { animation: steamRiseA 3.0s ease-out infinite; }
-/* Variante B — deriva a la izquierda */
-.steamWispB { animation: steamRiseB 2.7s ease-out infinite; }
-/* Variante C — sube más alto, más fino */
-.steamWispC { animation: steamRiseC 3.4s ease-out infinite; }
+/*
+  3 variantes con trayectorias ondulantes distintas.
+  — Duración 6-8 s (lento, como humo real)
+  — Pico de opacidad ~0.38 (traslúcido)
+  — 7+ fotogramas para la curva serpentina
+*/
+.steamWispA { animation: steamA 7.2s cubic-bezier(0.25,0,0.5,1) infinite; }
+.steamWispB { animation: steamB 8.6s cubic-bezier(0.20,0,0.6,1) infinite; }
+.steamWispC { animation: steamC 6.8s cubic-bezier(0.30,0,0.4,1) infinite; }
 
-@keyframes steamRiseA {
-  0%   { transform: translateY(0)    translateX(0)    scale(0.45); opacity: 0;    }
-  10%  { opacity: 0.88; }
-  60%  { transform: translateY(-90px)  translateX(16px)  scale(1.30); opacity: 0.50; }
-  100% { transform: translateY(-165px) translateX(10px)  scale(1.75); opacity: 0;    }
+@keyframes steamA {
+  0%   { transform: translate(  0px,   0px) scale(0.38) rotate(0deg);   opacity: 0;    }
+  8%   { transform: translate( -4px, -18px) scale(0.55) rotate(-2deg);  opacity: 0.32; }
+  22%  { transform: translate(  8px, -42px) scale(0.75) rotate( 4deg);  opacity: 0.38; }
+  38%  { transform: translate( -6px, -72px) scale(0.95) rotate(-5deg);  opacity: 0.30; }
+  55%  { transform: translate( 12px,-105px) scale(1.18) rotate( 6deg);  opacity: 0.20; }
+  72%  { transform: translate( -5px,-138px) scale(1.40) rotate(-3deg);  opacity: 0.10; }
+  100% { transform: translate(  4px,-175px) scale(1.65) rotate( 2deg);  opacity: 0;    }
 }
-@keyframes steamRiseB {
-  0%   { transform: translateY(0)    translateX(0)    scale(0.50); opacity: 0;    }
-  10%  { opacity: 0.80; }
-  60%  { transform: translateY(-80px)  translateX(-18px) scale(1.40); opacity: 0.45; }
-  100% { transform: translateY(-155px) translateX(-11px) scale(1.80); opacity: 0;    }
+@keyframes steamB {
+  0%   { transform: translate(  0px,   0px) scale(0.42) rotate(0deg);   opacity: 0;    }
+  6%   { transform: translate(  6px, -14px) scale(0.58) rotate( 3deg);  opacity: 0.28; }
+  20%  { transform: translate(-10px, -38px) scale(0.78) rotate(-6deg);  opacity: 0.35; }
+  35%  { transform: translate(  7px, -65px) scale(0.98) rotate( 4deg);  opacity: 0.28; }
+  52%  { transform: translate(-12px, -96px) scale(1.22) rotate(-7deg);  opacity: 0.18; }
+  70%  { transform: translate(  8px,-130px) scale(1.48) rotate( 3deg);  opacity: 0.08; }
+  100% { transform: translate( -3px,-168px) scale(1.78) rotate(-2deg);  opacity: 0;    }
 }
-@keyframes steamRiseC {
-  0%   { transform: translateY(0)    translateX(0)    scale(0.40); opacity: 0;    }
-  10%  { opacity: 0.92; }
-  60%  { transform: translateY(-105px) translateX(9px)   scale(1.20); opacity: 0.42; }
-  100% { transform: translateY(-180px) translateX(-6px)  scale(1.65); opacity: 0;    }
+@keyframes steamC {
+  0%   { transform: translate(  0px,   0px) scale(0.35) rotate(0deg);   opacity: 0;    }
+  10%  { transform: translate(  3px, -20px) scale(0.50) rotate( 2deg);  opacity: 0.30; }
+  25%  { transform: translate(-8px,  -50px) scale(0.72) rotate(-4deg);  opacity: 0.36; }
+  42%  { transform: translate( 10px, -82px) scale(0.92) rotate( 6deg);  opacity: 0.24; }
+  60%  { transform: translate( -7px,-116px) scale(1.15) rotate(-5deg);  opacity: 0.13; }
+  80%  { transform: translate(  5px,-148px) scale(1.38) rotate( 2deg);  opacity: 0.05; }
+  100% { transform: translate( -2px,-180px) scale(1.60) rotate(-1deg);  opacity: 0;    }
 }
 
-/* ── COLD: overlay escarcha ──────────────────────────────── */
+/* ── COLD: overlay de escarcha y gotas ───────────────────── */
 .coldOverlay {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 2%   2%,   rgba(180,220,255,0.28) 0%, transparent 44%),
-    radial-gradient(ellipse at 98%  2%,   rgba(180,220,255,0.22) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 98%,   rgba(140,200,255,0.18) 0%, transparent 50%);
+    radial-gradient(ellipse at  5%  5%,  rgba(160,210,255,0.20) 0%, transparent 38%),
+    radial-gradient(ellipse at 95%  8%,  rgba(160,210,255,0.16) 0%, transparent 34%),
+    radial-gradient(ellipse at 50% 95%,  rgba(120,190,255,0.14) 0%, transparent 42%);
   mix-blend-mode: screen;
 }
 .coldGlow {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 50%;
+  height: 45%;
   background: linear-gradient(to top,
-    rgba(60, 140, 255, 0.28) 0%,
-    rgba(100, 180, 255, 0.10) 50%,
+    rgba(40, 110, 220, 0.20) 0%,
+    rgba(80, 160, 255, 0.07) 50%,
     transparent 100%
   );
 }
 
-/* Gota de condensación — base */
+/* Gota — base */
 .coldDrop {
   position: absolute;
   top: 0;
   border-radius: 0 0 999px 999px;
   background: linear-gradient(to bottom,
-    rgba(200, 235, 255, 0.82),
-    rgba(180, 220, 255, 0.28)
+    rgba(185, 225, 255, 0.70),
+    rgba(160, 210, 255, 0.20)
   );
-  filter: blur(0.6px);
+  filter: blur(0.8px);
   opacity: 0;
+  will-change: transform, opacity;
 }
 
-/* Variantes de recorrido */
-.coldDropS { animation: dropFallS 3.2s linear infinite; }
-.coldDropM { animation: dropFallM 3.8s linear infinite; }
-.coldDropL { animation: dropFallL 4.4s linear infinite; }
+/* Duración más lenta y suave — la condensación escurre lento */
+.coldDropS { animation: dropS 5.5s ease-in infinite; }
+.coldDropM { animation: dropM 6.8s ease-in infinite; }
+.coldDropL { animation: dropL 8.0s ease-in infinite; }
 
-@keyframes dropFallS {
-  0%   { transform: translateY(-6px); opacity: 0;   }
-  8%   { opacity: 0.85; }
-  88%  { opacity: 0.50; }
-  100% { transform: translateY(80px);  opacity: 0;   }
+@keyframes dropS {
+  0%   { transform: translateY(-4px); opacity: 0;   }
+  6%   { opacity: 0.72; }
+  80%  { opacity: 0.40; }
+  100% { transform: translateY(85px);  opacity: 0;  }
 }
-@keyframes dropFallM {
-  0%   { transform: translateY(-6px); opacity: 0;   }
-  8%   { opacity: 0.85; }
-  88%  { opacity: 0.50; }
-  100% { transform: translateY(115px); opacity: 0;   }
+@keyframes dropM {
+  0%   { transform: translateY(-4px); opacity: 0;   }
+  6%   { opacity: 0.68; }
+  80%  { opacity: 0.38; }
+  100% { transform: translateY(120px); opacity: 0;  }
 }
-@keyframes dropFallL {
-  0%   { transform: translateY(-6px); opacity: 0;   }
-  8%   { opacity: 0.85; }
-  88%  { opacity: 0.50; }
-  100% { transform: translateY(150px); opacity: 0;   }
+@keyframes dropL {
+  0%   { transform: translateY(-4px); opacity: 0;   }
+  6%   { opacity: 0.62; }
+  80%  { opacity: 0.32; }
+  100% { transform: translateY(160px); opacity: 0;  }
 }
 
 
