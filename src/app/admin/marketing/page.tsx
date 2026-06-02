@@ -330,58 +330,65 @@ export default function MarketingPage() {
 
         <div className={styles.slotsGrid}>
           {slots.map((slot, idx) => (
-            <div
-              key={idx}
-              className={`${styles.slot} ${slot.dragOver ? styles.slotOver : ""} ${slot.loading ? styles.slotLoading : ""}`}
-              onDragOver={e => onDragOver(e, idx)}
-              onDragLeave={() => onDragLeave(idx)}
-              onDrop={e => onDrop(e, idx)}
-              onClick={() => !slot.url && fileRefs.current[idx]?.click()}
-            >
-              <span className={styles.slotN}>{idx + 1}</span>
-              {slot.loading ? (
-                <div className={styles.slotSpinner}><RefreshCw size={24} className={styles.spin} /></div>
-              ) : slot.url ? (
-                <>
+            <div key={idx} className={styles.slotCard}>
+              {/* Imagen */}
+              <div
+                className={`${styles.slot} ${slot.dragOver ? styles.slotOver : ""} ${slot.loading ? styles.slotLoading : ""}`}
+                onDragOver={e => onDragOver(e, idx)}
+                onDragLeave={() => onDragLeave(idx)}
+                onDrop={e => onDrop(e, idx)}
+                onClick={() => !slot.url && fileRefs.current[idx]?.click()}
+              >
+                <span className={styles.slotN}>{idx + 1}</span>
+                {slot.loading ? (
+                  <div className={styles.slotSpinner}><RefreshCw size={24} className={styles.spin} /></div>
+                ) : slot.url ? (
                   <img src={slot.url} alt={`Slot ${idx + 1}`} className={styles.slotImg} />
-                  <div className={styles.slotOverlay}>
-                    <button className={styles.slotAction} onClick={e => { e.stopPropagation(); setPreview(slot.url!) }} title="Ver"><ZoomIn size={16} /></button>
-                    <button className={styles.slotAction} onClick={e => { e.stopPropagation(); fileRefs.current[idx]?.click() }} title="Reemplazar"><Upload size={16} /></button>
-                    <button className={`${styles.slotAction} ${styles.slotDelete}`} onClick={e => { e.stopPropagation(); void deleteSlot(idx) }} title="Eliminar" disabled={saving === idx}><Trash2 size={16} /></button>
+                ) : (
+                  <div className={styles.slotEmpty}>
+                    <Upload size={28} className={styles.slotEmptyIcon} />
+                    <span className={styles.slotEmptyLabel}>Arrastra o click</span>
+                    <span className={styles.slotEmptyHint}>JPG · PNG · WebP</span>
                   </div>
-                  {/* Selector de efecto temperatura */}
-                  <div className={styles.slotTypeBar} onClick={e => e.stopPropagation()}>
-                    <button
-                      className={`${styles.slotTypeBtn} ${slot.type === 'hot'  ? styles.slotTypeBtnHot  : ''}`}
-                      onClick={() => void setSlotType(idx, 'hot')}
-                      title="Caliente — vapor"
-                    ><Flame size={13} /></button>
-                    <button
-                      className={`${styles.slotTypeBtn} ${slot.type === 'none' ? styles.slotTypeBtnNone : ''}`}
-                      onClick={() => void setSlotType(idx, 'none')}
-                      title="Sin efecto"
-                    ><Minus size={13} /></button>
-                    <button
-                      className={`${styles.slotTypeBtn} ${slot.type === 'cold' ? styles.slotTypeBtnCold : ''}`}
-                      onClick={() => void setSlotType(idx, 'cold')}
-                      title="Frío — condensación"
-                    ><Snowflake size={13} /></button>
-                  </div>
-                </>
-              ) : (
-                <div className={styles.slotEmpty}>
-                  <Upload size={28} className={styles.slotEmptyIcon} />
-                  <span className={styles.slotEmptyLabel}>Arrastra o click</span>
-                  <span className={styles.slotEmptyHint}>JPG · PNG · WebP</span>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={el => { fileRefs.current[idx] = el }}
+                  className={styles.fileInput}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSlot(idx, f); e.target.value = "" }}
+                />
+              </div>
+
+              {/* Acciones — siempre visibles en mobile y desktop */}
+              {slot.url && !slot.loading && (
+                <div className={styles.slotActionsRow}>
+                  <button className={styles.slotAction} onClick={() => setPreview(slot.url!)} title="Ver"><ZoomIn size={14} /></button>
+                  <button className={styles.slotAction} onClick={() => fileRefs.current[idx]?.click()} title="Reemplazar"><Upload size={14} /></button>
+                  <button className={`${styles.slotAction} ${styles.slotDelete}`} onClick={() => void deleteSlot(idx)} title="Eliminar" disabled={saving === idx}><Trash2 size={14} /></button>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                ref={el => { fileRefs.current[idx] = el }}
-                className={styles.fileInput}
-                onChange={e => { const f = e.target.files?.[0]; if (f) void uploadSlot(idx, f); e.target.value = "" }}
-              />
+
+              {/* Efecto temperatura — siempre visible cuando hay imagen */}
+              {slot.url && !slot.loading && (
+                <div className={styles.slotTypeBar}>
+                  <button
+                    className={`${styles.slotTypeBtn} ${slot.type === 'hot'  ? styles.slotTypeBtnHot  : ''}`}
+                    onClick={() => void setSlotType(idx, 'hot')}
+                    title="Caliente — vapor"
+                  ><Flame size={12} /></button>
+                  <button
+                    className={`${styles.slotTypeBtn} ${slot.type === 'none' ? styles.slotTypeBtnNone : ''}`}
+                    onClick={() => void setSlotType(idx, 'none')}
+                    title="Sin efecto"
+                  ><Minus size={12} /></button>
+                  <button
+                    className={`${styles.slotTypeBtn} ${slot.type === 'cold' ? styles.slotTypeBtnCold : ''}`}
+                    onClick={() => void setSlotType(idx, 'cold')}
+                    title="Frío — condensación"
+                  ><Snowflake size={12} /></button>
+                </div>
+              )}
             </div>
           ))}
         </div>

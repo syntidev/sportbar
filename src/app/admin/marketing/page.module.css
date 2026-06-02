@@ -27,6 +27,13 @@
 @media (max-width: 700px) { .slotsGrid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 480px) { .slotsGrid { grid-template-columns: repeat(2, 1fr); } }
 
+/* Cada slot es una tarjeta vertical: imagen arriba, controles abajo */
+.slotCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .slot {
   position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden;
   background: var(--color-surface-2); border: 2px dashed var(--color-border);
@@ -46,50 +53,48 @@
 .spin { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.slotOverlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,0); display: flex;
-  align-items: center; justify-content: center; gap: 6px;
-  transition: background .15s; opacity: 0;
-}
-.slot:hover .slotOverlay { background: rgba(0,0,0,.52); opacity: 1; }
-
-.slotAction {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
-  color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: background .12s;
-}
-.slotAction:hover { background: rgba(255,255,255,.28); }
-.slotDelete:hover { background: rgba(198,40,40,.7) !important; }
-
-/* ── Selector temperatura por slot ────────────────────────── */
-.slotTypeBar {
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
+/* ── Botones de acción — siempre visibles debajo de la imagen ── */
+.slotActionsRow {
   display: flex;
   gap: 4px;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 999px;
-  padding: 4px 6px;
-  z-index: 10;
+  justify-content: center;
+}
+.slotAction {
+  flex: 1;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
+}
+.slotAction:hover { background: var(--color-surface); color: var(--color-text); }
+.slotDelete:hover { background: rgba(198,40,40,.25) !important; color: #ff6b6b !important; border-color: rgba(198,40,40,.4) !important; }
+
+/* ── Selector de efecto — fila debajo de acciones ─────────── */
+.slotTypeBar {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
 }
 .slotTypeBtn {
-  width: 26px; height: 26px; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.18);
-  background: transparent;
-  color: rgba(255,255,255,.55);
+  flex: 1;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background .12s, color .12s, border-color .12s;
+  font-size: 11px;
 }
-.slotTypeBtn:hover { background: rgba(255,255,255,.12); color: #fff; }
-.slotTypeBtnHot  { background: rgba(220,80,20,.6)  !important; color: #ffd3a0 !important; border-color: rgba(255,120,40,.5) !important; }
-.slotTypeBtnNone { background: rgba(255,255,255,.18) !important; color: #fff !important; border-color: rgba(255,255,255,.35) !important; }
-.slotTypeBtnCold { background: rgba(30,100,200,.6)  !important; color: #c8e8ff !important; border-color: rgba(140,200,255,.5) !important; }
+.slotTypeBtn:hover { background: var(--color-surface); color: var(--color-text); }
+.slotTypeBtnHot  { background: rgba(220,80,20,.25)  !important; color: #ffb380 !important; border-color: rgba(255,120,40,.4) !important; }
+.slotTypeBtnNone { background: var(--color-surface)  !important; color: var(--color-text) !important; border-color: var(--color-border) !important; }
+.slotTypeBtnCold { background: rgba(30,100,200,.25)  !important; color: #99d0ff !important; border-color: rgba(140,200,255,.4) !important; }
 
 .slotEmpty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
