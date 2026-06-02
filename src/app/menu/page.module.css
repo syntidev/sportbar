@@ -182,7 +182,7 @@
   background:radial-gradient(circle at 38% 32%, #38291a, #15110d);
   display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-card);
   overflow:hidden; }
-.prodImg { width:88px; height:88px; object-fit:cover; border-radius:0; display:block; }
+.prodImg { width:88px; height:88px; object-fit:contain; object-position:center; border-radius:0; display:block; padding:4px; }
 
 .prodBody { flex:1; min-width:0; }
 .prodName { font-size:16px; font-weight:700; color:var(--color-text); }
