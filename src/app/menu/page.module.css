@@ -551,30 +551,53 @@
   filter: blur(40px); pointer-events: none; z-index: 0;
 }
 
-/* 1 — Logo */
+/* 1 — Logo — PNG puro, sin marco ni border-radius */
 .splashTopLogo {
   position: relative; z-index: 1;
-  width: 60px; height: 60px; object-fit: contain;
-  margin-bottom: 8px;
-  border-radius: 10px;
-  filter: drop-shadow(0 4px 16px rgba(245,166,35,.35));
+  width: 84px; height: 84px; object-fit: contain;
+  margin-bottom: 2px;
+  /* Sin border-radius: el PNG ya tiene su forma */
+  filter: drop-shadow(0 6px 28px rgba(245,166,35,.5))
+          drop-shadow(0 2px 8px rgba(0,0,0,.55));
 }
 .splashLogoPlaceholder {
   position: relative; z-index: 1;
-  width: 60px; height: 60px; border-radius: 12px;
+  width: 84px; height: 84px; border-radius: 16px;
   background: var(--color-surface-2); border: 1px solid var(--color-border);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: 28px; color: var(--color-brand);
-  margin-bottom: 8px;
-  filter: drop-shadow(0 4px 16px rgba(245,166,35,.25));
+  font-family: var(--font-display); font-size: 36px; color: var(--color-brand);
+  margin-bottom: 2px;
+  filter: drop-shadow(0 4px 18px rgba(245,166,35,.28));
+}
+
+/* 1b — Nombre del sitio — debajo del logo, identidad de marca */
+.splashSiteName {
+  position: relative; z-index: 1;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  opacity: 0.78;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.splashSiteName::before,
+.splashSiteName::after {
+  content: '';
+  display: block;
+  width: 18px; height: 1px;
+  background: var(--color-brand);
+  opacity: 0.55;
+  flex: none;
 }
 
 /* 2 — Imagen producto — 55% viewport */
 .splashImgWrap {
   position: relative; z-index: 2;
-  width: min(55vw, 280px); height: min(55vw, 280px);
+  width: min(56vw, 290px); height: min(56vw, 290px);
   display: flex; align-items: center; justify-content: center;
-  margin: 4px 0 20px;
+  margin: 0 0 16px;
 }
 .splashImg {
   width: 100%; height: 100%;
@@ -616,18 +639,20 @@
 @keyframes splashNameGlow {
   0%, 100% {
     text-shadow:
-      0 0 18px rgba(245,166,35,.5),
-      0 0 36px rgba(245,166,35,.18),
-      0 2px 6px rgba(0,0,0,.7);
+      0 0 22px rgba(245,166,35,.55),
+      0 0 44px rgba(245,166,35,.2),
+      0 2px 8px rgba(0,0,0,.75);
     color: var(--color-brand);
+    letter-spacing: .04em;
   }
   50% {
     text-shadow:
-      0 0 28px rgba(245,166,35,.9),
-      0 0 56px rgba(245,166,35,.4),
-      0 0 90px rgba(245,166,35,.15),
-      0 2px 6px rgba(0,0,0,.7);
-    color: #ffc84a;
+      0 0 32px rgba(255,185,50,.95),
+      0 0 64px rgba(245,166,35,.45),
+      0 0 110px rgba(245,166,35,.18),
+      0 2px 8px rgba(0,0,0,.75);
+    color: #ffd060;
+    letter-spacing: .055em;
   }
 }
 

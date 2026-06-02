@@ -227,26 +227,36 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
       <div className={styles.splashGlow} />
       <div className={styles.splashGlow2} />
 
-      {/* 1 — Logo */}
+      {/* 1 — Logo: PNG sin marco, más grande */}
       {config.logoUrl ? (
         <motion.img
           src={config.logoUrl}
           alt={config.businessName}
           className={styles.splashTopLogo}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, scale: 0.7, y: -16 }}
+          animate={{ opacity: 1, scale: 1,   y: 0 }}
+          transition={{ delay: 0.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         />
       ) : (
         <motion.div
           className={styles.splashLogoPlaceholder}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, scale: 0.7, y: -16 }}
+          animate={{ opacity: 1, scale: 1,   y: 0 }}
+          transition={{ delay: 0.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
           {config.businessName.charAt(0).toUpperCase()}
         </motion.div>
       )}
+
+      {/* 1b — Nombre del sitio: debajo del logo, identidad de marca */}
+      <motion.div
+        className={styles.splashSiteName}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.38, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {config.businessName}
+      </motion.div>
 
       {/* 2 — Imagen producto — 55% viewport, entra desde abajo con spring */}
       {config.productImage && (
