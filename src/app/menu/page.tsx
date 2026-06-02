@@ -518,6 +518,8 @@ function MenuContent() {
   const [heroSlots,  setHeroSlots]  = useState<HeroSlot[]>([]);
   const [sliderIdx,  setSliderIdx]  = useState(0);
   const sliderTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const swipeStart  = useRef<{ x: number; y: number } | null>(null);
+  const swipeDragging = useRef(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -582,13 +584,44 @@ function MenuContent() {
 
   // Hero slider autoplay (4 s)
   const activeSlots = useMemo(() => heroSlots.filter(s => s.url !== null), [heroSlots]);
-  useEffect(() => {
-    if (activeSlots.length <= 1) return;
+
+  const restartSliderTimer = useCallback((slots: HeroSlot[]) => {
+    if (sliderTimer.current) clearInterval(sliderTimer.current);
+    if (slots.length <= 1) return;
     sliderTimer.current = setInterval(() => {
-      setSliderIdx(i => (i + 1) % activeSlots.length);
+      setSliderIdx(i => (i + 1) % slots.length);
     }, 4000);
+  }, []);
+
+  useEffect(() => {
+    restartSliderTimer(activeSlots);
     return () => { if (sliderTimer.current) clearInterval(sliderTimer.current); };
-  }, [activeSlots.length]);
+  }, [activeSlots, restartSliderTimer]);
+
+  const onSliderTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    swipeStart.current  = { x, y };
+    swipeDragging.current = false;
+  }, []);
+
+  const onSliderTouchEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    if (!swipeStart.current) return;
+    const x = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
+    const y = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
+    const dx = x - swipeStart.current.x;
+    const dy = y - swipeStart.current.y;
+    swipeStart.current = null;
+    // Only handle if horizontal drag dominates and > 40px
+    if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+    setSliderIdx(i => {
+      const next = dx < 0
+        ? (i + 1) % activeSlots.length
+        : (i - 1 + activeSlots.length) % activeSlots.length;
+      return next;
+    });
+    restartSliderTimer(activeSlots);
+  }, [activeSlots, restartSliderTimer]);
 
   // After products load, set activeGroup to first group that has products
   useEffect(() => {
@@ -848,7 +881,13 @@ function MenuContent() {
 
         {/* Ad banner slider */}
         {activeSlots.length > 0 && (
-          <div className={styles.adSlider}>
+          <div
+              className={styles.adSlider}
+              onTouchStart={onSliderTouchStart}
+              onTouchEnd={onSliderTouchEnd}
+              onMouseDown={onSliderTouchStart}
+              onMouseUp={onSliderTouchEnd}
+            >
             <div
               className={styles.adTrack}
               style={{ transform: `translateX(-${sliderIdx * 100}%)` }}
@@ -868,7 +907,7 @@ function MenuContent() {
                     className={styles.adDot + (i === sliderIdx ? " " + styles.adDotActive : "")}
                     onClick={() => {
                       setSliderIdx(i);
-                      if (sliderTimer.current) clearInterval(sliderTimer.current);
+                      restartSliderTimer(activeSlots);
                     }}
                     aria-label={`Slide ${i + 1}`}
                   />
