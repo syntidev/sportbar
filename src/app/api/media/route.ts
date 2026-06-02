@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     if (!VALID_TYPES.has(type as MediaType)) {
       return NextResponse.json(
-        { success: false, error: `Tipo inválido. Opciones: ${[...VALID_TYPES].join(', ')}` },
+        { success: false, error: `Tipo inválido. Opciones: ${Array.from(VALID_TYPES).join(', ')}` },
         { status: 400 },
       )
     }
