@@ -13,6 +13,7 @@ const PRODUCT_SELECT = {
   badge:       true,
   is_featured: true,
   image_url:   true,
+  effect_type: true,
   is_active:   true,
 } as const
 
@@ -37,6 +38,7 @@ const UpdateSchema = z.object({
   badge:       z.enum(VALID_BADGES).nullable().optional(),
   is_featured: z.boolean().optional(),
   is_active:   z.boolean().optional(),
+  effect_type: z.enum(['steam', 'frost']).nullable().optional(),
 })
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -120,7 +122,7 @@ export async function PUT(
     )
   }
 
-  const { name, description, price_usd, category, badge, is_featured, is_active } = parsed.data
+  const { name, description, price_usd, category, badge, is_featured, is_active, effect_type } = parsed.data
 
   try {
     const product = await prisma.product.update({
@@ -133,6 +135,7 @@ export async function PUT(
         badge:       badge ?? null,
         is_featured: is_featured ?? false,
         is_active:   is_active ?? true,
+        effect_type: effect_type ?? null,
       },
       select: PRODUCT_SELECT,
     })

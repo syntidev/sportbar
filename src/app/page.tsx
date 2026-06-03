@@ -30,6 +30,7 @@ interface Product {
   is_featured: boolean;
   badge:       string | null;
   image_url:   string | null;
+  effect_type: 'steam' | 'frost' | null;
 }
 
 interface TurnoData {
@@ -127,6 +128,19 @@ const slideInLeft: Variants = {
   hidden:  { opacity: 0, x: -14 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" } },
 };
+
+// ── Estilo compartido para overlays de video efecto ──────────────────────────
+const EFFECT_VIDEO_STYLE: React.CSSProperties = {
+  position:      'absolute',
+  inset:         0,
+  width:         '100%',
+  height:        '100%',
+  objectFit:     'cover',
+  mixBlendMode:  'screen',
+  pointerEvents: 'none',
+  zIndex:        2,
+  opacity:       0.75,
+}
 
 // ── SlotEffect — vapor (hot) / condensación (cold) ─────────────────────────────
 type WispVariant = 'steamWispA' | 'steamWispB' | 'steamWispC' | 'steamWispD' | 'steamWispE' | 'steamWispF' | 'steamWispG'
@@ -299,6 +313,14 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
                 transition: { duration: 0.30, ease: [0.4, 0, 1, 1] } }}
             />
           </AnimatePresence>
+          {/* overlay video efecto */}
+          {config.effectType !== 'none' && (
+            <video
+              src={`/effects/${config.effectType === 'hot' ? 'steam' : 'frost'}.mp4`}
+              autoPlay loop muted playsInline
+              style={{ ...EFFECT_VIDEO_STYLE, zIndex: 11 }}
+            />
+          )}
           {/* efectos temperatura sobre el slider también */}
           <SlotEffect type={config.effectType} />
           {/* Dots indicadores */}
@@ -327,6 +349,13 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
           />
+          {config.effectType !== 'none' && (
+            <video
+              src={`/effects/${config.effectType === 'hot' ? 'steam' : 'frost'}.mp4`}
+              autoPlay loop muted playsInline
+              style={{ ...EFFECT_VIDEO_STYLE, zIndex: 11 }}
+            />
+          )}
           {/* efectos calor/frío sobre la imagen del producto */}
           <SlotEffect type={config.effectType} />
           <motion.div
@@ -536,6 +565,13 @@ function FeatCard({ p, rate, qty, onAdd, onSelect }: FeatCardProps) {
               <CatPlaceholder category={p.category} size={52} opacity={0.3} />
             </div>
         }
+        {p.effect_type && (
+          <video
+            src={`/effects/${p.effect_type}.mp4`}
+            autoPlay loop muted playsInline
+            style={EFFECT_VIDEO_STYLE}
+          />
+        )}
       </div>
       <div className={styles.featName}>{p.name}</div>
       <div className={styles.featDesc}>{p.description ?? " "}</div>
@@ -578,6 +614,13 @@ function ProdRow({ p, rate, qty, onAdd, onSelect }: ProdRowProps) {
             ? <img src={p.image_url} alt={p.name} className={styles.prodImg} />
             : <CatPlaceholder category={p.category} size={30} />
           }
+          {p.effect_type && (
+            <video
+              src={`/effects/${p.effect_type}.mp4`}
+              autoPlay loop muted playsInline
+              style={EFFECT_VIDEO_STYLE}
+            />
+          )}
         </div>
       </div>
       <div className={styles.prodBody}>

@@ -13,6 +13,7 @@ const PRODUCT_SELECT = {
   badge:       true,
   is_featured: true,
   image_url:   true,
+  effect_type: true,
   is_active:   true,
 } as const
 
@@ -28,6 +29,7 @@ const CreateSchema = z.object({
   badge:       z.enum(VALID_BADGES).nullable().optional(),
   is_featured: z.boolean().optional().default(false),
   is_active:   z.boolean().optional().default(true),
+  effect_type: z.enum(['steam', 'frost']).nullable().optional(),
 })
 
 // ── GET /api/products ───────────────────────────────────────────────────────────────
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { name, description, price_usd, category, badge, is_featured, is_active } = parsed.data
+  const { name, description, price_usd, category, badge, is_featured, is_active, effect_type } = parsed.data
 
   try {
     const product = await prisma.product.create({
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
         badge:       badge ?? null,
         is_featured: is_featured ?? false,
         is_active,
+        effect_type: effect_type ?? null,
       },
       select: PRODUCT_SELECT,
     })

@@ -46,6 +46,8 @@ const HELP_FAQS = [
 
 type BadgeValue = 'popular' | 'nuevo' | 'promo' | 'recomendado'
 
+type EffectType = 'steam' | 'frost'
+
 interface Product {
   id:          number
   name:        string
@@ -55,6 +57,7 @@ interface Product {
   badge:       BadgeValue | null
   is_featured: boolean
   image_url:   string | null
+  effect_type: EffectType | null
   is_active:   boolean
 }
 
@@ -70,6 +73,7 @@ interface FormData {
   price_usd:   string
   category:    string
   badge:       BadgeValue | ''
+  effect_type: EffectType | ''
   is_featured: boolean
   is_active:   boolean
   imageFile:   File | null
@@ -98,6 +102,7 @@ const EMPTY_FORM: FormData = {
   price_usd:   '',
   category:    '',
   badge:       '',
+  effect_type: '',
   is_featured: false,
   is_active:   true,
   imageFile:   null,
@@ -193,6 +198,7 @@ export default function AdminMenuPage() {
       price_usd:   p.price_usd,
       category:    p.category,
       badge:       p.badge ?? '',
+      effect_type: p.effect_type ?? '',
       is_featured: p.is_featured,
       is_active:   p.is_active,
       imageFile:   null,
@@ -241,6 +247,7 @@ export default function AdminMenuPage() {
         price_usd:   price,
         category:    cat,
         badge:       form.badge || null,
+        effect_type: form.effect_type || null,
         is_featured: form.is_featured,
         is_active:   form.is_active,
       }
@@ -754,6 +761,34 @@ export default function AdminMenuPage() {
                       {BADGE_META[b].label}
                     </button>
                   ))}
+                </div>
+              </label>
+
+              {/* Effect type */}
+              <label className={styles.fieldLabel}>
+                Efecto visual
+                <div className={styles.badgeOptions}>
+                  <button
+                    type="button"
+                    className={`${styles.badgeOpt} ${form.effect_type === '' ? styles.badgeOptActive : ''}`}
+                    onClick={() => setForm((prev) => ({ ...prev, effect_type: '' }))}
+                  >
+                    Sin efecto
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.badgeOpt} ${form.effect_type === 'steam' ? styles.badgeOptActive : ''}`}
+                    onClick={() => setForm((prev) => ({ ...prev, effect_type: 'steam' }))}
+                  >
+                    Humo caliente
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.badgeOpt} ${form.effect_type === 'frost' ? styles.badgeOptActive : ''}`}
+                    onClick={() => setForm((prev) => ({ ...prev, effect_type: 'frost' }))}
+                  >
+                    Frío
+                  </button>
                 </div>
               </label>
 
