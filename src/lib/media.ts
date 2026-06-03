@@ -93,11 +93,9 @@ export async function uploadMedia(
 
   if (type === 'splash') {
     // Detectar canal alpha para preservar transparencia
-    const meta     = await sharp(raw).metadata()
-    const hasAlpha = meta.hasAlpha ?? false
     buf = await sharp(raw)
       .resize({ width: 1200, withoutEnlargement: true })
-      .webp(hasAlpha ? { lossless: true } : { quality: 85 })
+      .webp({ lossless: true, alphaQuality: 100 })
       .toBuffer()
 
   } else if (type === 'logo') {
