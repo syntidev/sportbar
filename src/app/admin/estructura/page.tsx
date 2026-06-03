@@ -6,7 +6,39 @@ import {
   MapPin, Pencil, Plus, RefreshCw, ShoppingBag, Store,
   Trash2, UserCheck, Users, X,
 } from 'lucide-react'
+import HelpButton from '@/components/HelpButton'
 import styles from './page.module.css'
+
+// ── Help content ──────────────────────────────────────────────────────────────
+
+const HELP_STEPS = [
+  {
+    title: 'Cómo crear una zona',
+    body:  'Ve a la pestaña "Zonas" → presiona "Nueva Zona". Ponle un nombre (ej: Terraza, VIP, Barra), elige un color para identificarla visualmente y define la capacidad de personas. Guarda.',
+    tip:   'El color de la zona aparece en las comandas y en el visor del KDS para que cocina y bar sepan de dónde viene cada pedido.',
+  },
+  {
+    title: 'Cómo crear un quiosco',
+    body:  'Ve a la pestaña "Quioscos" → presiona "Nuevo Quiosco". Define el nombre (ej: Mostrador 1, Mesa QR), el tipo (quiosco, cocina, bar) y si estará activo desde el inicio.',
+    tip:   'Cada quiosco tiene su propio acceso independiente. Un mesero se asigna a un quiosco y solo ve sus propias comandas.',
+  },
+  {
+    title: 'Cómo asignar zonas a quioscos',
+    body:  'Ve a la pestaña "Asignaciones". Verás una matriz: filas = zonas, columnas = quioscos. Activa el checkbox donde se cruzan para vincularlos. Un quiosco puede atender varias zonas.',
+    tip:   'Si desasignas una zona de un quiosco, los meseros de ese quiosco ya no podrán tomar órdenes en esa zona.',
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: '¿Qué diferencia hay entre zona y quiosco?',
+    a: 'La zona es un espacio físico del local (terraza, salón, barra). El quiosco es un punto de atención (tablet, caja, mesero). Un quiosco puede atender varias zonas y una zona puede ser atendida por varios quioscos.',
+  },
+  {
+    q: '¿Puedo tener un quiosco sin zona?',
+    a: 'Sí. Un quiosco sin zona asignada puede recibir órdenes pero las comandas no mostrarán zona específica. Es útil para pedidos para llevar o entregas sin asiento fijo.',
+  },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -345,12 +377,15 @@ export default function EstructuraPage() {
           <h1 className={styles.pageTitle}>Estructura</h1>
           <p className={styles.pageSub}>Zonas · Quioscos · Asignaciones</p>
         </div>
-        {activeTab === 'zonas' && (
-          <button className={styles.btnPrimary} onClick={openZoneCreate}>
-            <Plus size={16} aria-hidden />
-            Nueva Zona
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <HelpButton title="Estructura del Local" steps={HELP_STEPS} faqs={HELP_FAQS} />
+          {activeTab === 'zonas' && (
+            <button className={styles.btnPrimary} onClick={openZoneCreate}>
+              <Plus size={16} aria-hidden />
+              Nueva Zona
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

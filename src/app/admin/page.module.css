@@ -95,6 +95,13 @@
   50%       { opacity: 0.35; transform: scale(0.6); }
 }
 
+.headerRight {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  flex-shrink: 0;
+}
+
 .clock {
   display: flex;
   align-items: center;

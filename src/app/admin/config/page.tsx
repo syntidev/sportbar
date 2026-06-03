@@ -7,7 +7,34 @@ import {
   GripVertical, Plus, Pencil, Trash2, X,
 } from "lucide-react";
 import Link from "next/link";
+import HelpButton from "@/components/HelpButton";
 import styles from "./page.module.css";
+
+// ── Help content ──────────────────────────────────────────────────────────────
+
+const HELP_STEPS = [
+  {
+    title: "Cómo configurar métodos de pago",
+    body:  "Ve a la sección Cobros → presiona el + para agregar un método (efectivo, pago móvil, transferencia, punto de venta). Activa o desactiva los que uses. Arrastra para cambiar el orden en que aparecen al cobrar.",
+    tip:   "Puedes tener activos solo los métodos que realmente recibes. Los inactivos no aparecen en la pantalla de cobro del mesero.",
+  },
+  {
+    title: "Cómo configurar el routing KDS",
+    body:  "El routing define a qué pantalla de cocina o bar llega cada producto. En Menú, cada producto tiene asignado un destino (Cocina o Bar). Si un pedido mezcla ambos, los KDS reciben simultáneamente su parte.",
+    tip:   "Las hamburguesas y raciones van a KDS Cocina. Las bebidas van a KDS Bar. Despacho espera que ambos hagan bump antes de marcar lista la orden.",
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: "¿Qué es el routing KDS?",
+    a: "Es la regla que define adónde van las órdenes: Cocina ve las hamburgesas y raciones, Bar ve las bebidas. Si el pedido tiene de los dos, ambas pantallas reciben su parte al mismo tiempo sin que el mesero haga nada.",
+  },
+  {
+    q: "¿Puedo aceptar solo efectivo?",
+    a: "Sí. Desactiva todos los métodos excepto Efectivo en la sección Cobros. El sistema solo te ofrecerá ese método al cerrar una orden. Puedes reactivar los demás cuando quieras.",
+  },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -392,7 +419,7 @@ export default function AdminConfigPage() {
           <span className={styles.pageTitle}>Configuración</span>
           <span className={styles.pageSub}>Moneda · Cobros · Dispositivos</span>
         </div>
-        <Settings size={18} style={{ color: "var(--color-text-muted)", flexShrink: 0 }} />
+        <HelpButton title="Configuración" steps={HELP_STEPS} faqs={HELP_FAQS} />
       </header>
 
       {/* ── Moneda ── */}

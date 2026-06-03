@@ -5,7 +5,39 @@ import {
   Download, FileImage, Flame, ImageIcon, Layers, Minus, QrCode,
   RefreshCw, Save, Snowflake, Trash2, Upload, X, ZoomIn,
 } from "lucide-react"
+import HelpButton from "@/components/HelpButton"
 import styles from "./page.module.css"
+
+// ── Help content ───────────────────────────────────────────────────────
+
+const HELP_STEPS = [
+  {
+    title: "Cómo subir el slider de imágenes",
+    body:  "En la sección Hero Slider, presiona el botón de subir imagen en cualquiera de los 5 slots. Sube tu foto (JPG o PNG). Puedes aplicar efecto caliente o frío encima de la imagen. Guarda con el botón verde.",
+    tip:   "Las imágenes del slider se muestran en el menú público que ven los clientes al escanear el QR. El autoplay pasa cada 4 segundos.",
+  },
+  {
+    title: "Cómo configurar la portada (Splash)",
+    body:  "En la sección Splash, sube la imagen de fondo, escribe el nombre del negocio y un texto de bienvenida. Elige el color del fondo y del texto. Presiona Guardar.",
+    tip:   "La portada es lo primero que ve el cliente al abrir el link del QR, antes de ver el menú.",
+  },
+  {
+    title: "Cómo generar el QR",
+    body:  "Ve a la sección QR → presiona Generar QR. El sistema crea el código automáticamente con el link de tu menú público. Descárgalo en PNG y úsalo donde quieras: mesas, pizarras, flyers.",
+    tip:   "El QR lleva a un link fijo que no cambia. Puedes imprimirlo una sola vez y quedará válido aunque cambies el menú.",
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: "¿Qué tamaño debe tener la imagen del slider?",
+    a: "Recomendamos imágenes de 1200 × 600 px o más, en JPG o PNG. El slider las adapta automáticamente al ancho de la pantalla del cliente. Evita imágenes de menos de 800 px de ancho para que no se vean pixeladas.",
+  },
+  {
+    q: "¿El QR cambia si cambio la zona?",
+    a: "No. El QR de acceso al menú público lleva siempre al mismo link. Si quieres QR por zona (para que el cliente indique su mesa), eso se configura en Estructura → Zonas → generar QR de zona.",
+  },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -476,8 +508,11 @@ export default function MarketingPage() {
       )}
 
       <div className={styles.pageHead}>
-        <h1 className={styles.pageTitle}>Marketing</h1>
-        <p className={styles.pageSub}>Hero slider publicitario y sticker QR de acceso</p>
+        <div>
+          <h1 className={styles.pageTitle}>Marketing</h1>
+          <p className={styles.pageSub}>Hero slider publicitario y sticker QR de acceso</p>
+        </div>
+        <HelpButton title="Marketing" steps={HELP_STEPS} faqs={HELP_FAQS} />
       </div>
 
       {/* ── HERO SLIDER ──────────────────────────────────────────────── */}

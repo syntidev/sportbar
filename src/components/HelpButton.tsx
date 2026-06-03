@@ -1,80 +1,102 @@
 'use client'
 
 // src/components/HelpButton.tsx
-// Global help button — renders a ? trigger; on click shows a modal with color/icon/action legend.
+// Drawer de ayuda contextual — portado de SYNTImeat HelpModal.vue
+// Props: title, steps (Cómo funciona), faqs (acordeón)
+// Comportamiento: botón ? → drawer slide desde la derecha, Escape cierra
 
-import { useState } from 'react'
-import { HelpCircle, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { HelpCircle, Lightbulb, X } from 'lucide-react'
 import styles from './HelpButton.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export interface HelpColor {
-  color: string
-  label: string
+export interface HelpStep {
+  title: string
+  body:  string
+  tip?:  string
 }
 
-export interface HelpIconDef {
-  icon:  string
-  label: string
-}
-
-export interface HelpAction {
-  action:      string
-  description: string
-}
-
-export interface HelpContent {
-  colors?:  HelpColor[]
-  icons?:   HelpIconDef[]
-  actions?: HelpAction[]
+export interface HelpFaq {
+  q: string
+  a: string
 }
 
 interface Props {
-  module:  string
-  title:   string
-  content: HelpContent
+  title: string
+  steps: HelpStep[]
+  faqs:  HelpFaq[]
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function HelpButton({ module, title, content }: Props) {
-  const [open, setOpen] = useState(false)
+export default function HelpButton({ title, steps, faqs }: Props) {
+  const [open,      setOpen]      = useState(false)
+  const [activeTab, setActiveTab] = useState<'steps' | 'faqs'>('steps')
+  const [openFaq,   setOpenFaq]   = useState<number | null>(null)
+  const [mounted,   setMounted]   = useState(false)
+  const closeRef = useRef<HTMLButtonElement>(null)
 
-  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) setOpen(false)
-  }
+  // SSR-safe portal
+  useEffect(() => { setMounted(true) }, [])
 
-  const hasColors  = (content.colors  ?? []).length > 0
-  const hasIcons   = (content.icons   ?? []).length > 0
-  const hasActions = (content.actions ?? []).length > 0
+  // Reset al abrir
+  useEffect(() => {
+    if (open) {
+      setActiveTab('steps')
+      setOpenFaq(null)
+      setTimeout(() => closeRef.current?.focus(), 60)
+    }
+  }, [open])
 
-  return (
-    <>
-      <button
-        type="button"
-        className={styles.trigger}
-        onClick={() => setOpen(true)}
-        aria-label={`Ayuda — ${module}`}
-        title={`Ayuda: ${title}`}
-      >
-        <HelpCircle size={16} strokeWidth={2.5} aria-hidden />
-      </button>
+  // Escape cierra
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
+  // Lock scroll
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  const hasBoth = steps.length > 0 && faqs.length > 0
+
+  const drawer = (
+    <AnimatePresence>
       {open && (
-        <div
-          className={styles.backdrop}
-          role="dialog"
-          aria-modal
-          aria-label={title}
-          onClick={handleBackdropClick}
+        <motion.div
+          className={styles.overlay}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => setOpen(false)}
         >
-          <div className={styles.modal}>
-
+          <motion.div
+            className={styles.panel}
+            role="dialog"
+            aria-modal
+            aria-label={`Ayuda: ${title}`}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
-            <div className={styles.modalHeader}>
-              <span className={styles.modalTitle}>{title}</span>
+            <div className={styles.header}>
+              <div className={styles.titleRow}>
+                <div className={styles.badge} aria-hidden>?</div>
+                <h2 className={styles.title}>{title}</h2>
+              </div>
               <button
+                ref={closeRef}
                 type="button"
                 className={styles.closeBtn}
                 onClick={() => setOpen(false)}
@@ -84,59 +106,106 @@ export default function HelpButton({ module, title, content }: Props) {
               </button>
             </div>
 
+            {/* Tabs */}
+            {hasBoth && (
+              <div className={styles.tabs} role="tablist">
+                <button
+                  role="tab"
+                  aria-selected={activeTab === 'steps'}
+                  className={`${styles.tab} ${activeTab === 'steps' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('steps')}
+                >
+                  Cómo funciona
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={activeTab === 'faqs'}
+                  className={`${styles.tab} ${activeTab === 'faqs' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('faqs')}
+                >
+                  Preguntas frecuentes
+                </button>
+              </div>
+            )}
+
             {/* Body */}
-            <div className={styles.modalBody}>
+            <div className={styles.body}>
 
-              {hasColors && (
-                <section className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Colores</h3>
-                  <ul className={styles.list}>
-                    {content.colors!.map((c) => (
-                      <li key={c.label} className={styles.colorRow}>
-                        <span
-                          className={styles.colorDot}
-                          style={{ background: c.color }}
-                          aria-hidden
-                        />
-                        <span className={styles.itemLabel}>{c.label}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+              {/* Pasos */}
+              {(activeTab === 'steps' || !hasBoth) && steps.length > 0 && (
+                <div className={styles.stepsList}>
+                  {steps.map((step, i) => (
+                    <div key={i} className={styles.stepItem}>
+                      <div className={styles.stepNum} aria-hidden>{i + 1}</div>
+                      <div className={styles.stepContent}>
+                        <span className={styles.stepTitle}>{step.title}</span>
+                        <p className={styles.stepBody}>{step.body}</p>
+                        {step.tip && (
+                          <p className={styles.stepTip}>
+                            <Lightbulb size={13} className={styles.tipIcon} aria-hidden />
+                            {step.tip}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
-              {hasIcons && (
-                <section className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Íconos</h3>
-                  <ul className={styles.list}>
-                    {content.icons!.map((ic) => (
-                      <li key={ic.label} className={styles.iconRow}>
-                        <span className={styles.iconGlyph}>{ic.icon}</span>
-                        <span className={styles.itemLabel}>{ic.label}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {hasActions && (
-                <section className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Acciones</h3>
-                  <ul className={styles.list}>
-                    {content.actions!.map((a) => (
-                      <li key={a.action} className={styles.actionRow}>
-                        <span className={styles.actionName}>{a.action}</span>
-                        <span className={styles.actionDesc}>{a.description}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+              {/* FAQs acordeón */}
+              {(activeTab === 'faqs' || !hasBoth) && faqs.length > 0 && (
+                <div className={styles.faqsList}>
+                  {faqs.map((faq, i) => (
+                    <div key={i} className={styles.faqItem}>
+                      <button
+                        type="button"
+                        className={styles.faqQ}
+                        aria-expanded={openFaq === i}
+                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      >
+                        <span className={styles.faqText}>{faq.q}</span>
+                        <span className={styles.faqCaret} aria-hidden>
+                          {openFaq === i ? '▲' : '▼'}
+                        </span>
+                      </button>
+                      <AnimatePresence>
+                        {openFaq === i && (
+                          <motion.p
+                            className={styles.faqA}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            {faq.a}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
               )}
 
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
+  )
+
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.trigger}
+        onClick={() => setOpen(true)}
+        aria-label={`Abrir ayuda: ${title}`}
+        title="Ayuda"
+      >
+        <HelpCircle size={16} strokeWidth={2.5} aria-hidden />
+      </button>
+
+      {mounted && createPortal(drawer, document.body)}
     </>
   )
 }

@@ -9,7 +9,39 @@ import {
   Settings, UserSquare2, Briefcase, CalendarDays,
 } from 'lucide-react'
 import type { KitchenStatus, PaymentStatus } from '@/types'
+import HelpButton from '@/components/HelpButton'
 import styles from './page.module.css'
+
+// ── Help content ──────────────────────────────────────────────────────────────
+
+const HELP_STEPS = [
+  {
+    title: '¿Qué es Mission Control?',
+    body:  'Es tu panel de mando en tiempo real. Muestra las órdenes activas del turno, cuánto se ha vendido y el estado de cada punto de venta en este momento.',
+    tip:   'Los números se actualizan solos cada vez que entra una orden nueva — no hace falta recargar la página.',
+  },
+  {
+    title: 'Cómo leer las métricas',
+    body:  'Órdenes activas: comandas abiertas que aún no se han cerrado. Pendientes cobro: órdenes listas que el cliente aún no pagó. Créditos abiertos: cuentas fiadas que quedaron pendientes.',
+    tip:   'El total REF turno suma todo lo facturado desde que abriste el turno — incluyendo lo que aún no cobraste.',
+  },
+  {
+    title: 'Cómo abrir el turno',
+    body:  'Ve al menú lateral → Turno → presiona "Abrir turno". Sin turno abierto los meseros pueden tomar órdenes pero no se registra la caja del día.',
+    tip:   'Daniel (admin) es el único que puede abrir y cerrar el turno.',
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: '¿Qué significa REF?',
+    a: 'REF es la referencia en dólares. Todos los precios se guardan en REF y se convierten a Bs. automáticamente usando la tasa BCV del día. Nunca verás el símbolo $ en el sistema.',
+  },
+  {
+    q: '¿Puedo ver órdenes de días anteriores?',
+    a: 'Mission Control solo muestra las órdenes del turno activo. Para ver días anteriores ve a Reportes (próximamente) o a la sección Caja donde puedes revisar el historial de cierres.',
+  },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -173,9 +205,12 @@ export default function AdminPage() {
             En vivo
           </div>
         </div>
-        <div className={styles.clock}>
-          <Clock size={13} strokeWidth={2} aria-hidden />
-          {clock}
+        <div className={styles.headerRight}>
+          <div className={styles.clock}>
+            <Clock size={13} strokeWidth={2} aria-hidden />
+            {clock}
+          </div>
+          <HelpButton title="Mission Control" steps={HELP_STEPS} faqs={HELP_FAQS} />
         </div>
       </header>
 

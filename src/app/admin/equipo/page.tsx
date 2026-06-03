@@ -6,7 +6,39 @@ import {
   UserPlus, X, ChefHat, Wine, Truck, ShieldCheck, Users, Pencil,
 } from 'lucide-react'
 import type { Role } from '@/types'
+import HelpButton from '@/components/HelpButton'
 import styles from './page.module.css'
+
+// ── Help content ──────────────────────────────────────────────────────────────
+
+const HELP_STEPS = [
+  {
+    title: 'Cómo crear un usuario',
+    body:  'Presiona "Nuevo usuario". Llena nombre, apellido, cédula, rol (mesero, cocina, bar, despacho, validador) y PIN de 4 dígitos. Guarda. El usuario puede entrar de inmediato.',
+    tip:   'El PIN se guarda cifrado — ni tú ni nadie puede verlo después de crearlo. Si alguien lo olvida, cámbialo desde aquí.',
+  },
+  {
+    title: 'Cómo asignar al quiosco',
+    body:  'Al crear o editar el usuario, selecciona el quiosco desde el campo "Quiosco asignado". El usuario solo verá las órdenes de ese quiosco y las zonas que tenga asignadas.',
+    tip:   'Puedes cambiar el quiosco de un usuario en cualquier momento sin afectar las órdenes activas que ya tiene.',
+  },
+  {
+    title: 'Cómo cambiar el PIN',
+    body:  'Toca el ícono de llave en la fila del usuario. Escribe el nuevo PIN de 4 dígitos y confirma. El cambio aplica al instante — la próxima vez que entre usará el nuevo PIN.',
+    tip:   'Si sospechas que alguien compartió su PIN, cámbialo de inmediato. Cada acceso queda registrado con usuario y hora.',
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: '¿Qué puede hacer un mesero?',
+    a: 'Un mesero puede: tomar órdenes, ver sus comandas activas, registrar cobros y ver el estado de sus pedidos en cocina/bar. No puede ver reportes, cambiar precios ni administrar usuarios.',
+  },
+  {
+    q: '¿Puedo tener varios meseros en un quiosco?',
+    a: 'Sí. Puedes asignar varios usuarios al mismo quiosco. Cada uno entra con su propio PIN y sus órdenes quedan identificadas con su código de mesero en el ticket.',
+  },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -291,10 +323,13 @@ export default function EquipoPage() {
           <h1 className={styles.title}>Equipo</h1>
           <p className={styles.subtitle}>Usuarios · Roles · Horario de acceso</p>
         </div>
-        <button type="button" className={styles.btnNew} onClick={openCreate}>
-          <UserPlus size={15} strokeWidth={2.2} aria-hidden />
-          Nuevo usuario
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <HelpButton title="Gestión de Equipo" steps={HELP_STEPS} faqs={HELP_FAQS} />
+          <button type="button" className={styles.btnNew} onClick={openCreate}>
+            <UserPlus size={15} strokeWidth={2.2} aria-hidden />
+            Nuevo usuario
+          </button>
+        </div>
       </header>
 
       {loading && (

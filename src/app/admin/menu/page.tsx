@@ -8,7 +8,39 @@ import {
   Check, ChevronDown, Eye, EyeOff, ImagePlus, Loader2,
   Pencil, Plus, Star, StarOff, Tag, Trash2, UtensilsCrossed, X,
 } from 'lucide-react'
+import HelpButton from '@/components/HelpButton'
 import styles from './page.module.css'
+
+// ── Help content ──────────────────────────────────────────────────────────────
+
+const HELP_STEPS = [
+  {
+    title: 'Cómo crear un producto',
+    body:  'Presiona "Nuevo producto" en la esquina superior derecha. Llena el nombre, descripción, precio en REF y categoría. Selecciona si va a cocina o al bar. Guarda.',
+    tip:   'El producto queda activo de inmediato y aparece en el menú público del QR.',
+  },
+  {
+    title: 'Cómo cambiar el precio',
+    body:  'Toca el lápiz en la fila del producto. Cambia el campo "Precio REF". Guarda. El sistema convierte automáticamente a Bs. usando la tasa del día al momento de cobrar.',
+    tip:   'El precio en Bs. que ve el cliente se calcula en tiempo real — no necesitas actualizar nada más.',
+  },
+  {
+    title: 'Cómo activar o desactivar un producto',
+    body:  'Usa el toggle de ojo en cada fila del producto. El ojo abierto significa visible en el menú; el ojo cerrado lo oculta sin borrarlo.',
+    tip:   'Desactivar es útil cuando algo se acaba. El producto queda guardado y lo reactivas cuando vuelva a estar disponible.',
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: '¿Puedo importar productos desde Excel?',
+    a: 'Sí, hay un botón "Importar" que acepta archivos CSV o Excel. El archivo debe tener las columnas: nombre, precio_ref, categoría, descripción (opcional). Descarga la plantilla desde ese mismo botón.',
+  },
+  {
+    q: '¿Qué es el badge "Promo"?',
+    a: 'Es una etiqueta visual que aparece sobre la foto del producto en el menú público. Sirve para destacar ofertas o productos nuevos. Puedes elegir entre: Popular, Nuevo, Promo o Recomendado.',
+  },
+]
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -370,10 +402,13 @@ export default function AdminMenuPage() {
           <h1 className={styles.title}>Menú</h1>
           <p className={styles.subtitle}>{allCount} productos · {categories.length} categorías</p>
         </div>
-        <button type="button" className={styles.btnPrimary} onClick={openCreate}>
-          <Plus size={16} aria-hidden />
-          Nuevo producto
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <HelpButton title="Gestión de Menú" steps={HELP_STEPS} faqs={HELP_FAQS} />
+          <button type="button" className={styles.btnPrimary} onClick={openCreate}>
+            <Plus size={16} aria-hidden />
+            Nuevo producto
+          </button>
+        </div>
       </header>
 
       {/* ── Error ───────────────────────────────────────────────────────────── */}
