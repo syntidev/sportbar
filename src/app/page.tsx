@@ -250,6 +250,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
           src={config.logoUrl}
           alt={config.businessName}
           className={styles.splashTopLogo}
+          style={{ mixBlendMode: 'screen' }}
           initial={{ opacity: 0, scale: 0.7, y: -16 }}
           animate={{ opacity: 1, scale: 1,   y: 0 }}
           transition={{ delay: 0.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
@@ -290,6 +291,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
               src={images[imgIdx]}
               alt={displayName}
               className={styles.splashSliderImg}
+              style={{ mixBlendMode: 'screen' }}
               initial={{ x: '105%', opacity: 0 }}
               animate={{ x: 0,      opacity: 1,
                 transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] } }}
@@ -321,6 +323,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
             src={images[0]}
             alt={displayName}
             className={styles.splashImg}
+            style={{ mixBlendMode: 'screen' }}
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
           />

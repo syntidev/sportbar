@@ -542,7 +542,7 @@
    ══════════════════════════════════════════════════════════ */
 .splash {
   position: fixed; inset: 0; z-index: 100;
-  background: var(--color-bg);
+  background: #080a08;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   overflow: hidden;
@@ -580,39 +580,35 @@
   filter: drop-shadow(0 4px 18px rgba(245,166,35,.28));
 }
 
-/* 1b — SPORT BAR — letrero de estadio: naranja puro + glow pulsante */
-/* NO gradiente, NO blanco: color directo + text-shadow de neón */
+/* 1b — SPORT BAR — letrero de estadio: gradiente naranja + glow pulsante */
 .splashSiteName {
   position: relative; z-index: 1;
   font-family: var(--font-display);
-  font-size: clamp(52px, 18vw, 72px);
-  font-weight: 400;          /* Bebas Neue es heavy en 400 */
-  letter-spacing: 0.06em;
+  font-size: 72px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
   line-height: 0.92;
   text-transform: uppercase;
-  color: #F5A623;             /* naranja puro, sin gradiente */
-  /* text-shadow: profundidad + glow neón */
-  text-shadow:
-    0  4px 12px rgba(0, 0, 0, 0.95),
-    0  0   28px rgba(245,166,35, 0.80),
-    0  0   60px rgba(245,166,35, 0.40);
+  background: linear-gradient(135deg, #FFB830 0%, #F5A623 45%, #E07B0F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 28px rgba(245,166,35,.80)) drop-shadow(0 4px 12px rgba(0,0,0,.95));
   margin-bottom: 16px;
   text-align: center;
   animation: brandPulse 2.2s ease-in-out infinite;
 }
 @keyframes brandPulse {
   0%, 100% {
-    text-shadow:
-      0 4px 12px rgba(0,0,0,.95),
-      0 0  28px rgba(245,166,35,.70),
-      0 0  55px rgba(245,166,35,.30);
+    filter:
+      drop-shadow(0 0 28px rgba(245,166,35,.70))
+      drop-shadow(0 4px 12px rgba(0,0,0,.95));
   }
   50% {
-    text-shadow:
-      0 4px 12px rgba(0,0,0,.95),
-      0 0  42px rgba(245,166,35,1.00),
-      0 0  90px rgba(245,166,35,.55),
-      0 0 140px rgba(245,166,35,.20);
+    filter:
+      drop-shadow(0 0 42px rgba(245,166,35,1.00))
+      drop-shadow(0 0 90px rgba(245,166,35,.55))
+      drop-shadow(0 4px 12px rgba(0,0,0,.95));
   }
 }
 
@@ -938,7 +934,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 3;
+  z-index: 10;
   overflow: visible;
 }
 
@@ -1030,16 +1026,16 @@
 /* Animación columna estándar — sube verticalmente, se expande, desvanece */
 @keyframes steamRise {
   0%   { transform: translateY(0)     scaleX(1.0); opacity: 0;    }
-  8%   {                                           opacity: 0.88; }
-  55%  { transform: translateY(-60px) scaleX(1.6); opacity: 0.55; }
+  8%   {                                           opacity: 0.90; }
+  55%  { transform: translateY(-60px) scaleX(1.6); opacity: 0.60; }
   100% { transform: translateY(-120px) scaleX(2.2); opacity: 0;   }
 }
 
 /* Variante para columna ancha — mismo recorrido, más expansión */
 @keyframes steamRiseWide {
   0%   { transform: translateY(0)     scaleX(1.0); opacity: 0;    }
-  8%   {                                           opacity: 0.82; }
-  55%  { transform: translateY(-75px) scaleX(1.4); opacity: 0.50; }
+  8%   {                                           opacity: 0.90; }
+  55%  { transform: translateY(-75px) scaleX(1.4); opacity: 0.60; }
   100% { transform: translateY(-140px) scaleX(2.0); opacity: 0;   }
 }
 
