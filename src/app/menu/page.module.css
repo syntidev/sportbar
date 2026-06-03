@@ -1044,72 +1044,40 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* Overlay completo: azul hielo — no sutil, VISIBLE */
+/* Overlay fijo — veladura azul hielo, sin animación */
 .coldOverlay {
   position: absolute;
   inset: 0;
-  /* Radial principal: círculo azul hielo en el centro */
-  background: radial-gradient(circle at 50% 40%,
-    rgba(147, 210, 255, 0.25) 0%,
-    rgba( 59, 130, 246, 0.15) 50%,
-    rgba( 30,  80, 200, 0.08) 80%,
-    transparent 100%
-  );
+  background: rgba(147, 210, 255, 0.12);
   mix-blend-mode: screen;
 }
 
-/* Shimmer: gradiente frío que baja de arriba a abajo en loop 3s */
+/* Luz fría estática — gradiente descendente, sin movimiento */
 .coldGlow {
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom,
-    rgba(200, 235, 255, 0.22) 0%,
-    rgba(100, 180, 255, 0.10) 40%,
-    rgba( 60, 130, 220, 0.06) 70%,
+    rgba(200, 235, 255, 0.14) 0%,
+    rgba(100, 180, 255, 0.06) 50%,
     transparent 100%
   );
-  animation: frostShimmer 3s ease-in-out infinite;
-}
-@keyframes frostShimmer {
-  0%   { opacity: 0.4; transform: translateY(-8%); }
-  50%  { opacity: 1.0; transform: translateY( 0%); }
-  100% { opacity: 0.4; transform: translateY( 8%); }
 }
 
-/* Gota de condensación — base compartida */
-/* Círculos 4-8px, blanco 70% — la condensación real de un vaso frío */
+/* Gotas estáticas — círculos blancos semi-transparentes, sin animación */
 .coldDrop {
   position: absolute;
-  top: 0;
-  border-radius: 50%;         /* círculos, no lágrimas */
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.72);
   filter: blur(0.5px);
   box-shadow: 0 0 4px rgba(150, 210, 255, 0.60);
-  opacity: 0;
-  will-change: transform, opacity;
+  opacity: 0.78;
 }
 
-/* Tamaños de gotas: S=4px, M=6px, L=8px */
-.coldDropS { width: 4px; height: 4px; animation: condS 3.8s ease-in infinite; }
-.coldDropM { width: 6px; height: 6px; animation: condM 4.8s ease-in infinite; }
-.coldDropL { width: 8px; height: 8px; animation: condL 5.6s ease-in infinite; }
-
-@keyframes condS {
-  0%   { transform: translateY(0);    opacity: 0;    }
-  6%   {                              opacity: 0.88; }
-  80%  {                              opacity: 0.65; }
-  100% { transform: translateY(90px); opacity: 0;    }
-}
-@keyframes condM {
-  0%   { transform: translateY(0);     opacity: 0;    }
-  6%   {                               opacity: 0.84; }
-  80%  {                               opacity: 0.60; }
-  100% { transform: translateY(130px); opacity: 0;    }
-}
-@keyframes condL {
-  0%   { transform: translateY(0);     opacity: 0;    }
-  6%   {                               opacity: 0.78; }
-  80%  {                               opacity: 0.55; }
-  100% { transform: translateY(170px); opacity: 0;    }
-}
+/* S — pequeña, alta */
+.coldDropS { width: 4px; height: 4px; top: 18%; }
+/* M — mediana, zona media */
+.coldDropM { width: 6px; height: 6px; top: 8%; }
+/* L — grande, zona inferior */
+.coldDropL { width: 8px; height: 8px; top: 38%; }
 
 
