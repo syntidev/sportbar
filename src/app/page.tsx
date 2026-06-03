@@ -242,9 +242,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
       exit={{ opacity: 0, transition: { duration: 0.5, ease: "easeInOut" } }}
       onClick={onDone}
     >
-      {/* Fondos */}
-      <div className={styles.splashGlow} />
-      <div className={styles.splashGlow2} />
+      {/* Sin fondos de color — negro puro para que mix-blend-mode funcione */}
 
       {/* 1 — Logo: PNG sin marco, más grande */}
       {config.logoUrl ? (

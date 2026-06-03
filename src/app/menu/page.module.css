@@ -551,19 +551,9 @@
   user-select: none;
 }
 
-/* Fondo — gradiente radial sutil */
-.splashGlow {
-  position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
-  width: 90vw; height: 70vw; max-width: 600px;
-  background: radial-gradient(circle, rgba(245,166,35,.28) 0%, transparent 65%);
-  filter: blur(55px); pointer-events: none; z-index: 0;
-}
-.splashGlow2 {
-  position: absolute; bottom: -5%; left: 50%; transform: translateX(-50%);
-  width: 60vw; height: 40vw;
-  background: radial-gradient(circle, rgba(46,125,50,.18) 0%, transparent 65%);
-  filter: blur(40px); pointer-events: none; z-index: 0;
-}
+/* Glows eliminados — fondo negro puro para que mix-blend-mode funcione */
+.splashGlow  { display: none; }
+.splashGlow2 { display: none; }
 
 /* 1 — Logo splash — mix-blend-mode:screen: píxeles negros desaparecen sobre fondo oscuro */
 .splashTopLogo {
@@ -590,27 +580,40 @@
   filter: drop-shadow(0 4px 18px rgba(245,166,35,.28));
 }
 
-/* 1b — SPORT BAR — PROTAGONISTA: 64px, gradiente dorado, weight 900 */
+/* 1b — SPORT BAR — letrero de estadio: naranja puro + glow pulsante */
+/* NO gradiente, NO blanco: color directo + text-shadow de neón */
 .splashSiteName {
   position: relative; z-index: 1;
   font-family: var(--font-display);
-  font-size: clamp(48px, 16vw, 64px);
-  font-weight: 900;
-  letter-spacing: 0.10em;
-  line-height: 0.88;
+  font-size: clamp(52px, 18vw, 72px);
+  font-weight: 400;          /* Bebas Neue es heavy en 400 */
+  letter-spacing: 0.06em;
+  line-height: 0.92;
   text-transform: uppercase;
-  /* gradiente blanco→naranja: impacto VIP */
-  background: linear-gradient(140deg, #ffffff 10%, #f5f0e8 40%, #F5A623 90%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 14px;
+  color: #F5A623;             /* naranja puro, sin gradiente */
+  /* text-shadow: profundidad + glow neón */
+  text-shadow:
+    0  4px 12px rgba(0, 0, 0, 0.95),
+    0  0   28px rgba(245,166,35, 0.80),
+    0  0   60px rgba(245,166,35, 0.40);
+  margin-bottom: 16px;
   text-align: center;
-  animation: brandGlow 2.4s ease-in-out infinite;
+  animation: brandPulse 2.2s ease-in-out infinite;
 }
-@keyframes brandGlow {
-  0%, 100% { filter: drop-shadow(0 0 14px rgba(245,166,35,.35)); }
-  50%       { filter: drop-shadow(0 0 32px rgba(245,166,35,.75)); }
+@keyframes brandPulse {
+  0%, 100% {
+    text-shadow:
+      0 4px 12px rgba(0,0,0,.95),
+      0 0  28px rgba(245,166,35,.70),
+      0 0  55px rgba(245,166,35,.30);
+  }
+  50% {
+    text-shadow:
+      0 4px 12px rgba(0,0,0,.95),
+      0 0  42px rgba(245,166,35,1.00),
+      0 0  90px rgba(245,166,35,.55),
+      0 0 140px rgba(245,166,35,.20);
+  }
 }
 
 /* 2 — Imagen producto — 55% viewport */
@@ -623,7 +626,9 @@
 .splashImg {
   width: 100%; height: 100%;
   object-fit: contain;
-  /* TRIPLE DROP-SHADOW — profundidad oscura + aureola naranja + rebote cálido */
+  /* mix-blend-mode: multiply → fondo blanco/gris de la imagen = negro = invisible */
+  /* Funciona sobre cualquier fondo oscuro sin tocar el asset */
+  mix-blend-mode: multiply;
   filter:
     drop-shadow(0 20px 40px rgba(0,0,0,0.80))
     drop-shadow(0 0   30px rgba(245,166,35,0.40))
