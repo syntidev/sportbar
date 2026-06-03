@@ -129,16 +129,18 @@ const slideInLeft: Variants = {
 };
 
 // ── SlotEffect — vapor (hot) / condensación (cold) ─────────────────────────────
-type WispVariant = 'steamWispA' | 'steamWispB' | 'steamWispC'
+type WispVariant = 'steamWispA' | 'steamWispB' | 'steamWispC' | 'steamWispD' | 'steamWispE' | 'steamWispF' | 'steamWispG'
 type DropVariant = 'coldDropS'  | 'coldDropM'  | 'coldDropL'
 
-const HOT_WISPS: { left: string; v: WispVariant; delay: string }[] = [
-  { left: '22%', v: 'steamWispB', delay: '0s'   },
-  { left: '33%', v: 'steamWispA', delay: '0.6s' },
-  { left: '44%', v: 'steamWispC', delay: '1.2s' },
-  { left: '54%', v: 'steamWispA', delay: '0.4s' },
-  { left: '63%', v: 'steamWispB', delay: '1.8s' },
-  { left: '72%', v: 'steamWispC', delay: '0.9s' },
+// 7 columnas de vapor — cada variante CSS tiene su ancho/alto/keyframe propio
+const HOT_WISPS: { v: WispVariant; delay: string }[] = [
+  { v: 'steamWispA', delay: '0s'    },
+  { v: 'steamWispB', delay: '0.36s' },
+  { v: 'steamWispC', delay: '0.72s' },
+  { v: 'steamWispD', delay: '0.18s' },
+  { v: 'steamWispE', delay: '1.10s' },
+  { v: 'steamWispF', delay: '0.55s' },
+  { v: 'steamWispG', delay: '1.45s' },
 ]
 
 const COLD_DROPS_DATA: { left: string; w: string; h: string; delay: string; v: DropVariant }[] = [
@@ -162,7 +164,7 @@ function SlotEffect({ type }: { type: SlotEffectType }) {
             <div
               key={i}
               className={`${styles.steamWisp} ${styles[w.v]}`}
-              style={{ left: w.left, animationDelay: w.delay }}
+              style={{ animationDelay: w.delay }}
             />
           ))}
         </>
@@ -194,6 +196,7 @@ interface SplashConfig {
   forceReload:     boolean
   logoUrl:         string | null
   businessName:    string
+  effectType:      SlotEffectType  // 'hot' | 'cold' | 'none' — aplicado sobre imagen splash
 }
 
 // ── Framer Motion variants para letter stagger ────────────────────────────────
@@ -296,6 +299,8 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
                 transition: { duration: 0.30, ease: [0.4, 0, 1, 1] } }}
             />
           </AnimatePresence>
+          {/* efectos temperatura sobre el slider también */}
+          <SlotEffect type={config.effectType} />
           {/* Dots indicadores */}
           <div className={styles.splashSliderDots}>
             {images.map((_, i) => (
@@ -307,7 +312,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
           </div>
         </motion.div>
       ) : images.length === 1 ? (
-        /* ── Modo single: flota suavemente ── */
+        /* ── Modo single: flota suavemente + efectos temperatura ── */
         <motion.div
           className={styles.splashImgWrap}
           initial={{ y: 120, scale: 0.78, opacity: 0 }}
@@ -321,6 +326,8 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
           />
+          {/* efectos calor/frío sobre la imagen del producto */}
+          <SlotEffect type={config.effectType} />
           <motion.div
             className={styles.splashRing}
             animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -1508,6 +1515,8 @@ export default function MenuPublicoPage() {
           forceReload:   raw?.forceReload   ?? true,
           logoUrl,
           businessName,
+          // 'hot' para burgers / comida (default); admin puede cambiarlo vía API
+          effectType:   (raw as { effectType?: SlotEffectType } | null)?.effectType ?? 'hot',
         };
 
         setSplashConfig(cfg);

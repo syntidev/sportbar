@@ -54,7 +54,9 @@ function Menu({ cart, onAdd, onOpenCart, total, count, onTickets, ticketCount, s
               <span className="social-pill"><Icon name="flame" size={13} color="var(--accent)" />{hero.pedidos} pedidos hoy</span>
             </div>
             <div className="hero-photo">
-              <div className="hero-plate-wrap" style={{ width: 240, height: 200 }}>
+              <div className="hero-plate-wrap" style={{ position: 'relative', overflow: 'visible' }}>
+                {isHot(hero)  && <SteamEffect count={7} />}
+                {isCold(hero) && <FrostEffect count={6} />}
                 <PhotoSlot id={hero.slot} emoji={hero.emoji} size={236} circle={false} plain />
               </div>
             </div>

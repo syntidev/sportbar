@@ -10,27 +10,67 @@ const QR_CTX = { zona: 'NORTE', seat: 'Fila G, Silla 12' };
 
 function Landing({ ctx, onEnter }) {
   return (
-    <div className="m-screen" style={{ alignItems: 'center' }}>
+    <div className="m-screen landing-vip" style={{ alignItems: 'center' }}>
+      {/* court texture — cancha de baloncesto al fondo */}
       <div className="login-bg">
-        <svg viewBox="0 0 390 760" preserveAspectRatio="xMidYMid slice" fill="none" stroke="#2E7D32" strokeWidth="2">
-          <rect x="16" y="30" width="358" height="700" rx="8" /><line x1="16" y1="380" x2="374" y2="380" />
-          <circle cx="195" cy="380" r="64" /><circle cx="195" cy="380" r="6" />
+        <svg viewBox="0 0 390 760" preserveAspectRatio="xMidYMid slice" fill="none" stroke="#2E7D32" strokeWidth="1.5">
+          <rect x="16" y="30" width="358" height="700" rx="8" />
+          <line x1="16" y1="380" x2="374" y2="380" />
+          <circle cx="195" cy="380" r="64" />
+          <circle cx="195" cy="380" r="6" fill="#2E7D32" fillOpacity=".4" />
+          <rect x="120" y="30"  width="150" height="118" />
+          <rect x="120" y="612" width="150" height="118" />
+          <line x1="120" y1="88"  x2="270" y2="88" />
+          <line x1="120" y1="662" x2="270" y2="662" />
         </svg>
       </div>
-      <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '32px 26px', textAlign: 'center' }}>
-        <img src="assets/logo-color.png" className="float-pulse" style={{ width: 132, height: 132, marginBottom: 16 }} alt="" />
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 54, letterSpacing: '.02em', lineHeight: .9 }}>SPORT BAR</h1>
-        <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Guaiqueríes · Margarita</div>
-        <div style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 999, background: 'var(--tint-primary)', border: '1px solid var(--border-strong)', color: 'var(--primary-light)', fontSize: 12, fontWeight: 600 }}>
-          <span className="pulse-dot" />PARTIDO EN CURSO · 2do Cuarto
+
+      {/* contenido central */}
+      <div className="landing-body">
+
+        {/* logo sin marco — mix-blend-mode:screen en CSS */}
+        <div className="landing-logo-wrap">
+          <img
+            src="assets/logo-color.png"
+            className="float-pulse"
+            style={{ width: 118, height: 118 }}
+            alt="Sport Bar"
+          />
         </div>
-        <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '10px 14px' }}>
-          <Icon name="map-pin" size={16} color="var(--accent)" />Tu asiento: <b style={{ color: 'var(--text)' }}>{ctx.zona} · {ctx.seat}</b>
+
+        {/* wordmark VIP */}
+        <div className="landing-wordmark">SPORT BAR</div>
+        <div className="landing-sub">Guaiqueríes · Margarita</div>
+
+        {/* separador dorado */}
+        <div className="landing-divider">
+          <span />ESTADIO DE BALONCESTO<span />
+        </div>
+
+        {/* live status */}
+        <div className="landing-live">
+          <span className="pulse-dot" />
+          PARTIDO EN CURSO · 2do Cuarto
+        </div>
+
+        {/* asiento detectado del QR */}
+        <div className="landing-seat">
+          <Icon name="map-pin" size={15} color="var(--accent)" />
+          <span>Asiento: <strong>{ctx.zona} · {ctx.seat}</strong></span>
         </div>
       </div>
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', padding: '0 22px calc(24px + env(safe-area-inset-bottom))' }}>
-        <button className="btn btn-accent btn-block" onClick={onEnter}>VER MENÚ</button>
-        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-faint)', marginTop: 12 }}>Pedido directo a barra · sin esperar al mesero</div>
+
+      {/* CTA inferior */}
+      <div className="landing-footer">
+        <button className="btn btn-accent btn-block landing-cta" onClick={onEnter}>
+          <Icon name="utensils" size={20} color="#1a1308" strokeWidth={2.4} />
+          VER MENÚ
+        </button>
+        <div className="landing-hint">
+          <span className="pulse-dot" style={{ width: 6, height: 6 }} />
+          Pedido directo · sin esperar al mesero
+          <span className="pulse-dot" style={{ width: 6, height: 6 }} />
+        </div>
       </div>
     </div>
   );

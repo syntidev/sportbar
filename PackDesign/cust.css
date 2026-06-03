@@ -113,3 +113,478 @@
 /* my-tickets list */
 .mt-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--r-md); padding: 13px 14px; display: flex; align-items: center; gap: 12px; }
 .mt-code { font-family: var(--font-display); font-size: 22px; color: var(--accent); letter-spacing: .03em; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ██╗   ██╗██╗██████╗      ███████╗██████╗ ██╗████████╗██╗ ██████╗ ███╗
+   ██║   ██║██║██╔══██╗     ██╔════╝██╔══██╗██║╚══██╔══╝██║██╔═══██╗████╗
+   ██║   ██║██║██████╔╝     █████╗  ██║  ██║██║   ██║   ██║██║   ██║██╔██╗
+   ╚██╗ ██╔╝██║██╔═══╝      ██╔══╝  ██║  ██║██║   ██║   ██║██║   ██║██║╚═╝
+    ╚████╔╝ ██║██║          ███████╗██████╔╝██║   ██║   ██║╚██████╔╝██║
+     ╚═══╝  ╚═╝╚═╝          ╚══════╝╚═════╝ ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝
+   700 ASIENTOS VIP — ESTADIO GUAIQUERÍES DE MARGARITA
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── 1. LOGO: eliminar marco negro ─────────────────────────────────────── */
+/* mix-blend-mode: screen → los píxeles negros se vuelven transparentes.    */
+/* Funciona con cualquier fondo oscuro sin tocar el asset.                  */
+
+.cust-head .logo {
+  mix-blend-mode: screen;
+  background: transparent;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 10px rgba(245,166,35,.28));
+}
+
+/* Logo en la pantalla Landing */
+.float-pulse {
+  mix-blend-mode: screen;
+  background: transparent;
+  border-radius: 50%;
+  animation: logoFloat 3.4s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0);
+    filter: drop-shadow(0 0 18px rgba(245,166,35,.38));
+  }
+  50% {
+    transform: translateY(-9px);
+    filter: drop-shadow(0 12px 28px rgba(245,166,35,.60));
+  }
+}
+
+
+/* ── 2. WORDMARK "SPORT BAR": gold gradient, presencia VIP ─────────────── */
+
+.cust-head .wm {
+  font-size: 26px !important;
+  letter-spacing: .055em;
+  background: linear-gradient(130deg, #f0f5f0 15%, #F5A623 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+
+/* ── 3. HERO CARD: más cinematográfico ─────────────────────────────────── */
+
+.hero {
+  background: linear-gradient(158deg, #1d1408 0%, #090b09 52%, #07090d 100%) !important;
+  border-color: rgba(245,166,35,.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(245,166,35,.14),
+    0 20px 60px rgba(0,0,0,.75) !important;
+}
+
+.hero-halo {
+  height: 82% !important;
+  background: radial-gradient(
+    62% 78% at 50% 30%,
+    rgba(245,166,35,.68),
+    rgba(245,166,35,.14) 50%,
+    transparent 72%
+  ) !important;
+  filter: blur(14px) !important;
+}
+
+/* watermark: más visible, más impacto */
+.hero-wm {
+  opacity: .115 !important;
+  font-size: 110px !important;
+  letter-spacing: .015em !important;
+}
+
+/* nombre del producto más grande */
+.hero-name {
+  font-size: 38px !important;
+  letter-spacing: .028em;
+  line-height: .92;
+}
+
+
+/* ── 4. HERO IMAGE: PNG transparente renderizado limpio ────────────────── */
+/* PhotoSlot(plain) ahora usa <img> nativo — sin image-slot, sin fondo negro */
+
+.hero-plate-wrap {
+  background: transparent !important;
+  overflow: visible !important;
+  width: 240px;
+  height: 210px;
+}
+
+.hero-img {
+  display: block;
+  width: 240px;
+  height: 210px;
+  object-fit: contain;
+  background: transparent;
+  /* glow doble: sombra profunda abajo + aureola naranja cálida */
+  filter:
+    drop-shadow(0 30px 55px rgba(0,0,0,.94))
+    drop-shadow(0   2px 50px rgba(245,166,35,.42))
+    drop-shadow(0 -10px 22px rgba(200, 90, 10,.16));
+  animation: heroFloat 4.4s ease-in-out infinite;
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0);     }
+  50%       { transform: translateY(-11px); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. STEAM EFFECT — humo caliente sobre burgers / raciones
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.steam-wrap {
+  position: absolute;
+  /* sube desde el borde superior del contenedor padre */
+  bottom: calc(100% - 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 90px;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+}
+
+.steam-particle {
+  position: absolute;
+  bottom: 0;
+  width: 11px;
+  height: 48px;
+  border-radius: 50%;
+  /* núcleo blanco con halo difuso — se ve blanco/gris como vapor real */
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255,255,255,.75)  0%,
+    rgba(255,255,255,.22) 55%,
+    transparent          100%
+  );
+  filter: blur(5.5px);
+  opacity: 0;
+  /* cada partícula usa --si para delay y posición diferentes */
+  left: calc(8% + var(--si, 0) * 17%);
+  animation: steam-rise 2.9s ease-in-out infinite;
+  animation-delay: calc(var(--si, 0) * 0.46s);
+}
+
+@keyframes steam-rise {
+  0%   { transform: translateY(0px)    scaleX(1.0)  rotate(  0deg); opacity: 0;    }
+  10%  {                                                             opacity: .75;  }
+  55%  { transform: translateY(-48px)  scaleX(1.80) rotate( 15deg); opacity: .26;  }
+  100% { transform: translateY(-78px)  scaleX(0.50) rotate(-11deg); opacity: 0;    }
+}
+
+/* Hero: partículas más grandes porque el producto es más grande */
+.hero-plate-wrap .steam-wrap {
+  width: 175px;
+  height: 115px;
+  bottom: calc(100% - 36px);
+}
+
+.hero-plate-wrap .steam-particle {
+  width: 16px;
+  height: 62px;
+  filter: blur(9px);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. FROST EFFECT — cristales de hielo en bebidas frías
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.frost-wrap {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+}
+
+.frost-flake {
+  position: absolute;
+  font-size: 12px;
+  line-height: 1;
+  /* azul hielo con brillo interno y halo exterior */
+  color: rgba(148, 222, 255, .92);
+  text-shadow:
+    0  0 10px rgba(80, 190, 255, .88),
+    0  0 24px rgba(80, 190, 255, .45);
+  animation: frost-orbit 4.2s ease-in-out infinite;
+  opacity: 0;
+  animation-delay: calc(var(--fi, 0) * 0.70s);
+}
+
+/* 6 puntos alrededor del círculo (hexágono) */
+.frost-flake:nth-child(1) { top:  -5%; left: 44%; }
+.frost-flake:nth-child(2) { top:  18%; left: 96%; }
+.frost-flake:nth-child(3) { top:  66%; left: 96%; }
+.frost-flake:nth-child(4) { top: 102%; left: 44%; }
+.frost-flake:nth-child(5) { top:  66%; left: -9%; }
+.frost-flake:nth-child(6) { top:  18%; left: -9%; }
+
+@keyframes frost-orbit {
+  0%   { transform: scale(.50) rotate(  0deg); opacity: 0;  }
+  18%  {                                       opacity: 1;  }
+  65%  { transform: scale(1.25) rotate(180deg); opacity: .5; }
+  100% { transform: scale(.30) rotate(360deg); opacity: 0;  }
+}
+
+/* shimmer de escarcha sobre la foto circular */
+.frost-shimmer {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 28% 20%,
+    rgba(165, 235, 255, .24)  0%,
+    rgba( 80, 165, 255, .09) 45%,
+    transparent              72%
+  );
+  pointer-events: none;
+  animation: frost-pulse 3.4s ease-in-out infinite;
+}
+
+@keyframes frost-pulse {
+  0%, 100% { opacity: .55; }
+  50%       { opacity: 1.0; }
+}
+
+/* featured cards frías: halo azul + precio azul + botón azul */
+.feat-cold .feat-halo {
+  background: radial-gradient(
+    62% 72% at 50% 35%,
+    rgba(80, 185, 255, .48),
+    rgba(80, 185, 255, .07) 55%,
+    transparent             72%
+  ) !important;
+}
+.feat-cold .feat-price { color: #7ad4ff; }
+.feat-cold .feat-add   {
+  background: rgba(60, 148, 210, .92);
+  box-shadow: 0 0 20px rgba(80, 185, 255, .48);
+}
+.feat-cold {
+  border-color: rgba(80, 185, 255, .22);
+}
+
+/* featured cards calientes: halo más intenso */
+.feat-hot .feat-halo {
+  background: radial-gradient(
+    62% 72% at 50% 35%,
+    rgba(245, 166, 35, .70),
+    rgba(245, 120, 20, .12) 52%,
+    transparent             72%
+  ) !important;
+}
+
+/* ── ancla de efectos en featured cards ─────────────────────────────────── */
+/* El photo (.feat-photo) está a -52px del top de la card.                  */
+/* Los anchors se posicionan para que el efecto quede justo sobre la foto.  */
+
+.feat-temp-anchor {
+  position: absolute;
+  top: -112px;          /* −52px foto + −60px altura steam */
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* steam en featured card: más pequeño que el del hero */
+.feat-temp-anchor .steam-wrap {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  width: 96px;
+  height: 64px;
+}
+.feat-temp-anchor .steam-particle {
+  width: 9px;
+  height: 38px;
+  filter: blur(5px);
+}
+
+.feat-frost-anchor {
+  position: absolute;
+  top: -52px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 130px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+
+/* ── 7. PRODUCT ROW: temperatura ────────────────────────────────────────── */
+
+.prod-plate { position: relative; }
+
+.prod-temp {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 13px;
+  line-height: 1;
+  z-index: 3;
+  pointer-events: none;
+  animation: tempPulse 2.2s ease-in-out infinite;
+}
+
+.prod-temp-hot  { color: #ff9050; text-shadow: 0 0  9px rgba(255,120, 50,.80); }
+.prod-temp-cold { color: #7ad4ff; text-shadow: 0 0  9px rgba( 80,200,255,.80); }
+
+@keyframes tempPulse {
+  0%, 100% { transform: scale(1.0); opacity: .82; }
+  50%       { transform: scale(1.3); opacity: 1.0; }
+}
+
+/* rows de bebida: borde izquierdo azul hielo */
+.prod.prod-cold { border-left-color: rgba(80, 200, 255, .45); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. LANDING VIP — pantalla de entrada al menú
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.landing-vip {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%,   rgba(245,166,35,.08) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(46,125,50,.10)  0%, transparent 60%),
+    var(--bg);
+  justify-content: space-between;
+}
+
+/* logo sin marco negro */
+.landing-logo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+/* halo dorado detrás del logo */
+.landing-logo-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,166,35,.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.landing-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 28px 28px 16px;
+  text-align: center;
+}
+
+/* SPORT BAR — grande, con gradiente dorado */
+.landing-wordmark {
+  font-family: var(--font-display);
+  font-size: 64px;
+  letter-spacing: .055em;
+  line-height: .88;
+  background: linear-gradient(140deg, #f5f9f5 20%, #F5A623 85%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+
+.landing-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* separador —— con texto ——  */
+.landing-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: rgba(245,166,35,.55);
+  width: 100%;
+}
+.landing-divider span {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245,166,35,.35), transparent);
+}
+
+/* live pill */
+.landing-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--tint-primary);
+  border: 1px solid var(--border-strong);
+  color: var(--primary-light);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  margin-bottom: 12px;
+}
+
+/* asiento pill */
+.landing-seat {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 16px;
+}
+.landing-seat strong { color: var(--text); }
+
+/* footer */
+.landing-footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 0 22px calc(28px + env(safe-area-inset-bottom));
+}
+
+.landing-cta {
+  height: 62px !important;
+  font-size: 26px !important;
+  border-radius: var(--r-pill) !important;
+  box-shadow: var(--glow-accent), 0 16px 40px rgba(0,0,0,.55) !important;
+  letter-spacing: .06em !important;
+}
+
+.landing-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
