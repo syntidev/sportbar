@@ -329,6 +329,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
         /* ── Modo single: flota suavemente + efectos temperatura ── */
         <motion.div
           className={styles.splashImgWrap}
+          style={{ backgroundColor: 'transparent', background: 'none' }}
           initial={{ y: 120, scale: 0.78, opacity: 0 }}
           animate={{ y: 0, scale: 1, opacity: 1 }}
           transition={{ type: "spring", damping: 17, stiffness: 130, delay: 0.1 }}
@@ -337,7 +338,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
             src={images[0]}
             alt={displayName}
             className={styles.splashImg}
-            style={{ mixBlendMode: 'screen', background: 'transparent', display: 'block' }}
+            style={{ background: 'transparent', display: 'block' }}
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
           />
