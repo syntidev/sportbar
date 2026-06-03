@@ -305,7 +305,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
               src={images[imgIdx]}
               alt={displayName}
               className={styles.splashSliderImg}
-              style={{ mixBlendMode: 'screen' }}
+              style={{ mixBlendMode: 'screen', background: 'transparent', display: 'block' }}
               initial={{ x: '105%', opacity: 0 }}
               animate={{ x: 0,      opacity: 1,
                 transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] } }}
@@ -345,7 +345,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
             src={images[0]}
             alt={displayName}
             className={styles.splashImg}
-            style={{ mixBlendMode: 'screen' }}
+            style={{ mixBlendMode: 'screen', background: 'transparent', display: 'block' }}
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
           />
