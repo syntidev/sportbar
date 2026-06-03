@@ -61,25 +61,34 @@ const BUMP_LABEL: Record<FoodStatus, string> = {
 
 // ── Help content ──────────────────────────────────────────────────────────────
 
-const HELP_CONTENT = {
-  colors: [
-    { color: '#2E7D32', label: 'Verde — card tomada por esta estación' },
-    { color: '#C62828', label: 'Rojo parpadeante — emergencia >90s' },
-    { color: '#F5A623', label: 'Naranja — alerta >45s' },
-    { color: '#60A5FA', label: 'Azul — bebidas' },
-    { color: '#F59E0B', label: 'Dorado — licores fuertes' },
-  ],
-  icons: [
-    { icon: '✋ TOMAR',             label: 'Reclamar orden para esta estación' },
-    { icon: 'LISTO PARA SERVIR',    label: 'Bump final — notifica a despacho' },
-    { icon: '⏱ TIMER',             label: 'Tiempo transcurrido desde la orden' },
-  ],
-  actions: [
-    { action: 'TOMAR',             description: 'Asigna la orden a esta estación de bar' },
-    { action: 'PREPARAR',          description: 'Bump → avanza estado de NUEVO a PREP' },
-    { action: 'LISTO PARA SERVIR', description: 'Bump final → retira la comanda y notifica a despacho' },
-  ],
-}
+const HELP_STEPS = [
+  {
+    title: 'Cómo tomar una comanda',
+    body:  'Cuando llega una orden nueva (naranja) presiona TOMAR para asignarla a tu estación. La card se pone verde y la orden queda tuya.',
+    tip:   'Solo las comandas que contienen bebidas llegan al KDS Bar. Las de cocina van directo a KDS Cocina.',
+  },
+  {
+    title: 'Cómo hacer bump (avanzar estado)',
+    body:  'Presiona PREPARAR para moverla de NUEVO a PREP. Cuando terminaste de preparar las bebidas, presiona LISTO PARA SERVIR. Eso notifica a despacho para que retire.',
+    tip:   'Si la orden tiene bebidas y comida, despacho espera el bump de ambas estaciones antes de marcarla lista.',
+  },
+  {
+    title: 'Cómo leer los colores y tiempos',
+    body:  'Naranja = orden nueva esperando. Verde = tomada por esta estación. Amarillo parpadeante = más de 45 segundos sin atender. Rojo = más de 90 segundos (emergencia). El timer arriba de cada card muestra el tiempo desde que llegó la orden.',
+    tip:   'Cards con borde dorado tienen licor fuerte — requieren validación de edad si el local lo exige.',
+  },
+]
+
+const HELP_FAQS = [
+  {
+    q: '¿Por qué no veo una orden que el mesero acaba de tomar?',
+    a: 'El KDS se actualiza por WebSocket en tiempo real. Si no aparece en 5 segundos, presiona el botón de refrescar en la esquina superior derecha. Si persiste, revisa la conexión a internet.',
+  },
+  {
+    q: '¿Qué pasa si hago bump por error?',
+    a: 'Avisa a despacho de inmediato. Los estados del KDS no tienen un botón de deshacer — despacho puede reiniciar el estado de una comanda desde su panel si es necesario.',
+  },
+]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -241,9 +250,9 @@ export default function KdsBarPage() {
             </span>
           )}
           <HelpButton
-            module="KDS Bar"
-            title="Guía KDS Bar"
-            content={HELP_CONTENT}
+            title="KDS Bar"
+            steps={HELP_STEPS}
+            faqs={HELP_FAQS}
           />
         </div>
       </header>
