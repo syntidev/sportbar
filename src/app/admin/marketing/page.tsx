@@ -18,8 +18,6 @@ interface SlotState {
   dragOver: boolean
 }
 
-const ZONAS = ["general", "Norte", "Sur", "VIP", "Externa"] as const
-type Zona = typeof ZONAS[number]
 
 const COLOR_PALETTE: { label: string; value: string }[] = [
   { label: "Naranja",  value: "#F5A623" },   // SportBar brand — default
@@ -96,7 +94,8 @@ export default function MarketingPage() {
   const splashFileRef2 = useRef<HTMLInputElement | null>(null)
 
   // QR sticker state
-  const [zona,       setZona]       = useState<Zona>("general")
+  const [zona,       setZona]       = useState<string>("general")
+  const [zonas,      setZonas]      = useState<string[]>(["general"])
   const [qrColor,    setQrColor]    = useState<string>(COLOR_PALETTE[0].value)
   const [topText,    setTopText]    = useState<string>("")
   const [bottomText, setBottomText] = useState<string>("")
@@ -152,6 +151,18 @@ export default function MarketingPage() {
       .then(r => r.json())
       .then((d: { profile?: { business_name?: string } }) => {
         if (d.profile?.business_name) setBizName(d.profile.business_name)
+      })
+      .catch(() => {})
+  }, [])
+
+  // ── Load zones ───────────────────────────────────────────────────────
+  useEffect(() => {
+    fetch("/api/zones")
+      .then(r => r.json())
+      .then((d: { success: boolean; zones: { name: string; is_active: boolean }[] }) => {
+        if (!d.success) return
+        const names = d.zones.filter(z => z.is_active).map(z => z.name)
+        setZonas(["general", ...names])
       })
       .catch(() => {})
   }, [])
@@ -754,7 +765,7 @@ export default function MarketingPage() {
             <div className={styles.controlGroup}>
               <label className={styles.controlLabel}>Zona destino</label>
               <div className={styles.zonaGrid}>
-                {ZONAS.map(z => (
+                {zonas.map(z => (
                   <button
                     key={z}
                     className={`${styles.zonaBtn} ${zona === z ? styles.zonaBtnActive : ""}`}
@@ -764,7 +775,7 @@ export default function MarketingPage() {
                   </button>
                 ))}
               </div>
-              <p className={styles.urlPreview}>tusport.bar/menu?ref=qr&amp;zona={zona}</p>
+              <p className={styles.urlPreview}>tusport.bar?ref=qr&amp;zona={zona}</p>
             </div>
 
             {/* Color palette */}

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   // White swatch → invert: white modules on SportBar green. Otherwise blend with canvas bg.
   const light = dark === '#FFFFFF' ? '#2E7D32' : '#f8fafc'
 
-  const url = `https://tusport.bar/menu?ref=qr&zona=${encodeURIComponent(zona)}`
+  const url = `https://tusport.bar?ref=qr&zona=${encodeURIComponent(zona)}`
 
   try {
     const svg = await QRCode.toString(url, {
