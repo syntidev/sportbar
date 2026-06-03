@@ -316,7 +316,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
           {/* overlay video efecto */}
           {config.effectType !== 'none' && (
             <video
-              src={`/effects/${config.effectType === 'hot' ? 'steam' : 'frost'}.mp4`}
+              src={`/effets/${config.effectType === 'hot' ? 'steam' : 'frost'}.mp4`}
               autoPlay loop muted playsInline
               style={{ ...EFFECT_VIDEO_STYLE, zIndex: 11 }}
             />
@@ -351,7 +351,7 @@ function SplashScreen({ config, onDone }: { config: SplashConfig; onDone: () => 
           />
           {config.effectType !== 'none' && (
             <video
-              src={`/effects/${config.effectType === 'hot' ? 'steam' : 'frost'}.mp4`}
+              src={`/effets/${config.effectType === 'hot' ? 'steam' : 'frost'}.mp4`}
               autoPlay loop muted playsInline
               style={{ ...EFFECT_VIDEO_STYLE, zIndex: 11 }}
             />
@@ -567,7 +567,7 @@ function FeatCard({ p, rate, qty, onAdd, onSelect }: FeatCardProps) {
         }
         {p.effect_type && (
           <video
-            src={`/effects/${p.effect_type}.mp4`}
+            src={`/effets/${p.effect_type}.mp4`}
             autoPlay loop muted playsInline
             style={EFFECT_VIDEO_STYLE}
           />
@@ -616,7 +616,7 @@ function ProdRow({ p, rate, qty, onAdd, onSelect }: ProdRowProps) {
           }
           {p.effect_type && (
             <video
-              src={`/effects/${p.effect_type}.mp4`}
+              src={`/effets/${p.effect_type}.mp4`}
               autoPlay loop muted playsInline
               style={EFFECT_VIDEO_STYLE}
             />
