@@ -100,7 +100,13 @@ export async function uploadMedia(
       .webp(hasAlpha ? { lossless: true } : { quality: 85 })
       .toBuffer()
 
-  } else if (type === 'product' || type === 'logo') {
+  } else if (type === 'logo') {
+    buf = await sharp(raw)
+      .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
+      .webp({ lossless: true, alphaQuality: 100 })
+      .toBuffer()
+
+  } else if (type === 'product') {
     buf = await sharp(raw)
       .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 85 })
