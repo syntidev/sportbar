@@ -987,35 +987,67 @@ function MenuContent() {
 
   // ── Curtain (turno inactivo) ──
   if (!turno?.is_active) {
+    // Logo: prioridad → DB → logo local de SportBar → sin imagen
+    const curtainLogoSrc = logoUrl ?? "/logo-color.png";
+
     return (
       <div className={styles.curtain}>
         <div className={styles.curtainGlow} />
-        {logoUrl ? (
-          <motion.img
-            src={logoUrl}
-            alt={businessName}
-            className={styles.curtainLogo}
-            animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
-            transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
-          />
-        ) : (
-          <motion.div
-            className={styles.curtainLogoPlaceholder}
-            animate={{ opacity: [1, 0.55, 1], scale: [1, 0.95, 1] }}
-            transition={{ duration: 3.5, ease: "easeInOut", repeat: Infinity }}
-          >
-            {businessName.charAt(0)}
-          </motion.div>
-        )}
+
+        {/* Afiliación CafeConBike — top, muy discreta */}
+        <motion.div
+          className={styles.curtainAfiliacion}
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <span className={styles.curtainAfilDot} />
+          un servicio de&nbsp;
+          <span className={styles.curtainAfilBrand}>CafeConBike</span>
+        </motion.div>
+
+        {/* Logo SportBar — pulso suave */}
+        <motion.img
+          src={curtainLogoSrc}
+          alt={businessName}
+          className={styles.curtainLogo}
+          initial={{ opacity: 0, scale: 0.8, y: 10 }}
+          animate={{
+            opacity: [1, 0.75, 1],
+            scale:   [1, 0.96, 1],
+            y:       0,
+          }}
+          transition={{
+            opacity: { duration: 3.5, ease: "easeInOut", repeat: Infinity, delay: 0.2 },
+            scale:   { duration: 3.5, ease: "easeInOut", repeat: Infinity, delay: 0.2 },
+            y:       { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+          }}
+          onError={(e) => {
+            // Si el logo local falla, ocultar imagen
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+
+        {/* Cuerpo: nombre partido + subtítulo */}
         <div className={styles.curtainBody}>
           <span className={styles.curtainMatch}>
-            {turno?.partido_nombre || "Proximo partido"}
+            {turno?.partido_nombre || "Próximo Partido"}
           </span>
           <div className={styles.curtainDivider} />
           <span className={styles.curtainSub}>
-            El menu abre cuando inicie el partido
+            El menú abre cuando inicie el partido
           </span>
         </div>
+
+        {/* Indicador pulsante bottom */}
+        <motion.div
+          className={styles.curtainPulse}
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity }}
+        >
+          <span className={styles.curtainPulseDot} />
+          <span>En espera</span>
+        </motion.div>
       </div>
     );
   }
