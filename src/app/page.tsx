@@ -11,6 +11,7 @@ import {
   Star, MapPin, Plus, Minus, ArrowLeft, Receipt, Flame, Snowflake,
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 import { formatBs } from "@/lib/dollar-rate";
 import styles from "./menu/page.module.css";
 
@@ -632,6 +633,8 @@ function MenuContent() {
   const [cart,          setCart]          = useState<Map<number, CartEntry>>(new Map());
   const [orderCode,     setOrderCode]     = useState<string | null>(null);
   const [orderCount,    setOrderCount]    = useState(0);
+  const [orderReady,    setOrderReady]    = useState(false);
+  const [lastOrderCode, setLastOrderCode] = useState<string | null>(null);
   const [submitting,    setSubmitting]    = useState(false);
   const [formError,     setFormError]     = useState<string | null>(null);
   const [orderSnapshot, setOrderSnapshot] = useState<{ items: CartEntry[]; total: number } | null>(null);
@@ -784,6 +787,25 @@ function MenuContent() {
     return () => { void client.removeChannel(ch); };
   }, []);
 
+  // Supabase Realtime — notificación LISTO al cliente
+  useEffect(() => {
+    if (appScreen !== "success" || !lastOrderCode) return;
+    const supabase = createClient();
+    const channel  = supabase
+      .channel("sportbar-orders")
+      .on(
+        "broadcast",
+        { event: "order_update" },
+        ({ payload }: { payload: { code: string; status: string } }) => {
+          if (payload.code === lastOrderCode && payload.status === "LISTO") {
+            setOrderReady(true);
+          }
+        },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [appScreen, lastOrderCode]);
+
   // Update animated tab indicator position
   // Depende de products también: cuando los tabs aparecen en DOM por primera vez
   // (productos cargados), el effect debe re-correr aunque activeGroup no cambie
@@ -935,6 +957,8 @@ function MenuContent() {
       if (data.success && data.order) {
         setOrderSnapshot({ items: [...cartItems], total: cartTotal });
         setOrderCode(data.order.code);
+        setLastOrderCode(data.order.code);
+        setOrderReady(false);
         setCart(new Map());
         setOrderCount(c => c + 1);
         setAppScreen("success");
@@ -1457,6 +1481,8 @@ function MenuContent() {
                   onClick={() => {
                     setAppScreen("menu");
                     setOrderCode(null);
+                    setLastOrderCode(null);
+                    setOrderReady(false);
                     setOrderSnapshot(null);
                     setForm({
                       zone:     ((urlZona && (ZONES as readonly string[]).includes(urlZona))
@@ -1471,6 +1497,12 @@ function MenuContent() {
                   NUEVO PEDIDO
                 </button>
               </div>
+
+              {orderReady && (
+                <div className={styles.readyBanner}>
+                  🎉 ¡Tu pedido está listo! Ya vamos para tu silla.
+                </div>
+              )}
             </div>
           </motion.div>
         )}
