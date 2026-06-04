@@ -617,6 +617,12 @@ function ProdRow({ p, rate, qty, onAdd, onSelect }: ProdRowProps) {
 
 // ── MenuContent ───────────────────────────────────────────────────────────────
 function MenuContent() {
+  // URL params — needed for form initialization (must be before useState)
+  const searchParams = useSearchParams();
+  const zoneParam    = searchParams.get("zona") ?? searchParams.get("zone") ?? null;
+  const urlZona      = searchParams.get("zona");
+  const urlAsiento   = searchParams.get("asiento");
+
   const [turno,         setTurno]         = useState<TurnoData | null>(null);
   const [products,      setProducts]      = useState<Product[]>([]);
   const [rate,          setRate]          = useState(50.0);
@@ -631,11 +637,11 @@ function MenuContent() {
   const [orderSnapshot, setOrderSnapshot] = useState<{ items: CartEntry[]; total: number } | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [form, setForm] = useState({
-    zone:     "" as Zone | "",
-    seat:     "",
+    zone:     ((urlZona && (ZONES as readonly string[]).includes(urlZona))
+                ? urlZona as Zone : "") as Zone | "",
+    seat:     urlAsiento || "",
     name:     "",
-    lastname: "",
-    cedula:   "",
+    seat_ref: "",
   });
 
   // Business identity
@@ -655,9 +661,7 @@ function MenuContent() {
   const navRef  = useRef<HTMLElement>(null);
   const [tabPill, setTabPill] = useState<{ left: number; width: number } | null>(null);
 
-  // URL params for analytics
-  const searchParams = useSearchParams();
-  const zoneParam = searchParams.get("zona") ?? searchParams.get("zone") ?? null;
+  // URL params for analytics (searchParams/zoneParam/urlZona declared at top)
 
   // Set of all categorias that belong to a known group
   const allGroupCats = useMemo(
@@ -708,13 +712,6 @@ function MenuContent() {
       body: JSON.stringify({ event_type: "page_view", zone: zoneParam, device_type: deviceType }),
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Pre-populate zone from URL ?zona= param
-  useEffect(() => {
-    if (zoneParam && (ZONES as readonly string[]).includes(zoneParam)) {
-      setForm(f => ({ ...f, zone: zoneParam as Zone }));
-    }
-  }, [zoneParam]);
 
   // Hero slider autoplay (4 s)
   const activeSlots = useMemo(() => heroSlots.filter(s => s.url !== null), [heroSlots]);
@@ -906,12 +903,8 @@ function MenuContent() {
 
   // Submit order
   async function handleSubmit() {
-    if (!form.zone || !form.name.trim() || !form.lastname.trim()) {
-      setFormError("Zona, nombre y apellido son obligatorios");
-      return;
-    }
-    if (form.zone === "VIP" && !form.cedula.trim()) {
-      setFormError("Cedula obligatoria para zona VIP");
+    if (!form.zone || !form.name.trim()) {
+      setFormError("Zona y nombre son obligatorios");
       return;
     }
     setSubmitting(true);
@@ -923,10 +916,9 @@ function MenuContent() {
         body: JSON.stringify({
           origin:            "PUB",
           zone:              form.zone,
-          seat:              form.seat.trim() || undefined,
+          seat:              form.seat.trim() || form.seat_ref.trim() || undefined,
           customer_name:     form.name.trim(),
-          customer_lastname: form.lastname.trim(),
-          customer_id:       form.cedula.trim() || undefined,
+          customer_lastname: "",
           items: cartItems.map(({ product, qty }) => ({
             product_id: product.id,
             qty,
@@ -1328,15 +1320,15 @@ function MenuContent() {
               className={styles.mScroll}
               style={{ padding: "4px 16px 20px", overflowY: "auto" }}
             >
+              {/* Zona — badge si viene de URL, grid si no */}
               <div className={styles.formGroup}>
                 <label className={styles.flabel}>
                   Zona <span className={styles.req}>*</span>
                 </label>
-                {zoneParam && (ZONES as readonly string[]).includes(zoneParam) ? (
-                  <div className={styles.zoneLocked}>
-                    <MapPin size={13} color="var(--color-brand)" />
-                    <span>{zoneParam}</span>
-                    <span className={styles.zoneLockedHint}>desde QR</span>
+                {urlZona && (ZONES as readonly string[]).includes(urlZona) ? (
+                  <div className={styles.zoneBadge}>
+                    <MapPin size={13} />
+                    {urlZona}{urlAsiento ? ` · ${urlAsiento}` : ""}
                   </div>
                 ) : (
                   <div className={styles.zoneGrid}>
@@ -1356,56 +1348,45 @@ function MenuContent() {
                 )}
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.flabel}>Asiento / Mesa</label>
-                <input
-                  className={styles.field}
-                  placeholder="Ej: Fila G, Silla 12"
-                  value={form.seat}
-                  onChange={e => setForm(f => ({ ...f, seat: e.target.value }))}
-                />
-              </div>
+              {/* Asiento — solo si no viene de URL */}
+              {!urlAsiento && (
+                <div className={styles.formGroup}>
+                  <label className={styles.flabel}>Asiento / Mesa</label>
+                  <input
+                    className={styles.field}
+                    placeholder="Ej: Fila G, Silla 12"
+                    value={form.seat}
+                    onChange={e => setForm(f => ({ ...f, seat: e.target.value }))}
+                  />
+                </div>
+              )}
 
+              {/* Nombre — campo único */}
               <div className={styles.formGroup}>
                 <label className={styles.flabel}>
-                  Nombre <span className={styles.req}>*</span>
+                  Tu nombre <span className={styles.req}>*</span>
                 </label>
                 <input
                   className={styles.field}
                   placeholder="Carlos"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  autoFocus
                 />
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.flabel}>
-                  Apellido <span className={styles.req}>*</span>
-                </label>
-                <input
-                  className={styles.field}
-                  placeholder="Perez"
-                  value={form.lastname}
-                  onChange={e => setForm(f => ({ ...f, lastname: e.target.value }))}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.flabel}>
-                  Cedula
-                  {form.zone === "VIP" && <span className={styles.req}> *</span>}
-                </label>
-                <input
-                  className={styles.field}
-                  placeholder="V-12345678"
-                  inputMode="numeric"
-                  value={form.cedula}
-                  onChange={e => {
-                    const d = e.target.value.replace(/\D/g, "").slice(0, 8);
-                    setForm(f => ({ ...f, cedula: d ? "V-" + d : "" }));
-                  }}
-                />
-              </div>
+              {/* ¿Dónde entregar? — solo si no hay asiento de URL */}
+              {!urlAsiento && (
+                <div className={styles.formGroup}>
+                  <label className={styles.flabel}>¿Dónde te entregamos?</label>
+                  <input
+                    className={styles.field}
+                    placeholder="¿Dónde te entregamos? (pasillo norte, bar, entrada...)"
+                    value={form.seat_ref}
+                    onChange={e => setForm(f => ({ ...f, seat_ref: e.target.value }))}
+                  />
+                </div>
+              )}
 
               {formError && <div className={styles.errorMsg}>{formError}</div>}
             </div>
@@ -1413,12 +1394,7 @@ function MenuContent() {
             <div className={styles.mFoot}>
               <button
                 className={styles.btnGenerar}
-                disabled={
-                  submitting ||
-                  !form.zone ||
-                  !form.name.trim() ||
-                  !form.lastname.trim()
-                }
+                disabled={submitting || !form.zone || !form.name.trim()}
                 onClick={handleSubmit}
               >
                 {submitting ? "Generando ticket..." : "GENERAR TICKET"}
@@ -1482,11 +1458,13 @@ function MenuContent() {
                     setAppScreen("menu");
                     setOrderCode(null);
                     setOrderSnapshot(null);
-                    setForm(f => ({
-                      zone: (zoneParam && (ZONES as readonly string[]).includes(zoneParam))
-                        ? zoneParam as Zone : "",
-                      seat: "", name: "", lastname: "", cedula: "",
-                    }));
+                    setForm({
+                      zone:     ((urlZona && (ZONES as readonly string[]).includes(urlZona))
+                                  ? urlZona as Zone : "") as Zone | "",
+                      seat:     urlAsiento || "",
+                      name:     "",
+                      seat_ref: "",
+                    });
                     scrollRef.current?.scrollTo({ top: 0 });
                   }}
                 >
