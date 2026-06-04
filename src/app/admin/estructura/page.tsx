@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
-  AlertCircle, Check, ChefHat, ChevronDown, ChevronUp, CreditCard,
+  AlertCircle, ArrowLeft, Check, ChefHat, ChevronDown, ChevronUp, CreditCard,
   MapPin, Pencil, Plus, RefreshCw, ShoppingBag, Store,
   Trash2, UserCheck, Users, X,
 } from 'lucide-react'
@@ -373,6 +374,9 @@ export default function EstructuraPage() {
 
       {/* Header */}
       <div className={styles.pageHead}>
+        <Link href="/admin" className={styles.backBtn} aria-label="Volver">
+          <ArrowLeft size={20} />
+        </Link>
         <div>
           <h1 className={styles.pageTitle}>Estructura</h1>
           <p className={styles.pageSub}>Zonas · Quioscos · Asignaciones</p>

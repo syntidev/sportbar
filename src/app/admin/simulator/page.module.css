@@ -241,3 +241,21 @@
   text-align: center;
   padding: 1rem 0;
 }
+
+
+/* ── Back button — estándar 44px ─────────────────────────────────── */
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+.backBtn:hover { background: var(--color-surface-3); }

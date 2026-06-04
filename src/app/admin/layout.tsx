@@ -75,6 +75,11 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'KPIs',
     items: [
       { href: '/admin/analytics',  label: 'Pulso del Negocio', short: 'Pulso',  Icon: BarChart2 },
+    ],
+  },
+  {
+    label: 'SOPORTE',
+    items: [
       { href: '/admin/simulator',  label: 'Simulador',         short: 'Simul.', Icon: Activity  },
     ],
   },

@@ -111,6 +111,7 @@ export default function TurnoPage() {
   }
 
   async function handleClose() {
+    if (!confirm('¿Cerrar el turno? Esta acción no se puede deshacer.')) return;
     setError("");
     setSubmitting(true);
     try {

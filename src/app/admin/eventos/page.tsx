@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
-  CalendarRange, Check, Loader2, Plus, Power, PowerOff, Trash2, X,
+  ArrowLeft, CalendarRange, Check, Loader2, Plus, Power, PowerOff, Trash2, X,
 } from 'lucide-react'
 import styles from './eventos.module.css'
 
@@ -158,6 +159,9 @@ export default function EventosPage() {
 
       {/* Header */}
       <header className={styles.header}>
+        <Link href="/admin" className={styles.backBtn} aria-label="Volver">
+          <ArrowLeft size={20} />
+        </Link>
         <div>
           <h1 className={styles.title}>Eventos</h1>
           <p className={styles.subtitle}>{events.length} evento{events.length !== 1 ? 's' : ''}</p>

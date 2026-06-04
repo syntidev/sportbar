@@ -4,8 +4,9 @@
 // Admin Menú — categorías dinámicas + badges + tabla estándar
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
-  Check, ChevronDown, Eye, EyeOff, ImagePlus, Loader2,
+  ArrowLeft, Check, ChevronDown, Eye, EyeOff, ImagePlus, Loader2,
   Pencil, Plus, Star, StarOff, Tag, Trash2, UtensilsCrossed, X,
 } from 'lucide-react'
 import HelpButton from '@/components/HelpButton'
@@ -405,6 +406,9 @@ export default function AdminMenuPage() {
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className={styles.header}>
+        <Link href="/admin" className={styles.backBtn} aria-label="Volver">
+          <ArrowLeft size={20} />
+        </Link>
         <div>
           <h1 className={styles.title}>Menú</h1>
           <p className={styles.subtitle}>{allCount} productos · {categories.length} categorías</p>

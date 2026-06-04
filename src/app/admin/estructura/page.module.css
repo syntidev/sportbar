@@ -341,3 +341,21 @@
 .colorPreview { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .colorPreviewDot { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
 .colorPreviewHex { font-size: 12px; font-family: monospace; color: var(--color-text-muted); }
+
+
+/* ── Back button — estándar 44px ─────────────────────────────────── */
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+.backBtn:hover { background: var(--color-surface-3); }

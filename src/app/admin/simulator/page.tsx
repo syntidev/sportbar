@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import type { SimStatus, SimEvent, Intensity } from '@/lib/simulator'
 import styles from './page.module.css'
 
@@ -111,6 +113,9 @@ export default function SimulatorPage() {
 
       {/* Header */}
       <div className={styles.header}>
+        <Link href="/admin" className={styles.backBtn} aria-label="Volver">
+          <ArrowLeft size={20} />
+        </Link>
         <div className={`${styles.statusDot} ${ui !== 'idle' ? styles[ui] : ''}`} />
         <h1 className={styles.title}>Simulador de Carga</h1>
         <span className={styles.statusDotLabel}>
@@ -165,7 +170,10 @@ export default function SimulatorPage() {
           <button className={`${styles.btn} ${styles.btnStop}`}  disabled={ui === 'idle' || loading} onClick={() => void stop()}>
             DETENER
           </button>
-          <button className={`${styles.btn} ${styles.btnReset}`} disabled={loading} onClick={() => void control('reset')}>
+          <button className={`${styles.btn} ${styles.btnReset}`} disabled={loading} onClick={() => {
+            if (!confirm('¿Resetear simulación? Se borrarán todas las métricas.')) return
+            void control('reset')
+          }}>
             RESET
           </button>
         </div>

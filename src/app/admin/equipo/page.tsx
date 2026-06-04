@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import Link from 'next/link'
 import {
-  AlertCircle, Eye, EyeOff, KeyRound, MessageCircle,
+  AlertCircle, ArrowLeft, Eye, EyeOff, KeyRound, MessageCircle,
   UserPlus, X, ChefHat, Wine, Truck, ShieldCheck, Users, Pencil,
 } from 'lucide-react'
 import type { Role } from '@/types'
@@ -211,6 +212,7 @@ export default function EquipoPage() {
   // ── Toggle active ─────────────────────────────────────────────────────────────
 
   const handleToggle = useCallback(async (u: TeamUser) => {
+    if (!confirm(`¿${u.is_active ? 'Desactivar' : 'Activar'} a ${u.name}?`)) return;
     setToggling(u.id)
     try {
       const res  = await fetch(`/api/users/${u.id}`, {
@@ -319,6 +321,9 @@ export default function EquipoPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
+        <Link href="/admin" className={styles.backBtn} aria-label="Volver">
+          <ArrowLeft size={20} />
+        </Link>
         <div>
           <h1 className={styles.title}>Equipo</h1>
           <p className={styles.subtitle}>Usuarios · Roles · Horario de acceso</p>
