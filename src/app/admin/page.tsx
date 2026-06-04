@@ -4,9 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   AlertTriangle, CheckCircle, Circle, Clock,
-  Info, ShoppingBag, TrendingUp, WifiOff, Zap,
+  Info, ShoppingBag, TrendingUp, Wifi, WifiOff, Zap,
 } from 'lucide-react'
 import type { KitchenStatus, PaymentStatus } from '@/types'
+import { getSupabase } from '@/lib/supabase'
 import styles from './warroom.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -183,13 +184,14 @@ function KanbanCol({
 // ── WarRoomPage ────────────────────────────────────────────────────────────────
 
 export default function WarRoomPage() {
-  const [orders,    setOrders]    = useState<WROrder[]>([])
-  const [turno,     setTurno]     = useState<WRTurno | null>(null)
-  const [caja,      setCaja]      = useState<WRCajaData | null>(null)
-  const [venues,    setVenues]    = useState<WRVenue[]>([])
-  const [rate,      setRate]      = useState(0)
-  const [stale,     setStale]     = useState(false)
-  const [ready,     setReady]     = useState(false)
+  const [orders,       setOrders]       = useState<WROrder[]>([])
+  const [turno,        setTurno]        = useState<WRTurno | null>(null)
+  const [caja,         setCaja]         = useState<WRCajaData | null>(null)
+  const [venues,       setVenues]       = useState<WRVenue[]>([])
+  const [rate,         setRate]         = useState(0)
+  const [stale,        setStale]        = useState(false)
+  const [ready,        setReady]        = useState(false)
+  const [realtimeOk,   setRealtimeOk]   = useState(false)
 
   const tick = useTick(5_000)
 
@@ -227,17 +229,54 @@ export default function WarRoomPage() {
     } catch { /* keep previous */ }
   }, [])
 
-  // ── Init + polling ───────────────────────────────────────────────────────────
+  // ── Init + métricas/venues polling ──────────────────────────────────────────
 
   useEffect(() => {
     void Promise.all([fetchOrders(), fetchMetrics(), fetchVenues()])
       .finally(() => setReady(true))
 
-    const t1 = setInterval(fetchOrders,  5_000)
     const t2 = setInterval(fetchMetrics, 10_000)
     const t3 = setInterval(fetchVenues,  15_000)
-    return () => { clearInterval(t1); clearInterval(t2); clearInterval(t3) }
+    return () => { clearInterval(t2); clearInterval(t3) }
   }, [fetchOrders, fetchMetrics, fetchVenues])
+
+  // ── Órdenes: Supabase Realtime + polling de fallback ─────────────────────────
+
+  useEffect(() => {
+    const client = getSupabase()
+
+    if (!client) {
+      // Sin Supabase — polling puro
+      const id = setInterval(fetchOrders, 5_000)
+      return () => clearInterval(id)
+    }
+
+    let pollId: ReturnType<typeof setInterval> | null = null
+    const startPoll = () => { if (!pollId) pollId = setInterval(fetchOrders, 5_000) }
+    const stopPoll  = () => { if (pollId) { clearInterval(pollId); pollId = null } }
+
+    // Arrancar con polling como red de seguridad
+    startPoll()
+
+    const channel = client
+      .channel('warroom-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => { void fetchOrders() },
+      )
+      .subscribe((status) => {
+        const ok = status === 'SUBSCRIBED'
+        setRealtimeOk(ok)
+        if (ok) stopPoll()   // Realtime activo — polling innecesario
+        else    startPoll()  // Realtime caído — activar fallback
+      })
+
+    return () => {
+      stopPoll()
+      void client.removeChannel(channel)
+    }
+  }, [fetchOrders])
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
@@ -324,6 +363,12 @@ export default function WarRoomPage() {
           </span>
           {turno?.is_active && turno.opened_at && (
             <TurnoTimer openedAt={turno.opened_at} />
+          )}
+          {realtimeOk && (
+            <span className={styles.realtimeBadge}>
+              <Wifi size={10} aria-hidden />
+              live
+            </span>
           )}
           {stale && (
             <span className={styles.staleBadge}>
