@@ -40,4 +40,3 @@ next-env.d.ts
 # Claude Cowork session files (contienen credentials)
 .claude/settings.local.json
 .env
-.env
