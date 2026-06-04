@@ -1,409 +1,494 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { motion, useSpring, useTransform, animate } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import {
-  AlertCircle, Clock, ShoppingBag, CreditCard,
-  Banknote, Building2, Users, Timer,
-  Settings, UserSquare2, Briefcase, CalendarDays,
+  AlertTriangle, CheckCircle, Circle, Clock,
+  Info, ShoppingBag, TrendingUp, WifiOff, Zap,
 } from 'lucide-react'
 import type { KitchenStatus, PaymentStatus } from '@/types'
-import HelpButton from '@/components/HelpButton'
-import styles from './page.module.css'
+import styles from './warroom.module.css'
 
-// ── Help content ──────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-const HELP_STEPS = [
-  {
-    title: '¿Qué es Mission Control?',
-    body:  'Es tu panel de mando en tiempo real. Muestra las órdenes activas del turno, cuánto se ha vendido y el estado de cada punto de venta en este momento.',
-    tip:   'Los números se actualizan solos cada vez que entra una orden nueva — no hace falta recargar la página.',
-  },
-  {
-    title: 'Cómo leer las métricas',
-    body:  'Órdenes activas: comandas abiertas que aún no se han cerrado. Pendientes cobro: órdenes listas que el cliente aún no pagó. Créditos abiertos: cuentas fiadas que quedaron pendientes.',
-    tip:   'El total REF turno suma todo lo facturado desde que abriste el turno — incluyendo lo que aún no cobraste.',
-  },
-  {
-    title: 'Cómo abrir el turno',
-    body:  'Ve al menú lateral → Turno → presiona "Abrir turno". Sin turno abierto los meseros pueden tomar órdenes pero no se registra la caja del día.',
-    tip:   'Daniel (admin) es el único que puede abrir y cerrar el turno.',
-  },
-]
-
-const HELP_FAQS = [
-  {
-    q: '¿Qué significa REF?',
-    a: 'REF es la referencia en dólares. Todos los precios se guardan en REF y se convierten a Bs. automáticamente usando la tasa BCV del día. Nunca verás el símbolo $ en el sistema.',
-  },
-  {
-    q: '¿Puedo ver órdenes de días anteriores?',
-    a: 'Mission Control solo muestra las órdenes del turno activo. Para ver días anteriores ve a Reportes (próximamente) o a la sección Caja donde puedes revisar el historial de cierres.',
-  },
-]
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface OrderSummary {
-  id:             number
-  code:           string
-  zone:           string
-  kitchen_status: KitchenStatus
-  payment_status: PaymentStatus
-  total_usd:      string
-  created_at:     string
-  venue_assigned: number | null
-  user?:          { code: string; name: string }
+interface WRItem {
+  qty:     number
+  product: { name: string }
 }
 
-interface VenueCard {
-  id:       number
-  name:     string
-  type:     string
-  is_active: boolean
-  _count:   { users: number }
+interface WROrder {
+  id:               number
+  code:             string
+  kitchen_status:   KitchenStatus
+  payment_status:   PaymentStatus
+  zone:             string
+  seat:             string | null
+  total_usd:        string
+  created_at:       string
+  updated_at:       string
+  venue_destino_id: number | null
+  items:            WRItem[]
 }
 
-interface TeamUser {
-  id:       number
-  venue_id: number | null
+interface WRTurno {
+  is_active:      boolean
+  partido_nombre: string
+  opened_at:      string
+}
+
+interface WRCajaData {
+  cobrado_usd:    number
+  gran_total_usd: number
+  order_count:    number
+}
+
+interface WRVenue {
+  id:        number
+  name:      string
+  type:      string
   is_active: boolean
 }
 
-// ── Animated counter ──────────────────────────────────────────────────────────
-
-function AnimatedNumber({ value, decimals = 0 }: { value: number; decimals?: number }) {
-  const nodeRef = useRef<HTMLSpanElement>(null)
-  const prev    = useRef(0)
-
-  useEffect(() => {
-    const node = nodeRef.current
-    if (!node) return
-    const from = prev.current
-    prev.current = value
-    const ctrl = animate(from, value, {
-      duration: 0.6,
-      ease:     [0.25, 0, 0, 1],
-      onUpdate: (v) => {
-        node.textContent = decimals > 0
-          ? v.toFixed(decimals)
-          : String(Math.round(v))
-      },
-    })
-    return () => ctrl.stop()
-  }, [value, decimals])
-
-  return <span ref={nodeRef}>{decimals > 0 ? value.toFixed(decimals) : String(value)}</span>
+interface WRAlert {
+  level: 'danger' | 'warn' | 'ok'
+  msg:   string
 }
 
-// ── Live clock ─────────────────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────────
 
-function useClock() {
-  const [time, setTime] = useState('')
+const MAX_VENUE_CAP   = 20
+const MAX_CARDS       = 8
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function ageMs(iso: string): number {
+  return Date.now() - new Date(iso).getTime()
+}
+
+function fmtElapsed(ms: number): string {
+  const s   = Math.max(0, Math.floor(ms / 1_000))
+  const h   = Math.floor(s / 3600)
+  const m   = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
+function timerClass(ms: number): string {
+  const min = ms / 60_000
+  if (min < 3) return styles.timerOk
+  if (min < 6) return styles.timerWarn
+  return styles.timerDanger
+}
+
+// ── Hooks ──────────────────────────────────────────────────────────────────────
+
+function useTick(intervalMs: number): number {
+  const [t, setT] = useState(() => Date.now())
   useEffect(() => {
-    const fmt = () =>
-      new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    setTime(fmt())
-    const id = setInterval(() => setTime(fmt()), 1000)
+    const id = setInterval(() => setT(Date.now()), intervalMs)
     return () => clearInterval(id)
-  }, [])
-  return time
+  }, [intervalMs])
+  return t
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── TurnoTimer — 1 s tick ──────────────────────────────────────────────────────
 
-const KITCHEN_LABEL: Record<KitchenStatus, string> = {
-  NUEVO:      'NUEVO',
-  PREP:       'PREP',
-  LISTO:      'LISTO',
-  ENTREGADO:  'ENTREGADO',
+function TurnoTimer({ openedAt }: { openedAt: string }) {
+  const tick = useTick(1_000)
+  return (
+    <span className={styles.turnoTimer}>
+      {fmtElapsed(tick - new Date(openedAt).getTime())}
+    </span>
+  )
 }
 
-const PAYMENT_LABEL: Record<PaymentStatus, string> = {
-  PEND:      'PEND',
-  PAID:      'PAGADO',
-  CREDIT:    'CRÉDITO',
-  CANCELLED: 'CANCEL',
-}
+// ── KanbanCard ─────────────────────────────────────────────────────────────────
 
-function minutesAgo(iso: string) {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
-  if (diff < 1)  return 'ahora'
-  if (diff < 60) return `${diff} min`
-  return `${Math.floor(diff / 60)}h`
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export default function AdminPage() {
-  const clock = useClock()
-
-  const [orders,  setOrders]  = useState<OrderSummary[]>([])
-  const [venues,  setVenues]  = useState<VenueCard[]>([])
-  const [users,   setUsers]   = useState<TeamUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState<string | null>(null)
-
-  useEffect(() => {
-    const abort = new AbortController()
-    const s = abort.signal
-
-    Promise.all([
-      fetch('/api/orders?status=active&limit=100', { signal: s }).then((r) => r.json()),
-      fetch('/api/venues',                         { signal: s }).then((r) => r.json()),
-      fetch('/api/users',                          { signal: s }).then((r) => r.json()),
-    ])
-      .then(([od, vd, ud]) => {
-        if (!od.success) throw new Error(od.error)
-        if (!vd.success) throw new Error(vd.error)
-        if (!ud.success) throw new Error(ud.error)
-        setOrders(od.orders)
-        setVenues(vd.venues)
-        setUsers(ud.users)
-      })
-      .catch((e: unknown) => {
-        if ((e as { name?: string }).name === 'AbortError') return
-        setError(e instanceof Error ? e.message : 'Error al cargar dashboard')
-      })
-      .finally(() => setLoading(false))
-
-    return () => abort.abort()
-  }, [])
-
-  // ── Stats ──────────────────────────────────────────────────────────────────
-
-  const activeOrders  = orders.length
-  const pendingPay    = orders.filter((o) => o.payment_status === 'PEND').length
-  const openCredits   = orders.filter((o) => o.payment_status === 'CREDIT').length
-  const totalRef      = orders.reduce((sum, o) => sum + parseFloat(o.total_usd), 0)
-
-  const isEmpty = !loading && !error && orders.length === 0
-
-  // ── Venue enrichment ────────────────────────────────────────────────────────
-
-  const activeVenues = venues.filter((v) => v.is_active)
-
-  const venueStats = activeVenues.map((v) => {
-    const vOrders      = orders.filter((o) => o.venue_assigned === v.id)
-    const activeStaff  = users.filter((u) => u.venue_id === v.id && u.is_active).length
-    const lastOrder    = vOrders[0]
-    return { ...v, vOrders: vOrders.length, activeStaff, lastOrder }
-  })
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+function KanbanCard({ order, tick }: { order: WROrder; tick: number }) {
+  const ms      = tick - new Date(order.created_at).getTime()
+  const summary = order.items.slice(0, 2).map(i => `${i.qty}× ${i.product.name}`).join(' · ')
+  const extra   = order.items.length - 2
 
   return (
-    <div className={styles.page}>
+    <a
+      href={`/admin/partido/${order.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={styles.card}
+    >
+      <div className={styles.cardHead}>
+        <span className={styles.cardCode}>{order.code}</span>
+        <span className={`${styles.cardTimer} ${timerClass(ms)}`}>
+          <Clock size={9} aria-hidden />
+          {fmtElapsed(ms)}
+        </span>
+      </div>
+      <div className={styles.cardZone}>
+        {order.zone}{order.seat ? ` · ${order.seat}` : ''}
+      </div>
+      <div className={styles.cardItems}>
+        {summary}{extra > 0 ? ` +${extra}` : ''}
+      </div>
+      <div className={styles.cardFoot}>
+        <span className={styles.cardTotal}>
+          REF {parseFloat(order.total_usd).toFixed(2)}
+        </span>
+        {(order.payment_status === 'PEND' || order.payment_status === 'CREDIT') && (
+          <span className={`${styles.payBadge} ${styles[`pay_${order.payment_status}`]}`}>
+            {order.payment_status}
+          </span>
+        )}
+      </div>
+    </a>
+  )
+}
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Partido en curso</h1>
-          <div className={styles.livePill}>
-            <span className={styles.liveDot} />
-            En vivo
-          </div>
-        </div>
-        <div className={styles.headerRight}>
-          <div className={styles.clock}>
-            <Clock size={13} strokeWidth={2} aria-hidden />
-            {clock}
-          </div>
-          <HelpButton title="Mission Control" steps={HELP_STEPS} faqs={HELP_FAQS} />
-        </div>
-      </header>
+// ── KanbanCol ──────────────────────────────────────────────────────────────────
 
-      {/* ── Nav rápida ─────────────────────────────────────────────────── */}
-      <nav className={styles.quickNav} aria-label="Secciones de administración">
-        <Link href="/admin/perfil"    className={styles.navItem}>
-          <UserSquare2 size={15} aria-hidden />
-          Perfil
-        </Link>
-        <Link href="/admin/config"    className={styles.navItem}>
-          <Settings size={15} aria-hidden />
-          Config
-        </Link>
-        <Link href="/admin/equipo"    className={styles.navItem}>
-          <Users size={15} aria-hidden />
-          Equipo
-        </Link>
-        <Link href="/admin/turno"     className={styles.navItem}>
-          <Briefcase size={15} aria-hidden />
-          Turno
-        </Link>
-        <Link href="/admin/partido"   className={styles.navItem}>
-          <CalendarDays size={15} aria-hidden />
-          Partido
-        </Link>
-        <Link href="/admin/caja"      className={styles.navItem}>
-          <Banknote size={15} aria-hidden />
-          Caja
-        </Link>
-      </nav>
+function KanbanCol({
+  title, colStyle, orders, tick, Icon,
+}: {
+  title:    string
+  colStyle: string
+  orders:   WROrder[]
+  tick:     number
+  Icon:     LucideIcon
+}) {
+  const visible = orders.slice(0, MAX_CARDS)
+  const extra   = orders.length - visible.length
 
-      {/* ── Loading ─────────────────────────────────────────────────────── */}
-      {loading && (
-        <div className={styles.state}>
-          <span className={styles.spinner} />
-          <span>Cargando dashboard…</span>
-        </div>
-      )}
-
-      {/* ── Error ───────────────────────────────────────────────────────── */}
-      {error && (
-        <div className={`${styles.state} ${styles.stateError}`}>
-          <AlertCircle size={18} aria-hidden />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* ── Empty state ──────────────────────────────────────────────────── */}
-      {isEmpty && (
-        <div className={styles.emptyState}>
-          <ShoppingBag size={36} strokeWidth={1.2} className={styles.emptyIcon} aria-hidden />
-          <p className={styles.emptyTitle}>Abre un turno para comenzar</p>
-          <p className={styles.emptySubtitle}>Las órdenes aparecerán aquí en tiempo real</p>
-        </div>
-      )}
-
-      {!loading && !error && !isEmpty && (
-        <>
-          {/* ── Stats row ──────────────────────────────────────────────── */}
-          <div className={styles.statsRow}>
-            <StatCard
-              icon={ShoppingBag}
-              label="Órdenes activas"
-              value={activeOrders}
-              colorVar="--color-primary"
-            />
-            <StatCard
-              icon={CreditCard}
-              label="Pendientes cobro"
-              value={pendingPay}
-              colorVar="--color-pendiente"
-            />
-            <StatCard
-              icon={Banknote}
-              label="Créditos abiertos"
-              value={openCredits}
-              colorVar="--color-credito"
-            />
-            <StatCard
-              icon={Banknote}
-              label="Total REF turno"
-              value={totalRef}
-              colorVar="--color-brand"
-              decimals={2}
-              prefix="REF "
-            />
-          </div>
-
-          {/* ── Venue grid ─────────────────────────────────────────────── */}
-          {venueStats.length > 0 && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>
-                <Building2 size={14} aria-hidden />
-                Puntos de venta
-              </h2>
-              <div className={styles.venueGrid}>
-                {venueStats.map((v) => (
-                  <div key={v.id} className={styles.venueCard}>
-                    <div className={styles.venueHeader}>
-                      <span className={styles.venueName}>{v.name}</span>
-                      <span className={styles.venueType}>{v.type}</span>
-                    </div>
-                    <div className={styles.venueStats}>
-                      <div className={styles.venueStat}>
-                        <span className={styles.venueStatValue}>
-                          <AnimatedNumber value={v.vOrders} />
-                        </span>
-                        <span className={styles.venueStatLabel}>órdenes</span>
-                      </div>
-                      <div className={styles.venueStat}>
-                        <span className={styles.venueStatValue}>
-                          <AnimatedNumber value={v.activeStaff} />
-                        </span>
-                        <span className={styles.venueStatLabel}>
-                          <Users size={10} aria-hidden /> personal
-                        </span>
-                      </div>
-                    </div>
-                    {v.lastOrder && (
-                      <div className={styles.venueFooter}>
-                        <Timer size={10} aria-hidden />
-                        <span>Última orden: {minutesAgo(v.lastOrder.created_at)}</span>
-                      </div>
-                    )}
-                    {!v.lastOrder && (
-                      <div className={styles.venueFooter}>
-                        <span className={styles.venueEmpty}>Sin órdenes activas</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Últimas órdenes ────────────────────────────────────────── */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>
-              <ShoppingBag size={14} aria-hidden />
-              Últimas {Math.min(orders.length, 10)} órdenes
-            </h2>
-            <div className={styles.orderList}>
-              {orders.slice(0, 10).map((o) => (
-                <div key={o.id} className={styles.orderRow}>
-                  <span className={styles.orderCode}>{o.code}</span>
-                  <span className={styles.orderZone}>{o.zone}</span>
-                  <span className={`${styles.orderBadge} ${styles[`kitchen_${o.kitchen_status}`]}`}>
-                    {KITCHEN_LABEL[o.kitchen_status]}
-                  </span>
-                  <span className={`${styles.orderBadge} ${styles[`pay_${o.payment_status}`]}`}>
-                    {PAYMENT_LABEL[o.payment_status]}
-                  </span>
-                  <span className={styles.orderTotal}>REF {parseFloat(o.total_usd).toFixed(2)}</span>
-                  <span className={styles.orderTime}>{minutesAgo(o.created_at)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+  return (
+    <div className={`${styles.col} ${colStyle}`}>
+      <div className={styles.colHead}>
+        <Icon size={12} aria-hidden />
+        <span className={styles.colTitle}>{title}</span>
+        <span className={styles.colCount}>{orders.length}</span>
+      </div>
+      <div className={styles.colBody}>
+        {visible.map(o => (
+          <KanbanCard key={o.id} order={o} tick={tick} />
+        ))}
+        {extra > 0 && (
+          <div className={styles.colMore}>+{extra} más</div>
+        )}
+        {orders.length === 0 && (
+          <div className={styles.colEmpty}>—</div>
+        )}
+      </div>
     </div>
   )
 }
 
-// ── StatCard ──────────────────────────────────────────────────────────────────
+// ── WarRoomPage ────────────────────────────────────────────────────────────────
 
-function StatCard({
-  icon: Icon, label, value, colorVar, decimals = 0, prefix = '',
-}: {
-  icon:      typeof ShoppingBag
-  label:     string
-  value:     number
-  colorVar:  string
-  decimals?: number
-  prefix?:   string
-}) {
+export default function WarRoomPage() {
+  const [orders,    setOrders]    = useState<WROrder[]>([])
+  const [turno,     setTurno]     = useState<WRTurno | null>(null)
+  const [caja,      setCaja]      = useState<WRCajaData | null>(null)
+  const [venues,    setVenues]    = useState<WRVenue[]>([])
+  const [rate,      setRate]      = useState(0)
+  const [stale,     setStale]     = useState(false)
+  const [ready,     setReady]     = useState(false)
+
+  const tick = useTick(5_000)
+
+  // ── Fetchers ────────────────────────────────────────────────────────────────
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const r = await fetch('/api/orders?status=active&limit=200')
+      const d = await r.json() as { success: boolean; orders?: WROrder[] }
+      if (d.success && d.orders) { setOrders(d.orders); setStale(false) }
+    } catch { setStale(true) }
+  }, [])
+
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const [turnoR, cajaR, curR] = await Promise.allSettled([
+        fetch('/api/turno').then(r => r.json()),
+        fetch('/api/caja').then(r => r.json()),
+        fetch('/api/currency').then(r => r.json()),
+      ])
+      if (turnoR.status === 'fulfilled' && (turnoR.value as { success: boolean }).success)
+        setTurno((turnoR.value as { turno: WRTurno }).turno)
+      if (cajaR.status === 'fulfilled' && (cajaR.value as { success: boolean }).success)
+        setCaja(((cajaR.value as { caja: { totales: WRCajaData } }).caja).totales)
+      if (curR.status === 'fulfilled' && typeof (curR.value as { rate?: unknown }).rate === 'number')
+        setRate((curR.value as { rate: number }).rate)
+    } catch { /* keep previous */ }
+  }, [])
+
+  const fetchVenues = useCallback(async () => {
+    try {
+      const r = await fetch('/api/venues')
+      const d = await r.json() as { success: boolean; venues?: WRVenue[] }
+      if (d.success && d.venues) setVenues(d.venues)
+    } catch { /* keep previous */ }
+  }, [])
+
+  // ── Init + polling ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    void Promise.all([fetchOrders(), fetchMetrics(), fetchVenues()])
+      .finally(() => setReady(true))
+
+    const t1 = setInterval(fetchOrders,  5_000)
+    const t2 = setInterval(fetchMetrics, 10_000)
+    const t3 = setInterval(fetchVenues,  15_000)
+    return () => { clearInterval(t1); clearInterval(t2); clearInterval(t3) }
+  }, [fetchOrders, fetchMetrics, fetchVenues])
+
+  // ── Derived ──────────────────────────────────────────────────────────────────
+
+  const active    = orders.filter(o => o.payment_status !== 'CANCELLED')
+  const nuevo     = active.filter(o => o.kitchen_status === 'NUEVO')
+  const prep      = active.filter(o => o.kitchen_status === 'PREP')
+  const listo     = active.filter(o => o.kitchen_status === 'LISTO')
+  const entregado = active.filter(o => o.kitchen_status === 'ENTREGADO')
+
+  // Venue load: in-flight (non-ENTREGADO) orders per venue
+  const venueCounts: Record<number, number> = {}
+  for (const o of active) {
+    if (o.kitchen_status !== 'ENTREGADO' && o.venue_destino_id !== null) {
+      venueCounts[o.venue_destino_id] = (venueCounts[o.venue_destino_id] ?? 0) + 1
+    }
+  }
+
+  const venueRows = venues
+    .filter(v => v.is_active)
+    .map(v => {
+      const count = venueCounts[v.id] ?? 0
+      const pct   = Math.round((count / MAX_VENUE_CAP) * 100)
+      return { ...v, count, pct }
+    })
+
+  // Alerts (max 4, ordered: danger → warn → ok)
+  const alerts: WRAlert[] = []
+
+  for (const o of nuevo) {
+    if (ageMs(o.created_at) > 8 * 60_000 && alerts.filter(a => a.level === 'danger').length < 2) {
+      alerts.push({
+        level: 'danger',
+        msg:   `${o.code} — ${Math.floor(ageMs(o.created_at) / 60_000)} min sin atender`,
+      })
+    }
+  }
+
+  for (const v of venueRows) {
+    if (v.pct > 80) {
+      alerts.push({ level: 'warn', msg: `${v.name} al ${v.pct}% de capacidad` })
+    }
+  }
+
+  if (turno?.is_active && turno.opened_at) {
+    const mins = Math.floor(ageMs(turno.opened_at) / 60_000)
+    const h    = Math.floor(mins / 60)
+    const m    = mins % 60
+    alerts.push({
+      level: 'ok',
+      msg:   `Turno activo · ${h > 0 ? `${h}h ` : ''}${m}min · ${turno.partido_nombre}`,
+    })
+  }
+
+  const visibleAlerts = alerts.slice(0, 4)
+
+  // ── Skeleton ─────────────────────────────────────────────────────────────────
+
+  if (!ready) {
+    return (
+      <div className={styles.warroom}>
+        <div className={styles.skeletonHeader} />
+        <div className={styles.skeletonKanban}>
+          {[0, 1, 2, 3].map(i => <div key={i} className={styles.skeletonCol} />)}
+        </div>
+        <div className={styles.skeletonFooter} />
+      </div>
+    )
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
-    <motion.div
-      className={styles.statCard}
-      style={{ '--stat-color': `var(${colorVar})` } as React.CSSProperties}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.25, 0, 0, 1] }}
-    >
-      <div className={styles.statIcon}>
-        <Icon size={16} strokeWidth={2} aria-hidden />
+    <div className={styles.warroom}>
+
+      {/* ══ HEADER ════════════════════════════════════════════════════════════ */}
+      <header className={styles.header}>
+
+        <div className={styles.hLeft}>
+          <Zap size={14} className={styles.zapIcon} aria-hidden />
+          <span className={styles.wrTitle}>WAR ROOM</span>
+          <span className={`${styles.dot} ${turno?.is_active ? styles.dotOn : styles.dotOff}`} />
+          <span className={styles.hStatus}>
+            {turno?.is_active ? (turno.partido_nombre || 'ACTIVO') : 'SIN TURNO'}
+          </span>
+          {turno?.is_active && turno.opened_at && (
+            <TurnoTimer openedAt={turno.opened_at} />
+          )}
+          {stale && (
+            <span className={styles.staleBadge}>
+              <WifiOff size={10} aria-hidden />
+              sin red
+            </span>
+          )}
+        </div>
+
+        <div className={styles.hCenter}>
+          <div className={styles.hMetric}>
+            <ShoppingBag size={11} aria-hidden />
+            <strong>{caja?.order_count ?? active.length}</strong>
+            <span>órdenes</span>
+          </div>
+          <div className={styles.hDivider} />
+          <div className={styles.hMetric}>
+            <TrendingUp size={11} aria-hidden />
+            <strong>REF {(caja?.cobrado_usd ?? 0).toFixed(2)}</strong>
+            <span>cobrado</span>
+          </div>
+          {rate > 0 && (
+            <>
+              <div className={styles.hDivider} />
+              <div className={styles.hMetric}>
+                <strong>{rate.toFixed(2)}</strong>
+                <span>Bs/REF</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className={styles.hRight}>
+          {turno?.is_active && (
+            <a href="/admin/turno" className={styles.closeTurnoBtn}>
+              Cerrar turno →
+            </a>
+          )}
+        </div>
+
+      </header>
+
+      {/* ══ KANBAN ════════════════════════════════════════════════════════════ */}
+      <div className={styles.kanban}>
+
+        <KanbanCol
+          title="NUEVAS"
+          colStyle={styles.colNuevo}
+          orders={nuevo}
+          tick={tick}
+          Icon={Circle}
+        />
+        <KanbanCol
+          title="EN PREP"
+          colStyle={styles.colPrep}
+          orders={prep}
+          tick={tick}
+          Icon={Clock}
+        />
+        <KanbanCol
+          title="LISTAS"
+          colStyle={styles.colListo}
+          orders={listo}
+          tick={tick}
+          Icon={CheckCircle}
+        />
+
+        {/* DESPACHADAS — stats only */}
+        <div className={`${styles.col} ${styles.colEntregado}`}>
+          <div className={styles.colHead}>
+            <Zap size={12} aria-hidden />
+            <span className={styles.colTitle}>DESPACHADAS</span>
+            <span className={styles.colCount}>{entregado.length}</span>
+          </div>
+          <div className={styles.statsBox}>
+            <div className={styles.sItem}>
+              <span className={styles.sVal}>{entregado.length}</span>
+              <span className={styles.sLbl}>entregadas</span>
+            </div>
+            <div className={styles.sDivider} />
+            <div className={styles.sItem}>
+              <span className={styles.sVal}>{active.length}</span>
+              <span className={styles.sLbl}>activas</span>
+            </div>
+            <div className={styles.sDivider} />
+            <div className={styles.sItem}>
+              <span className={`${styles.sVal} ${styles.sGreen}`}>
+                REF {(caja?.cobrado_usd ?? 0).toFixed(2)}
+              </span>
+              <span className={styles.sLbl}>cobrado</span>
+            </div>
+            <div className={styles.sDivider} />
+            <div className={styles.sItem}>
+              <span className={styles.sVal}>
+                REF {(caja?.gran_total_usd ?? 0).toFixed(2)}
+              </span>
+              <span className={styles.sLbl}>facturado</span>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div className={styles.statBody}>
-        <span className={styles.statValue}>
-          {prefix}<AnimatedNumber value={value} decimals={decimals} />
-        </span>
-        <span className={styles.statLabel}>{label}</span>
-      </div>
-    </motion.div>
+
+      {/* ══ FOOTER ════════════════════════════════════════════════════════════ */}
+      <footer className={styles.footer}>
+
+        {/* Venue load */}
+        <div className={styles.footVenues}>
+          <span className={styles.footTitle}>CARGA VENUES</span>
+          <div className={styles.venueBars}>
+            {venueRows.map(v => (
+              <div key={v.id} className={styles.venueRow}>
+                <span className={styles.venueName} title={v.name}>
+                  {v.name.length > 10 ? `${v.name.slice(0, 10)}…` : v.name}
+                </span>
+                <div className={styles.barTrack}>
+                  <div
+                    className={`${styles.barFill} ${
+                      v.pct > 80 ? styles.barDanger
+                      : v.pct > 60 ? styles.barWarn
+                      : styles.barOk
+                    }`}
+                    style={{ width: `${Math.min(v.pct, 100)}%` }}
+                  />
+                </div>
+                <span className={styles.venueInfo}>{v.pct}% ({v.count})</span>
+              </div>
+            ))}
+            {venueRows.length === 0 && (
+              <span className={styles.footEmpty}>Sin datos</span>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.footDivider} />
+
+        {/* Alerts */}
+        <div className={styles.footAlerts}>
+          <span className={styles.footTitle}>ALERTAS</span>
+          <div className={styles.alertList}>
+            {visibleAlerts.length === 0 && (
+              <div className={`${styles.alertRow} ${styles.alertOk}`}>
+                <CheckCircle size={11} aria-hidden />
+                <span>Todo en orden</span>
+              </div>
+            )}
+            {visibleAlerts.map((a, i) => (
+              <div
+                key={i}
+                className={`${styles.alertRow} ${
+                  a.level === 'danger' ? styles.alertDanger
+                  : a.level === 'warn' ? styles.alertWarn
+                  : styles.alertOk
+                }`}
+              >
+                {a.level === 'danger' && <AlertTriangle size={11} aria-hidden />}
+                {a.level === 'warn'   && <AlertTriangle size={11} aria-hidden />}
+                {a.level === 'ok'     && <Info size={11} aria-hidden />}
+                <span>{a.msg}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </footer>
+    </div>
   )
 }
