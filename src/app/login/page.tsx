@@ -114,7 +114,7 @@ export default function LoginPage() {
         {/* Brand */}
         <div className={styles.brand}>
           <span className={styles.brandOrb} aria-hidden />
-          <h1 className={styles.brandName}>CafeBall</h1>
+          <h1 className={styles.brandName}>SportBar</h1>
         </div>
 
         {/* User code input */}

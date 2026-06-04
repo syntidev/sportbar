@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "CafeBall · Sport Bar",
+  title: "SportBar · Sport Bar",
   description: "Sistema operativo para Sport Bar · Guaiqueríes de Margarita",
   icons: {
     icon: "/logo-color.png",

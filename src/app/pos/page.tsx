@@ -62,10 +62,10 @@ export default function Home() {
         <div className={styles.headerTop}>
           <div className={styles.homeBrand}>
             <div className={styles.logoContainer}>
-              <Image src="/logo-color.png" alt="CafeBall" width={32} height={32} priority />
+              <Image src="/logo-color.png" alt="SportBar" width={32} height={32} priority />
             </div>
             <div className={styles.brandText}>
-              <span className={styles.homeName}>CafeBall</span>
+              <span className={styles.homeName}>SportBar</span>
               <span className={styles.homeSub}>Sport Bar · Guaiquerías</span>
             </div>
           </div>
