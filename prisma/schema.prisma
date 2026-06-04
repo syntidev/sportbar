@@ -10,6 +10,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── EVENTOS ───────────────────────────────────────────
+enum EventType {
+  VENUE
+  OUTDOOR
+}
+
+model Event {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  type        EventType @default(VENUE)
+  date        DateTime?
+  is_active   Boolean   @default(false)
+  description String?
+  created_at  DateTime  @default(now())
+
+  venues  Venue[]
+  zones   Zone[]
+  orders  Order[]
+
+  @@map("events")
+}
+
 // ── VENUES ────────────────────────────────────────────
 model Venue {
   id              Int       @id @default(autoincrement())
@@ -20,6 +43,9 @@ model Venue {
   is_active       Boolean   @default(true)
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
+
+  event_id  Int?
+  event     Event? @relation(fields: [event_id], references: [id])
 
   users               User[]
   venueZones          VenueZone[]
@@ -44,6 +70,11 @@ model Zone {
   capacity   Int         @default(0)
   is_active  Boolean     @default(true)
   created_at DateTime    @default(now())
+
+  event_id    Int?
+  event       Event? @relation(fields: [event_id], references: [id])
+  seat_prefix String?
+  seat_count  Int?
 
   venueZones VenueZone[]
   orders     Order[]
@@ -161,6 +192,10 @@ model Order {
   paid_at     DateTime?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+
+  seat_ref  String?
+  event_id  Int?
+  event     Event? @relation(fields: [event_id], references: [id])
 
   items             OrderItem[]
   logs              OrderLog[]
