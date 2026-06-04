@@ -1,15 +1,14 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient as createBrowser } from '@/utils/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-let _client: SupabaseClient | null = null
-
+// Cliente browser — usa @supabase/ssr bajo el capó
+// Retorna null si las vars de entorno no están disponibles (build-time safety)
 export function getSupabase(): SupabaseClient | null {
-  if (typeof window === 'undefined') return null
-  if (_client) return _client
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  _client = createClient(url, key)
-  return _client
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) return null
+  return createBrowser() as SupabaseClient
 }
 
 // Broadcast server-side vía HTTP — sin WebSocket, válido desde Route Handlers
