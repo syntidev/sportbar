@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { publishOrderEvent } from '@/lib/supabase'
 
 const PatchStatusSchema = z.object({
   kitchen_status: z.enum(['NUEVO', 'PREP', 'LISTO', 'ENTREGADO']).optional(),
@@ -78,6 +79,10 @@ export async function PATCH(
         },
       }),
     ])
+
+    // Realtime broadcast — fire-and-forget
+    const newStatus = kitchen_status ?? payment_status ?? ''
+    void publishOrderEvent({ order_id: updated.id, code: updated.code, status: newStatus, venue_id: updated.venue_destino_id }).catch(() => {})
 
     return NextResponse.json({ success: true, order: updated })
   } catch {

@@ -11,6 +11,24 @@ export function getSupabase(): SupabaseClient | null {
   return createBrowser() as SupabaseClient
 }
 
+// Broadcast orden — fire-and-forget desde cualquier Route Handler
+export async function publishOrderEvent(payload: {
+  order_id: number
+  code:     string
+  status:   string
+  venue_id?: number | null
+}): Promise<void> {
+  const { createClient } = await import('@/utils/supabase/client')
+  const supabase = createClient()
+  const channel  = supabase.channel('sportbar-orders')
+  await channel.subscribe()
+  await channel.send({
+    type:    'broadcast',
+    event:   'order_update',
+    payload,
+  })
+}
+
 // Broadcast server-side vía HTTP — sin WebSocket, válido desde Route Handlers
 export async function broadcastTurno(payload: {
   is_active:      boolean

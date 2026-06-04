@@ -259,17 +259,13 @@ export default function WarRoomPage() {
     startPoll()
 
     const channel = client
-      .channel('warroom-orders')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        () => { void fetchOrders() },
-      )
+      .channel('sportbar-orders')
+      .on('broadcast', { event: 'order_update' }, () => { void fetchOrders() })
       .subscribe((status) => {
         const ok = status === 'SUBSCRIBED'
         setRealtimeOk(ok)
-        if (ok) stopPoll()   // Realtime activo — polling innecesario
-        else    startPoll()  // Realtime caído — activar fallback
+        if (ok) stopPoll()   // Broadcast activo — polling innecesario
+        else    startPoll()  // Broadcast caído — activar fallback
       })
 
     return () => {

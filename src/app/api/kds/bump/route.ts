@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { publishOrderEvent } from '@/lib/supabase'
 
 const STATUS_FLOW: Record<string, string> = {
   NUEVO: 'PREP',
@@ -40,6 +41,9 @@ export async function POST(req: NextRequest) {
         },
       },
     })
+
+    // Realtime broadcast — fire-and-forget
+    void publishOrderEvent({ order_id: updated.id, code: updated.code, status: updated.kitchen_status, venue_id: updated.venue_destino_id }).catch(() => {})
 
     return NextResponse.json({ success: true, order: updated })
   } catch {

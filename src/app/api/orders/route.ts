@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentRate, calcBs } from '@/lib/dollar-rate'
 import { generateTicketCode } from '@/lib/ticket'
 import { routeOrder } from '@/lib/routing'
+import { publishOrderEvent } from '@/lib/supabase'
 import type { KitchenStatus, Zone } from '@/types'
 
 const OrderItemSchema = z.object({
@@ -122,6 +123,9 @@ export async function POST(req: NextRequest) {
       },
       include: { items: { include: { product: true } } },
     })
+
+    // Realtime broadcast — fire-and-forget
+    void publishOrderEvent({ order_id: order.id, code: order.code, status: 'NUEVO', venue_id: order.venue_destino_id }).catch(() => {})
 
     // Analytics — fire-and-forget
     void prisma.analyticsEvent.create({
