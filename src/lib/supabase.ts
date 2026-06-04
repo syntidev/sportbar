@@ -1,4 +1,4 @@
-import { createClient as createBrowser } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Cliente browser — usa @supabase/ssr bajo el capó
@@ -8,21 +8,18 @@ export function getSupabase(): SupabaseClient | null {
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   ) return null
-  return createBrowser() as SupabaseClient
+  return createClient() as SupabaseClient
 }
 
-// Broadcast orden — fire-and-forget desde cualquier Route Handler
+// Broadcast orden — bus de eventos Supabase (DB sigue en MySQL)
 export async function publishOrderEvent(payload: {
-  order_id: number
-  code:     string
-  status:   string
+  order_id:  number
+  code:      string
+  status:    string
   venue_id?: number | null
 }): Promise<void> {
-  const { createClient } = await import('@/utils/supabase/client')
   const supabase = createClient()
-  const channel  = supabase.channel('sportbar-orders')
-  await channel.subscribe()
-  await channel.send({
+  await supabase.channel('sportbar-orders').send({
     type:    'broadcast',
     event:   'order_update',
     payload,
