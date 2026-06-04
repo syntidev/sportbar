@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Clock, Banknote, UtensilsCrossed,
   Users, Building2, Settings, CalendarDays, UserSquare2,
   TrendingUp, Megaphone, BarChart2, Package, ChefHat, GlassWater, Activity,
+  CalendarRange,
 } from 'lucide-react'
 import styles from './layout.module.css'
 
@@ -40,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/caja',    label: 'Caja',     short: 'Caja',    Icon: Banknote     },
       { href: '/admin/partido', label: 'Partidos', short: 'Partido', Icon: CalendarDays },
+      { href: '/admin/eventos', label: 'Eventos',  short: 'Eventos', Icon: CalendarRange },
     ],
   },
   {
