@@ -987,29 +987,14 @@ function MenuContent() {
 
   // ── Curtain (turno inactivo) ──
   if (!turno?.is_active) {
-    // Logo: prioridad → DB → logo local de SportBar → sin imagen
-    const curtainLogoSrc = logoUrl ?? "/logo-color.png";
-
     return (
       <div className={styles.curtain}>
         <div className={styles.curtainGlow} />
 
-        {/* Afiliación CafeConBike — top, muy discreta */}
-        <motion.div
-          className={styles.curtainAfiliacion}
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <span className={styles.curtainAfilDot} />
-          un servicio de&nbsp;
-          <span className={styles.curtainAfilBrand}>CafeConBike</span>
-        </motion.div>
-
-        {/* Logo SportBar — pulso suave */}
+        {/* Logo SportBar — ruta estática, pulso suave */}
         <motion.img
-          src={curtainLogoSrc}
-          alt={businessName}
+          src="/logo-color.png"
+          alt="SportBar"
           className={styles.curtainLogo}
           initial={{ opacity: 0, scale: 0.8, y: 10 }}
           animate={{
@@ -1022,11 +1007,17 @@ function MenuContent() {
             scale:   { duration: 3.5, ease: "easeInOut", repeat: Infinity, delay: 0.2 },
             y:       { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
           }}
-          onError={(e) => {
-            // Si el logo local falla, ocultar imagen
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
         />
+
+        {/* Nombre — protagonista único */}
+        <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,5.5vw,26px)", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--color-text)", position: "relative", zIndex: 1, marginTop: 2 }}>
+          {businessName}
+        </div>
+
+        {/* Firma discreta — debajo del nombre */}
+        <div style={{ fontSize: 10, letterSpacing: "2px", textTransform: "uppercase", opacity: 0.4, color: "rgba(245,166,35,0.9)", position: "relative", zIndex: 1, marginTop: 5 }}>
+          un servicio de · CafeConBike
+        </div>
 
         {/* Cuerpo: nombre partido + subtítulo */}
         <div className={styles.curtainBody}>
