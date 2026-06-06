@@ -284,7 +284,10 @@ export default function AdminMenuPage() {
         const upRes  = await fetch(`/api/products/${savedProduct.id}/upload`, { method: 'POST', body: fd })
         const upData = await upRes.json() as { success: boolean; image_url?: string; error?: string }
         if (upData.success && upData.image_url) {
-          savedProduct = { ...savedProduct, image_url: upData.image_url }
+          // Cache-bust client-side SOLO de la imagen recién subida (state local).
+          // El listado normal (GET) usa la URL limpia → no rompe caché de Cloudflare.
+          const cleanUrl = upData.image_url.split('?')[0]
+          savedProduct = { ...savedProduct, image_url: `${cleanUrl}?v=${Date.now()}` }
         } else {
           imgError = upData.error ?? 'Error al subir la foto'
         }

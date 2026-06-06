@@ -3,10 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { readdir, unlink } from 'fs/promises'
-import { existsSync } from 'fs'
-import { join } from 'path'
-import { uploadMedia } from '@/lib/media'
+import { uploadMedia, deleteMedia, UPLOAD_HINT, MediaValidationError } from '@/lib/media'
 import { prisma } from '@/lib/prisma'
 
 export const runtime = 'nodejs'
@@ -21,26 +18,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Archivo requerido' }, { status: 400 })
     }
 
+    // Leer logo actual para borrar su archivo físico tras subir el nuevo
+    const prev = await prisma.config.findUnique({ where: { key: 'business_logo_url' } })
+
     // Delegar procesamiento y almacenamiento a media.ts
-    // media.ts valida MIME (jpg/png/webp/avif) y tamaño (5 MB)
+    // media.ts valida MIME (jpg/png/webp) y tamaño (5 MB), nombre único
     const url = await uploadMedia(file, 'logo')
 
-    // Limpiar logos anteriores (logo_*.webp) para no acumular archivos
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    const newFilename = url.split('/').pop()! // logo_ts.webp
-    try {
-      const files = await readdir(uploadsDir)
-      await Promise.all(
-        files
-          .filter(f => /^logo_\d+\.webp$/.test(f) && f !== newFilename)
-          .map(f => unlink(join(uploadsDir, f)).catch(() => {})),
-      )
-    } catch { /* no crítico */ }
-
-    // Borrar archivos legacy si existían
-    for (const legacy of ['logo.png', 'logo.jpg', 'logo.webp']) {
-      const p = join(uploadsDir, legacy)
-      if (existsSync(p)) await unlink(p).catch(() => {})
+    // Borrar el logo anterior si era un archivo local subido (no URL externa)
+    if (prev?.value && prev.value.startsWith('/uploads/')) {
+      await deleteMedia(prev.value).catch(() => {})
     }
 
     await prisma.config.upsert({
@@ -49,8 +36,11 @@ export async function POST(req: NextRequest) {
       update: { value: url },
     })
 
-    return NextResponse.json({ success: true, url })
+    return NextResponse.json({ success: true, url, hint: UPLOAD_HINT })
   } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    }
     const msg = err instanceof Error ? err.message : 'Error al guardar el logo'
     console.error('[logo POST]', err)
     return NextResponse.json({ success: false, error: msg }, { status: 500 })

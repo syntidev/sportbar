@@ -5,9 +5,10 @@
 // Colores: verde NUEVO, naranja overflow 45s, rojo emergency 90s
 // Claim system: TOMAR → BUMP (INICIAR PREP) → MARCAR LISTO
 
+import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  AlertTriangle, ChefHat, Hand, RefreshCw, StickyNote, Zap,
+  AlertTriangle, ArrowLeft, ChefHat, Hand, RefreshCw, StickyNote, Zap,
 } from 'lucide-react'
 import type { Category } from '@/types'
 import styles from './page.module.css'
@@ -177,6 +178,10 @@ export default function KdsCocinaPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
+          <Link href="/admin" className={styles.dashboardBtn} aria-label="Volver al dashboard">
+            <ArrowLeft size={14} strokeWidth={2.5} aria-hidden />
+            Dashboard
+          </Link>
           <ChefHat size={22} strokeWidth={2} aria-hidden />
           <div>
             <span className={styles.headerTitle}>KDS Cocina</span>

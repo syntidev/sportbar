@@ -6,6 +6,7 @@ import {
   RefreshCw, Save, Snowflake, Trash2, Upload, X, ZoomIn,
 } from "lucide-react"
 import HelpButton from "@/components/HelpButton"
+import { HERO_PRESET_LIST, DEFAULT_HERO_PRESET, type HeroPresetId } from "@/lib/hero-presets"
 import styles from "./page.module.css"
 
 // ── Help content ───────────────────────────────────────────────────────
@@ -46,6 +47,10 @@ type SlotEffectType = 'hot' | 'cold' | 'none'
 interface SlotState {
   url:      string | null
   type:     SlotEffectType
+  title:    string
+  subtitle: string
+  cta:      string
+  preset:   HeroPresetId
   loading:  boolean
   dragOver: boolean
 }
@@ -103,7 +108,11 @@ function drawCorners(
 export default function MarketingPage() {
   // Hero slider state
   const [slots, setSlots] = useState<SlotState[]>(
-    Array.from({ length: 5 }, () => ({ url: null, type: 'none' as SlotEffectType, loading: false, dragOver: false })),
+    Array.from({ length: 5 }, () => ({
+      url: null, type: 'none' as SlotEffectType,
+      title: '', subtitle: '', cta: '', preset: DEFAULT_HERO_PRESET,
+      loading: false, dragOver: false,
+    })),
   )
   const [saving,  setSaving]  = useState<number | null>(null)
   const [toast,   setToast]   = useState<{ msg: string; type: "ok" | "err" } | null>(null)
@@ -136,26 +145,62 @@ export default function MarketingPage() {
   const [rendering,  setRendering]  = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // ── Load hero slots ──────────────────────────────────────────────────
-  useEffect(() => {
-    fetch("/api/config/hero-slots")
-      .then(r => r.json())
-      .then((d: { success: boolean; slots: { slot: number; url: string | null; type: string }[] }) => {
-        if (!d.success) return
-        setSlots(prev => prev.map((s, i) => ({
+  // ── Load hero slots (refetch reactivo desde BD, sin reload) ──────────
+  const loadHeroSlots = useCallback(async () => {
+    try {
+      const r = await fetch("/api/config/hero-slots", { cache: "no-store" })
+      const d = await r.json() as {
+        success: boolean
+        slots: { slot: number; url: string | null; type: string; title: string; subtitle: string; cta: string; preset: string }[]
+      }
+      if (!d.success) return
+      setSlots(prev => prev.map((s, i) => {
+        const row = d.slots[i]
+        const preset = (['fire','ice','night','sport'].includes(row?.preset) ? row.preset : DEFAULT_HERO_PRESET) as HeroPresetId
+        return {
           ...s,
-          url:  d.slots[i]?.url  ?? null,
-          type: (['hot','cold','none'].includes(d.slots[i]?.type) ? d.slots[i].type : 'none') as SlotEffectType,
-        })))
-      })
-      .catch(() => {})
+          url:      row?.url ?? null,
+          type:     (['hot','cold','none'].includes(row?.type) ? row.type : 'none') as SlotEffectType,
+          title:    row?.title    ?? '',
+          subtitle: row?.subtitle ?? '',
+          cta:      row?.cta      ?? '',
+          preset,
+          loading:  false,
+          dragOver: false,
+        }
+      }))
+    } catch { /* silencioso */ }
   }, [])
 
-  // ── Load portada config ──────────────────────────────────────────────
-  useEffect(() => {
-    fetch("/api/config/splash")
-      .then(r => r.json())
-      .then((d: {
+  useEffect(() => { void loadHeroSlots() }, [loadHeroSlots])
+
+  // ── Persistir config de un slot (preset / textos) en /api/config ──────
+  const saveSlotConfig = useCallback(async (slot: number, suffix: string, value: string) => {
+    try {
+      await fetch("/api/config", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ key: `hero_slot_${slot}_${suffix}`, value }),
+      })
+    } catch { /* silencioso — no romper UX */ }
+  }, [])
+
+  // Cambiar preset → actualización optimista + PATCH
+  const setSlotPreset = useCallback((idx: number, preset: HeroPresetId) => {
+    setSlots(prev => prev.map((s, i) => i === idx ? { ...s, preset } : s))
+    void saveSlotConfig(idx + 1, "preset", preset)
+  }, [saveSlotConfig])
+
+  // Editar texto localmente (persiste en onBlur)
+  function setSlotText(idx: number, field: 'title' | 'subtitle' | 'cta', value: string) {
+    setSlots(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
+  }
+
+  // ── Load portada config (completo — solo al montar) ──────────────────
+  const loadSplash = useCallback(async () => {
+    try {
+      const r = await fetch("/api/config/splash", { cache: "no-store" })
+      const d = await r.json() as {
         success: boolean
         config: {
           productImage:  string | null
@@ -165,17 +210,29 @@ export default function MarketingPage() {
           durationSeconds: number
           forceReload:   boolean
         }
-      }) => {
-        if (!d.success) return
-        setSplashProductImage(d.config.productImage)
-        setSplashProductImage2(d.config.productImage2)
-        setSplashProductName(d.config.productName)
-        setSplashSubtitle(d.config.subtitle)
-        setSplashDuration(d.config.durationSeconds)
-        setSplashForceReload(d.config.forceReload)
-      })
-      .catch(() => {})
+      }
+      if (!d.success) return
+      setSplashProductImage(d.config.productImage)
+      setSplashProductImage2(d.config.productImage2)
+      setSplashProductName(d.config.productName)
+      setSplashSubtitle(d.config.subtitle)
+      setSplashDuration(d.config.durationSeconds)
+      setSplashForceReload(d.config.forceReload)
+    } catch { /* silencioso */ }
   }, [])
+
+  // Refetch SOLO de imágenes — no pisa los textos del formulario sin guardar
+  const refetchSplashImages = useCallback(async () => {
+    try {
+      const r = await fetch("/api/config/splash", { cache: "no-store" })
+      const d = await r.json() as { success: boolean; config: { productImage: string | null; productImage2: string | null } }
+      if (!d.success) return
+      setSplashProductImage(d.config.productImage)
+      setSplashProductImage2(d.config.productImage2)
+    } catch { /* silencioso */ }
+  }, [])
+
+  useEffect(() => { void loadSplash() }, [loadSplash])
 
   // ── Load business name ───────────────────────────────────────────────
   useEffect(() => {
@@ -324,8 +381,8 @@ export default function MarketingPage() {
       const res  = await fetch(`/api/config/hero-slot/${slot}`, { method: "POST", body: fd })
       const data = await res.json() as { success: boolean; url?: string; error?: string }
       if (data.success && data.url) {
-        // data.url ya incluye ?v=timestamp desde la API — no agregar otro cache-buster
-        setSlots(prev => prev.map((s, i) => i === idx ? { ...s, url: data.url!, loading: false } : s))
+        // Refetch autoritativo desde la BD → la preview se actualiza con la URL real
+        await loadHeroSlots()
         showToast(`Slot ${slot} guardado`, "ok")
       } else {
         showToast(data.error ?? "Error", "err")
@@ -335,7 +392,7 @@ export default function MarketingPage() {
       showToast("Error de red", "err")
       setSlots(prev => prev.map((s, i) => i === idx ? { ...s, loading: false } : s))
     } finally { setSaving(null) }
-  }, [])
+  }, [loadHeroSlots])
 
   async function deleteSlot(idx: number) {
     const slot = idx + 1
@@ -344,7 +401,7 @@ export default function MarketingPage() {
       const res  = await fetch(`/api/config/hero-slot/${slot}`, { method: "DELETE" })
       const data = await res.json() as { success: boolean }
       if (data.success) {
-        setSlots(prev => prev.map((s, i) => i === idx ? { ...s, url: null, loading: false } : s))
+        await loadHeroSlots()
         showToast(`Slot ${slot} eliminado`, "ok")
       } else {
         setSlots(prev => prev.map((s, i) => i === idx ? { ...s, loading: false } : s))
@@ -392,7 +449,7 @@ export default function MarketingPage() {
       const res  = await fetch("/api/config/splash", { method: "POST", body: fd })
       const data = await res.json() as { success: boolean; url?: string; error?: string }
       if (data.success && data.url) {
-        setSplashProductImage(data.url)
+        await refetchSplashImages()
         showToast("Imagen guardada", "ok")
       } else {
         showToast(data.error ?? "Error al subir imagen", "err")
@@ -402,7 +459,7 @@ export default function MarketingPage() {
     } finally {
       setSplashLoading(false)
     }
-  }, [])
+  }, [refetchSplashImages])
 
   async function deleteSplash() {
     setSplashLoading(true)
@@ -410,7 +467,7 @@ export default function MarketingPage() {
       const res  = await fetch("/api/config/splash", { method: "DELETE" })
       const data = await res.json() as { success: boolean }
       if (data.success) {
-        setSplashProductImage(null)
+        await refetchSplashImages()
         showToast("Imagen eliminada", "ok")
       } else {
         showToast("Error al eliminar imagen", "err")
@@ -433,7 +490,7 @@ export default function MarketingPage() {
       const res  = await fetch("/api/config/splash", { method: "POST", body: fd })
       const data = await res.json() as { success: boolean; url?: string; error?: string }
       if (data.success && data.url) {
-        setSplashProductImage2(data.url)
+        await refetchSplashImages()
         showToast("Imagen 2 guardada", "ok")
       } else {
         showToast(data.error ?? "Error al subir imagen 2", "err")
@@ -443,7 +500,7 @@ export default function MarketingPage() {
     } finally {
       setSplashLoading2(false)
     }
-  }, [])
+  }, [refetchSplashImages])
 
   async function deleteSplash2() {
     setSplashLoading2(true)
@@ -451,7 +508,7 @@ export default function MarketingPage() {
       const res  = await fetch("/api/config/splash?slot=2", { method: "DELETE" })
       const data = await res.json() as { success: boolean }
       if (data.success) {
-        setSplashProductImage2(null)
+        await refetchSplashImages()
         showToast("Imagen 2 eliminada", "ok")
       } else {
         showToast("Error al eliminar imagen 2", "err")
@@ -586,10 +643,58 @@ export default function MarketingPage() {
                   ><Snowflake size={12} /></button>
                 </div>
               )}
+
+              {/* Preset visual + textos del slider */}
+              {slot.url && !slot.loading && (
+                <div className={styles.presetBlock}>
+                  <span className={styles.presetLabel}>Tema</span>
+                  <div className={styles.presetRow}>
+                    {HERO_PRESET_LIST.map(pr => (
+                      <button
+                        key={pr.id}
+                        type="button"
+                        className={`${styles.presetBtn} ${slot.preset === pr.id ? styles.presetBtnActive : ''}`}
+                        onClick={() => setSlotPreset(idx, pr.id)}
+                        title={pr.name}
+                      >
+                        <span className={styles.presetSwatch} style={{ background: pr.titleColor }} />
+                        {pr.name}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    className={styles.presetInput}
+                    type="text"
+                    maxLength={40}
+                    placeholder="Título"
+                    value={slot.title}
+                    onChange={e => setSlotText(idx, 'title', e.target.value)}
+                    onBlur={e => void saveSlotConfig(idx + 1, 'title', e.target.value)}
+                  />
+                  <input
+                    className={styles.presetInput}
+                    type="text"
+                    maxLength={60}
+                    placeholder="Subtítulo"
+                    value={slot.subtitle}
+                    onChange={e => setSlotText(idx, 'subtitle', e.target.value)}
+                    onBlur={e => void saveSlotConfig(idx + 1, 'subtitle', e.target.value)}
+                  />
+                  <input
+                    className={styles.presetInput}
+                    type="text"
+                    maxLength={24}
+                    placeholder="Texto del botón (CTA)"
+                    value={slot.cta}
+                    onChange={e => setSlotText(idx, 'cta', e.target.value)}
+                    onBlur={e => void saveSlotConfig(idx + 1, 'cta', e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
-        <p className={styles.slotHint}>Arte recomendado: <strong>1440 × 400 px</strong> — Autoplay cada 4 segundos.</p>
+        <p className={styles.slotHint}>JPG · PNG · WebP — máx 5MB · Tamaño recomendado: <strong>1440 × 400 px</strong></p>
       </section>
 
       {/* ── PORTADA (SPLASH SCREEN) ──────────────────────────────────── */}
@@ -642,8 +747,8 @@ export default function MarketingPage() {
             )}
 
             <p className={styles.splashHint}>
-              <span className={styles.splashHintStrong}>PNG con fondo transparente</span>{" "}
-              para efecto flotante. El sujeto principal debe estar centrado.
+              JPG · PNG · WebP — máx 5MB ·{" "}
+              <span className={styles.splashHintStrong}>PNG transparente recomendado — mín 800 × 800 px</span>
             </p>
 
             {/* ── Slot 2 — modo slider ─────────────── */}

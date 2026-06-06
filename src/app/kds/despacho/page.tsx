@@ -4,9 +4,10 @@
 // KDS Despacho — ve órdenes LISTO (todos los bumps completados)
 // Botón "ENTREGAR" → ENTREGADO, notifica al mesero asignado
 
+import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { AlertTriangle, CheckCircle2, MapPin, PackageCheck, RefreshCw, User } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, MapPin, PackageCheck, RefreshCw, User } from "lucide-react";
 import { formatRef, formatBs } from "@/lib/dollar-rate";
 import type { Zone } from "@/types";
 import styles from "./page.module.css";
@@ -131,9 +132,15 @@ export default function KdsDespachoPage() {
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className={styles.header}>
-        <div className={styles.brand}>
-          <span className={styles.title}>KDS Despacho</span>
-          <span className={styles.sub}>Comandas listas · Entregar</span>
+        <div className={styles.headerLeft}>
+          <Link href="/admin" className={styles.dashboardBtn} aria-label="Volver al dashboard">
+            <ArrowLeft size={14} strokeWidth={2.5} aria-hidden />
+            Dashboard
+          </Link>
+          <div className={styles.brand}>
+            <span className={styles.title}>KDS Despacho</span>
+            <span className={styles.sub}>Comandas listas · Entregar</span>
+          </div>
         </div>
         <div className={styles.headerRight}>
           <span className={styles.counter}>

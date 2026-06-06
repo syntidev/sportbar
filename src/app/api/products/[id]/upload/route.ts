@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
-import { uploadMedia } from '@/lib/media'
+import { uploadMedia, deleteMedia, UPLOAD_HINT, MediaValidationError } from '@/lib/media'
 import { prisma } from '@/lib/prisma'
 
 function getSecret() {
@@ -52,16 +52,21 @@ export async function POST(
     return NextResponse.json({ success: false, error: 'No se recibió archivo' }, { status: 400 })
   }
 
-  // ── Verificar que el producto existe ──────────────────────────────────────────
-  const exists = await prisma.product.findUnique({ where: { id }, select: { id: true } })
+  // ── Verificar que el producto existe (y leer foto actual para borrarla) ────────
+  const exists = await prisma.product.findUnique({ where: { id }, select: { id: true, image_url: true } })
   if (!exists) {
     return NextResponse.json({ success: false, error: 'Producto no encontrado' }, { status: 404 })
   }
 
   try {
     // Delegar procesamiento y almacenamiento a media.ts
-    // media.ts valida MIME y tamaño, comprime a webp 85 calidad
+    // media.ts valida MIME y tamaño, comprime a webp 85 calidad, nombre único
     const url = await uploadMedia(file, 'product', id)
+
+    // Borrar la foto anterior si era un archivo local subido (no URL externa)
+    if (exists.image_url && exists.image_url.startsWith('/uploads/')) {
+      await deleteMedia(exists.image_url).catch(() => {})
+    }
 
     // Guardar URL limpia en DB; agregar cache-buster en la respuesta para el browser
     await prisma.product.update({
@@ -69,8 +74,11 @@ export async function POST(
       data:  { image_url: url },
     })
 
-    return NextResponse.json({ success: true, image_url: `${url}?v=${Date.now()}` })
+    return NextResponse.json({ success: true, image_url: `${url}?v=${Date.now()}`, hint: UPLOAD_HINT })
   } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    }
     const msg = err instanceof Error ? err.message : 'Error al procesar imagen'
     console.error('[product-upload]', err)
     return NextResponse.json({ success: false, error: msg }, { status: 500 })

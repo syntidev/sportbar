@@ -3,32 +3,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { readdir, unlink } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
-import { uploadMedia } from '@/lib/media'
+import { uploadMedia, deleteMedia, UPLOAD_HINT, MediaValidationError } from '@/lib/media'
 import { prisma } from '@/lib/prisma'
 
 export const runtime = 'nodejs'
 
 const VALID = [1, 2, 3, 4, 5]
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'hero')
-
-// Elimina archivos previos del slot (slot_N_*.webp) excepto el nuevo
-async function cleanOldFiles(slot: number, keepFilename: string) {
-  try {
-    const files   = await readdir(UPLOAD_DIR)
-    const pattern = new RegExp(`^slot_${slot}_\\d+\\.webp$`)
-    await Promise.all(
-      files
-        .filter(f => pattern.test(f) && f !== keepFilename)
-        .map(f => unlink(path.join(UPLOAD_DIR, f)).catch(() => {})),
-    )
-    // Limpiar nombre legado fijo slot_N.webp
-    const legacy = path.join(UPLOAD_DIR, `slot_${slot}.webp`)
-    if (existsSync(legacy)) await unlink(legacy).catch(() => {})
-  } catch { /* no crítico */ }
-}
 
 // ── POST — subir imagen ────────────────────────────────────────────────────────
 export async function POST(
@@ -45,26 +25,31 @@ export async function POST(
     const form = await req.formData()
     const file = form.get('image') as File | null
     if (!file) return NextResponse.json({ success: false, error: 'Sin imagen' }, { status: 400 })
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ success: false, error: 'Solo imágenes' }, { status: 400 })
-    }
-
-    // Delegar procesamiento y almacenamiento a media.ts
-    const url      = await uploadMedia(file, 'hero-slot', slot)
-    const filename = path.basename(url) // slot_N_ts.webp
-
-    // Borrar versiones anteriores de este slot
-    await cleanOldFiles(slot, filename)
 
     const key = `hero_slot_${slot}`
+
+    // Leer imagen actual del slot para borrar su archivo físico tras subir la nueva
+    const prev = await prisma.config.findUnique({ where: { key } })
+
+    // Delegar procesamiento y almacenamiento a media.ts (valida MIME/tamaño, nombre único)
+    const url = await uploadMedia(file, 'hero-slot', slot)
+
+    // Borrar la imagen anterior de este slot si era un archivo local subido
+    if (prev?.value && prev.value.startsWith('/uploads/')) {
+      await deleteMedia(prev.value).catch(() => {})
+    }
+
     await prisma.config.upsert({
       where:  { key },
       create: { key, value: url },
       update: { value: url },
     })
 
-    return NextResponse.json({ success: true, url })
+    return NextResponse.json({ success: true, url, hint: UPLOAD_HINT })
   } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    }
     const msg = err instanceof Error ? err.message : 'Error al subir imagen'
     console.error('[hero-slot POST]', err)
     return NextResponse.json({ success: false, error: msg }, { status: 500 })
@@ -83,18 +68,29 @@ export async function DELETE(
   }
 
   try {
-    // Borrar todos los archivos de este slot (nombre dinámico)
-    try {
-      const files   = await readdir(UPLOAD_DIR)
-      const pattern = new RegExp(`^slot_${slot}(_\\d+)?\\.webp$`)
-      await Promise.all(
-        files
-          .filter(f => pattern.test(f))
-          .map(f => unlink(path.join(UPLOAD_DIR, f)).catch(() => {})),
-      )
-    } catch { /* dir puede no existir */ }
+    const key = `hero_slot_${slot}`
 
-    await prisma.config.deleteMany({ where: { key: `hero_slot_${slot}` } })
+    // Borrar el archivo físico de la imagen actual del slot (si es local)
+    const row = await prisma.config.findUnique({ where: { key } })
+    if (row?.value && row.value.startsWith('/uploads/')) {
+      await deleteMedia(row.value).catch(() => {})
+    }
+
+    // Reset completo del slot: imagen + efecto + preset + textos
+    await prisma.config.deleteMany({
+      where: {
+        key: {
+          in: [
+            key,
+            `hero_slot_${slot}_type`,
+            `hero_slot_${slot}_preset`,
+            `hero_slot_${slot}_title`,
+            `hero_slot_${slot}_subtitle`,
+            `hero_slot_${slot}_cta`,
+          ],
+        },
+      },
+    })
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[hero-slot DELETE]', err)

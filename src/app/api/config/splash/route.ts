@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadMedia, deleteMedia } from '@/lib/media'
+import { uploadMedia, deleteMedia, UPLOAD_HINT, MediaValidationError } from '@/lib/media'
 import { prisma } from '@/lib/prisma'
 
 export const runtime = 'nodejs'
@@ -83,8 +83,11 @@ export async function POST(req: NextRequest) {
       update: { value: url },
     })
 
-    return NextResponse.json({ success: true, url, slot: isSlot2 ? 2 : 1 })
+    return NextResponse.json({ success: true, url, slot: isSlot2 ? 2 : 1, hint: UPLOAD_HINT })
   } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    }
     const msg = err instanceof Error ? err.message : 'Error al subir imagen'
     console.error('[splash POST]', err)
     return NextResponse.json({ success: false, error: msg }, { status: 500 })

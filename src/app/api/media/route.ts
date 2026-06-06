@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadMedia, deleteMedia, type MediaType } from '@/lib/media'
+import { uploadMedia, deleteMedia, UPLOAD_HINT, MediaValidationError, type MediaType } from '@/lib/media'
 
 export const runtime = 'nodejs'
 
@@ -34,8 +34,11 @@ export async function POST(req: NextRequest) {
     }
 
     const url = await uploadMedia(file, type as MediaType, id ?? undefined)
-    return NextResponse.json({ success: true, url })
+    return NextResponse.json({ success: true, url, hint: UPLOAD_HINT })
   } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    }
     const msg = err instanceof Error ? err.message : 'Error al subir archivo'
     console.error('[media POST]', err)
     return NextResponse.json({ success: false, error: msg }, { status: 500 })

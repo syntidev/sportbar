@@ -13,6 +13,7 @@ import {
 import { getSupabase } from "@/lib/supabase";
 import { createClient } from "@/utils/supabase/client";
 import { formatBs } from "@/lib/dollar-rate";
+import { resolveHeroPreset } from "@/lib/hero-presets";
 import styles from "./menu/page.module.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -20,7 +21,15 @@ type Zone      = "Norte" | "Sur" | "VIP" | "Externa";
 type AppScreen = "menu" | "cart" | "confirm" | "success";
 
 type SlotEffectType = 'hot' | 'cold' | 'none'
-interface HeroSlot { slot: number; url: string | null; type: SlotEffectType }
+interface HeroSlot {
+  slot:     number;
+  url:      string | null;
+  type:     SlotEffectType;
+  title:    string;
+  subtitle: string;
+  cta:      string;
+  preset:   string;
+}
 
 interface Product {
   id:          number;
@@ -679,7 +688,7 @@ function MenuContent() {
         const [tRes, rRes, hsRes, bizRes] = await Promise.all([
           fetch("/api/turno"),
           fetch("/api/currency"),
-          fetch("/api/config/hero-slots"),
+          fetch("/api/config/hero-slots", { cache: "no-store" }),
           fetch("/api/config/business"),
         ]);
         const [tData, rData, hsData, bizData] = await Promise.all([
@@ -706,14 +715,20 @@ function MenuContent() {
     init();
   }, []);
 
-  // Analytics — track page_view on mount
+  // Analytics — track page_view on mount.
+  // Fire-and-forget, UN SOLO intento. Omitimos `zone` si es null (el schema la espera
+  // opcional, no nullable → null daría 422). Nunca reintentar ni romper la UX.
   useEffect(() => {
     const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop";
     void fetch("/api/analytics/track", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event_type: "page_view", zone: zoneParam, device_type: deviceType }),
-    });
+      body: JSON.stringify({
+        event_type: "page_view",
+        ...(zoneParam ? { zone: zoneParam } : {}),
+        device_type: deviceType,
+      }),
+    }).catch(() => { /* tracking nunca debe romper la UX — sin retry */ });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hero slider autoplay (4 s)
@@ -1116,12 +1131,35 @@ function MenuContent() {
                 className={styles.adTrack}
                 style={{ transform: `translateX(-${sliderIdx * 100}%)` }}
               >
-                {activeSlots.map((s, i) => (
-                  <div key={s.slot} className={styles.adSlide} style={{ position: 'relative' }}>
-                    <img src={s.url!} alt={`Banner ${i + 1}`} className={styles.adSlideImg} />
-                    <SlotEffect type={s.type} />
-                  </div>
-                ))}
+                {activeSlots.map((s, i) => {
+                  const preset  = resolveHeroPreset(s.preset);
+                  const hasText = Boolean(s.title || s.subtitle || s.cta);
+                  return (
+                    <div key={s.slot} className={styles.adSlide} style={{ position: 'relative' }}>
+                      <img src={s.url!} alt={`Banner ${i + 1}`} className={styles.adSlideImg} />
+                      <div className={styles.adOverlay} style={{ background: preset.overlay }} />
+                      <SlotEffect type={s.type} />
+                      {hasText && (
+                        <div
+                          className={`${styles.adText} ${styles[`adText_${preset.position}`]}`}
+                          style={{ fontFamily: preset.fontFamily }}
+                        >
+                          {s.title && (
+                            <span className={styles.adTitle} style={{ color: preset.titleColor }}>
+                              {s.title}
+                            </span>
+                          )}
+                          {s.subtitle && (
+                            <span className={styles.adSubtitle} style={{ color: preset.subtitleColor }}>
+                              {s.subtitle}
+                            </span>
+                          )}
+                          {s.cta && <span className={styles.adCta}>{s.cta}</span>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               {activeSlots.length > 1 && (
                 <div className={styles.adDots}>

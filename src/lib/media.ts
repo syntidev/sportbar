@@ -11,6 +11,7 @@
 import sharp from 'sharp'
 import { writeFile, mkdir, unlink } from 'fs/promises'
 import { existsSync } from 'fs'
+import { randomBytes } from 'crypto'
 import path from 'path'
 import { prisma } from '@/lib/prisma'
 
@@ -22,9 +23,45 @@ const ALLOWED_MIME = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
-  'image/avif',
 ])
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
+
+/**
+ * Hint estándar devuelto por cada endpoint de upload para guiar al usuario.
+ * Fuente única — todos los wrappers lo reexportan en su respuesta JSON.
+ */
+export const UPLOAD_HINT = {
+  formats: ['JPG', 'PNG', 'WebP'],
+  recommended_size: '800x800px mínimo, fondo transparente para logos',
+  max_size_mb: 5,
+} as const
+
+/**
+ * Error de validación de medios (formato / tamaño).
+ * Los wrappers lo mapean a HTTP 400; cualquier otro error → 500.
+ */
+export class MediaValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'MediaValidationError'
+  }
+}
+
+// ── Generación de nombre único ───────────────────────────────────────────────────
+// {tipo}-{timestamp}-{random6}.webp  →  nunca colisiona, nunca sobrescribe por ID
+function uniqueName(prefix: string): string {
+  const ts   = Date.now()
+  const rand = randomBytes(3).toString('hex') // 6 chars hex
+  return `${prefix}-${ts}-${rand}.webp`
+}
+
+// Mapa tipo → (prefijo de archivo, subcarpeta dentro de public/uploads)
+const TARGET: Record<MediaType, { prefix: string; folder: string }> = {
+  product:     { prefix: 'product', folder: 'products' },
+  logo:        { prefix: 'logo',    folder: 'logos'    },
+  'hero-slot': { prefix: 'hero',    folder: 'hero'     },
+  splash:      { prefix: 'splash',  folder: 'splash'   },
+}
 
 // ── uploadMedia ────────────────────────────────────────────────────────────────
 
@@ -33,58 +70,30 @@ const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
  *
  * @param file  Objeto File proveniente de FormData
  * @param type  Categoría del medio
- * @param id    Requerido para 'product' y 'hero-slot'
+ * @param _id   (legacy) ya no se usa para el nombre — el nombre siempre es único
  * @returns     URL pública lista para guardar en DB y servir al cliente
  */
 export async function uploadMedia(
   file: File,
   type: MediaType,
-  id?: string | number,
+  _id?: string | number,
 ): Promise<string> {
   // ── Validaciones ─────────────────────────────────────────────────────────────
   if (!ALLOWED_MIME.has(file.type)) {
-    throw new Error('Formato no permitido. Usa JPG, PNG, WebP o AVIF.')
+    throw new MediaValidationError('Formato no válido. Usa JPG, PNG o WebP.')
   }
   if (file.size > MAX_BYTES) {
-    throw new Error('El archivo supera el límite de 5 MB.')
+    throw new MediaValidationError('Archivo muy grande. Máximo 5MB.')
   }
 
   const raw         = Buffer.from(await file.arrayBuffer())
-  const ts          = Date.now()
   const uploadsRoot = path.join(process.cwd(), 'public', 'uploads')
 
-  // ── Ruta de destino según tipo ────────────────────────────────────────────────
-  let dir: string
-  let filename: string
-  let urlPublica: string
-
-  switch (type) {
-    case 'product':
-      if (id === undefined || id === null) throw new Error('id requerido para product')
-      dir        = path.join(uploadsRoot, 'products')
-      filename   = `${id}.webp`
-      urlPublica = `/uploads/products/${filename}`
-      break
-
-    case 'logo':
-      dir        = uploadsRoot
-      filename   = `logo_${ts}.webp`
-      urlPublica = `/uploads/${filename}`
-      break
-
-    case 'hero-slot':
-      if (id === undefined || id === null) throw new Error('id requerido para hero-slot')
-      dir        = path.join(uploadsRoot, 'hero')
-      filename   = `slot_${id}_${ts}.webp`
-      urlPublica = `/uploads/hero/${filename}`
-      break
-
-    case 'splash':
-      dir        = path.join(uploadsRoot, 'splash')
-      filename   = `splash_${ts}.webp`
-      urlPublica = `/uploads/splash/${filename}`
-      break
-  }
+  // ── Ruta de destino según tipo — nombre SIEMPRE único, sin colisiones ──────────
+  const { prefix, folder } = TARGET[type]
+  const dir        = path.join(uploadsRoot, folder)
+  const filename   = uniqueName(prefix)
+  const urlPublica = `/uploads/${folder}/${filename}`
 
   await mkdir(dir, { recursive: true })
 
@@ -111,11 +120,10 @@ export async function uploadMedia(
       .toBuffer()
 
   } else {
-    // hero-slot — banner horizontal
-    const oversize = raw.byteLength > 1.5 * 1024 * 1024
+    // hero-slot — banner horizontal · quality 85, sin alfa
     buf = await sharp(raw)
       .resize({ width: 1200, withoutEnlargement: true })
-      .webp({ quality: oversize ? 76 : 82 })
+      .webp({ quality: 85 })
       .toBuffer()
   }
 
